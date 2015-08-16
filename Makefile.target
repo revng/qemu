@@ -19,6 +19,16 @@ ifdef CONFIG_USER_ONLY
 # user emulator name
 QEMU_PROG=qemu-$(TARGET_NAME)
 QEMU_PROG_BUILD = $(QEMU_PROG)
+
+ifdef CONFIG_LIBTINYCODE
+# user emulator name
+QEMU_PROG=libtinycode-$(TARGET_NAME).so
+QEMU_PROG_BUILD = $(QEMU_PROG)
+
+QEMU_CFLAGS+=-fPIC
+
+endif
+
 else
 # system emulator name
 QEMU_PROG=qemu-system-$(TARGET_NAME)$(EXESUF)
@@ -99,6 +109,15 @@ obj-$(CONFIG_LIBDECNUMBER) += libdecnumber/decNumber.o
 obj-$(CONFIG_LIBDECNUMBER) += libdecnumber/dpd/decimal32.o
 obj-$(CONFIG_LIBDECNUMBER) += libdecnumber/dpd/decimal64.o
 obj-$(CONFIG_LIBDECNUMBER) += libdecnumber/dpd/decimal128.o
+
+#########################################################
+# libtinycode target
+
+ifdef CONFIG_LIBTINYCODE
+
+QEMU_LDFLAGS+=-shared
+
+endif #CONFIG_LIBTINYCODE
 
 #########################################################
 # Linux user emulator target

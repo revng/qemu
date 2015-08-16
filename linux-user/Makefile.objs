@@ -1,3 +1,6 @@
+ifdef CONFIG_LIBTINYCODE
+obj-y = api.o uaccess.o
+else
 obj-y = main.o syscall.o strace.o mmap.o signal.o \
 	elfload.o linuxload.o uaccess.o uname.o
 
@@ -5,3 +8,4 @@ obj-$(TARGET_HAS_BFLT) += flatload.o
 obj-$(TARGET_I386) += vm86.o
 obj-$(TARGET_ARM) += arm/nwfpe/
 obj-$(TARGET_M68K) += m68k-sim.o
+endif

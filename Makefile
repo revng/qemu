@@ -26,6 +26,7 @@ endif
 
 CONFIG_SOFTMMU := $(if $(filter %-softmmu,$(TARGET_DIRS)),y)
 CONFIG_USER_ONLY := $(if $(filter %-user,$(TARGET_DIRS)),y)
+CONFIG_LIBTINYCODE := $(if $(filter %-libtinycode,$(TARGET_DIRS)),y)
 CONFIG_ALL=y
 -include config-all-devices.mak
 -include config-all-disas.mak
@@ -142,6 +143,10 @@ defconfig:
 
 ifneq ($(wildcard config-host.mak),)
 include $(SRC_PATH)/Makefile.objs
+endif
+
+ifeq ($(CONFIG_LIBTINYCODE),y)
+QEMU_CFLAGS+=-fPIC
 endif
 
 dummy := $(call unnest-vars,, \
