@@ -574,6 +574,13 @@ struct TCGContext {
     uint8_t gen_opc_instr_start[OPC_BUF_SIZE];
 };
 
+typedef struct TCGHelperInfo {
+    void *func;
+    const char *name;
+    unsigned flags;
+    unsigned sizemask;
+} TCGHelperInfo;
+
 extern TCGContext tcg_ctx;
 
 /* The number of opcodes emitted so far.  */
