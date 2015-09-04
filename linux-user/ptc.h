@@ -4,8 +4,6 @@
 #include <stdlib.h>
 #include <assert.h>
 
-/* TODO: import TCG_CALL_* flags */
-
 /* Exported data structures */
 
 /* This corresponds to TCGArg, whose size is target-dependent. We always use a 64-bit value. */
@@ -234,6 +232,16 @@ static inline PTCHelperDef *ptc_find_helper(PTCInstructionArg id) {
 /* PTCInstruction accessors */
 
 /* TODO: use unsigned int instead of size_t */
+
+#define PTC_CALL_NO_READ_GLOBALS 0x0010
+#define PTC_CALL_NO_WRITE_GLOBALS 0x0020
+#define PTC_CALL_NO_SIDE_EFFECTS 0x0040
+
+#define PTC_CALL_NO_RWG PTC_CALL_NO_READ_GLOBALS
+#define PTC_CALL_NO_WG PTC_CALL_NO_WRITE_GLOBALS
+#define PTC_CALL_NO_SE PTC_CALL_NO_SIDE_EFFECTS
+#define PTC_CALL_NO_RWG_SE (PTC_CALL_NO_RWG | PTC_CALL_NO_SE)
+#define PTC_CALL_NO_WG_SE (PTC_CALL_NO_WG | PTC_CALL_NO_SE)
 
 #define PTC_CALL_DUMMY_ARG ((PTCInstructionArg) -1)
 
