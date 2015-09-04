@@ -11,6 +11,43 @@
 
 #include "exec/exec-all.h"
 
+/* Check coherence of the values of the constants between TCG_* and
+   PTC_*. Sadly we have to use this dirty division by zero trick to
+   trigger an error from the compiler, in fact, due to using enums and
+   not defines, we cannot check the values with a preprocessor
+   conditional block. */
+
+#define EQUALS(x, y) (1 / ((int) (x) == (int) (y)))
+#define MATCH(pref, x) EQUALS(PTC_ ## x, pref ## x)
+#define MATCH2(pref, prefix, a, b) MATCH(pref, prefix ## _ ## a) + MATCH(pref, prefix ## _ ## b)
+#define MATCH3(pref, prefix, a, b, c) MATCH(pref, prefix ## _ ## a) + MATCH2(pref, prefix, b, c)
+#define MATCH4(pref, prefix, a, b, c, d) MATCH2(pref, prefix, a, b) + MATCH2(pref, prefix, c, d)
+#define MATCH5(pref, prefix, a, b, c, d, e) MATCH3(pref, prefix, a, b, e) + MATCH2(pref, prefix, c, d)
+#define MATCH7(pref, prefix, a, b, c, d, e, f, g) MATCH4(pref, prefix, a, b, c, d) + MATCH3(pref, prefix, e, f, g)
+
+static int constants_checks =
+  MATCH3(TCG_, TYPE, I32, I64, COUNT) +
+
+  MATCH4(TCG_, COND, NEVER, ALWAYS, EQ, NE) +
+  MATCH4(TCG_, COND, LT, GE, LE, GT) +
+  MATCH4(TCG_, COND, NEVER, ALWAYS, EQ, NE) +
+  MATCH4(TCG_, COND, LTU, GEU, LEU, GTU) +
+
+  MATCH5(, MO, 8, 16, 32, 64, SIZE) +
+  MATCH2(, MO, SIGN, BSWAP) + MATCH3(, MO, LE, BE, TE) +
+  MATCH7(, MO, UB, UW, UL, SB, SW, SL, Q) +
+  MATCH5(, MO, LEUW, LEUL, LESW, LESL, LEQ) +
+  MATCH5(, MO, BEUW, BEUL, BESW, BESL, BEQ) +
+  MATCH5(, MO, TEUW, TEUL, TESW, TESL, TEQ) +
+  MATCH(, MO_SSIZE) +
+
+  MATCH4(, TEMP_VAL, DEAD, REG, MEM, CONST) +
+
+  MATCH(TCG_, CALL_DUMMY_ARG);
+
+#undef EQUALS
+#undef MATCH
+
 unsigned long reserved_va = 0;
 int singlestep = 0;
 unsigned long guest_base = 0;

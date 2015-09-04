@@ -4,9 +4,6 @@
 #include <stdlib.h>
 #include <assert.h>
 
-/* TODO: check that TCG_* and the corresponding PTC_* values are using the pre-processor.
- * Check also PTC_CALL_DUMMY_ARG.  */
-
 /* TODO: import TCG_CALL_* flags */
 
 /* Exported data structures */
