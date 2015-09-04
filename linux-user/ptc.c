@@ -66,7 +66,7 @@ static void dump_tinycode(TCGContext *s, PTCInstructionList *instructions);
 
 PTCOpcodeDef *ptc_opcode_defs;
 PTCHelperDef *ptc_helper_defs;
-size_t ptc_helper_defs_size;
+unsigned ptc_helper_defs_size;
 
 static unsigned long cs_base = 0;
 static CPUState *cpu = NULL;
@@ -74,8 +74,8 @@ static CPUState *cpu = NULL;
 
 static void add_helper(gpointer key, gpointer value, gpointer user_data) {
   TCGHelperInfo *helper = value;
-  size_t *count = user_data;
-  size_t index = --(*count);
+  unsigned *count = user_data;
+  unsigned index = --(*count);
 
   ptc_helper_defs[index].func = helper->func;
   ptc_helper_defs[index].name = helper->name;
@@ -121,7 +121,7 @@ void ptc_init(void) {
   if (ptc_helper_defs == NULL) {
     TCGContext *s = &tcg_ctx;
     GHashTable *helper_table = s->helpers;
-    size_t helper_table_size = g_hash_table_size(helper_table);
+    unsigned helper_table_size = g_hash_table_size(helper_table);
 
     ptc_helper_defs_size = helper_table_size;
     ptc_helper_defs = (PTCHelperDef *) calloc(sizeof(PTCHelperDef), helper_table_size);
@@ -153,7 +153,7 @@ static void dump_tinycode(TCGContext *s, PTCInstructionList *instructions) {
 
     PTCInstructionList result = { 0 };
 
-    size_t arguments_count = 0;
+    unsigned arguments_count = 0;
 
     PTCInstruction *current_instruction = NULL;
     TCGOpcode c;

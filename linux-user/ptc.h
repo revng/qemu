@@ -64,13 +64,13 @@ typedef struct {
 
 typedef struct {
   PTCInstruction *instructions;
-  size_t instruction_count;
+  unsigned instruction_count;
 
   /* Additional data, do not access this directly */
   PTCInstructionArg *arguments;
   PTCTemp *temps;
-  size_t global_temps;
-  size_t total_temps;
+  unsigned global_temps;
+  unsigned total_temps;
 } PTCInstructionList;
 
 typedef struct {
@@ -194,7 +194,7 @@ typedef struct PTCHelperDef {
 
 extern PTCOpcodeDef *ptc_opcode_defs;
 extern PTCHelperDef *ptc_helper_defs;
-extern size_t ptc_helper_defs_size;
+extern unsigned ptc_helper_defs_size;
 
 /* Exported functions */
 
@@ -231,8 +231,6 @@ static inline PTCHelperDef *ptc_find_helper(PTCInstructionArg id) {
 
 /* PTCInstruction accessors */
 
-/* TODO: use unsigned int instead of size_t */
-
 #define PTC_CALL_NO_READ_GLOBALS 0x0010
 #define PTC_CALL_NO_WRITE_GLOBALS 0x0020
 #define PTC_CALL_NO_SIDE_EFFECTS 0x0040
@@ -253,63 +251,63 @@ static inline PTCOpcodeDef *ptc_instruction_opcode_def(PTCInstruction *instructi
 }
 
 
-static inline size_t ptc_instruction_out_arg_count(PTCInstruction *instruction) {
+static inline unsigned ptc_instruction_out_arg_count(PTCInstruction *instruction) {
   assert(instruction->opc != PTC_INSTRUCTION_op_call);
   return ptc_instruction_opcode_def(instruction)->nb_oargs;
 }
 
-static inline PTCInstructionArg ptc_instruction_out_arg(PTCInstruction *instruction, size_t index) {
+static inline PTCInstructionArg ptc_instruction_out_arg(PTCInstruction *instruction, unsigned index) {
   assert(instruction->opc != PTC_INSTRUCTION_op_call);
   assert(index < ptc_instruction_out_arg_count(instruction));
   return instruction->args[index];
 }
 
-static inline size_t ptc_instruction_in_arg_count(PTCInstruction *instruction) {
+static inline unsigned ptc_instruction_in_arg_count(PTCInstruction *instruction) {
   assert(instruction->opc != PTC_INSTRUCTION_op_call);
   return ptc_instruction_opcode_def(instruction)->nb_iargs;
 }
 
-static inline PTCInstructionArg ptc_instruction_in_arg(PTCInstruction *instruction, size_t index) {
+static inline PTCInstructionArg ptc_instruction_in_arg(PTCInstruction *instruction, unsigned index) {
   assert(instruction->opc != PTC_INSTRUCTION_op_call);
   assert(index < ptc_instruction_in_arg_count(instruction));
   return instruction->args[ptc_instruction_opcode_def(instruction)->nb_oargs + index];
 }
 
-static inline size_t ptc_instruction_const_arg_count(PTCInstruction *instruction) {
+static inline unsigned ptc_instruction_const_arg_count(PTCInstruction *instruction) {
   assert(instruction->opc != PTC_INSTRUCTION_op_call);
   return ptc_instruction_opcode_def(instruction)->nb_cargs;
 }
 
-static inline PTCInstructionArg ptc_instruction_const_arg(PTCInstruction *instruction, size_t index) {
+static inline PTCInstructionArg ptc_instruction_const_arg(PTCInstruction *instruction, unsigned index) {
   assert(instruction->opc != PTC_INSTRUCTION_op_call);
   assert(index < ptc_instruction_const_arg_count(instruction));
   return instruction->args[ptc_instruction_opcode_def(instruction)->nb_oargs + ptc_instruction_opcode_def(instruction)->nb_iargs + index];
 }
 
 
-static inline size_t ptc_call_instruction_out_arg_count(PTCInstruction *instruction) {
+static inline unsigned ptc_call_instruction_out_arg_count(PTCInstruction *instruction) {
   assert(instruction->opc == PTC_INSTRUCTION_op_call);
   return instruction->callo;
 }
 
-static inline PTCInstructionArg ptc_call_instruction_out_arg(PTCInstruction *instruction, size_t index) {
+static inline PTCInstructionArg ptc_call_instruction_out_arg(PTCInstruction *instruction, unsigned index) {
   assert(instruction->opc == PTC_INSTRUCTION_op_call);
   assert(index < ptc_call_instruction_out_arg_count(instruction));
   return instruction->args[index];
 }
 
-static inline size_t ptc_call_instruction_in_arg_count(PTCInstruction *instruction) {
+static inline unsigned ptc_call_instruction_in_arg_count(PTCInstruction *instruction) {
   assert(instruction->opc == PTC_INSTRUCTION_op_call);
   return instruction->calli;
 }
 
-static inline PTCInstructionArg ptc_call_instruction_in_arg(PTCInstruction *instruction, size_t index) {
+static inline PTCInstructionArg ptc_call_instruction_in_arg(PTCInstruction *instruction, unsigned index) {
   assert(instruction->opc == PTC_INSTRUCTION_op_call);
   assert(index < ptc_call_instruction_in_arg_count(instruction));
   return instruction->args[instruction->callo + index];
 }
 
-static inline PTCInstructionArg ptc_call_instruction_const_arg(PTCInstruction *instruction, size_t index) {
+static inline PTCInstructionArg ptc_call_instruction_const_arg(PTCInstruction *instruction, unsigned index) {
   assert(instruction->opc == PTC_INSTRUCTION_op_call);
   assert(index < ptc_instruction_opcode_def(instruction)->nb_cargs);
   return instruction->args[instruction->callo + instruction->calli + index];
