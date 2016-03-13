@@ -11,6 +11,7 @@ static TCGLabel *exitreq_label;
 
 static inline void gen_tb_start(TranslationBlock *tb)
 {
+#ifndef CONFIG_LIBTINYCODE
     TCGv_i32 count, flag, imm;
     int i;
 
@@ -45,10 +46,12 @@ static inline void gen_tb_start(TranslationBlock *tb)
     tcg_gen_st16_i32(count, cpu_env,
                      -ENV_OFFSET + offsetof(CPUState, icount_decr.u16.low));
     tcg_temp_free_i32(count);
+#endif
 }
 
 static void gen_tb_end(TranslationBlock *tb, int num_insns)
 {
+#ifndef CONFIG_LIBTINYCODE
     gen_set_label(exitreq_label);
     tcg_gen_exit_tb((uintptr_t)tb + TB_EXIT_REQUESTED);
 
@@ -57,6 +60,7 @@ static void gen_tb_end(TranslationBlock *tb, int num_insns)
         gen_set_label(icount_label);
         tcg_gen_exit_tb((uintptr_t)tb + TB_EXIT_ICOUNT_EXPIRED);
     }
+#endif
 
     /* Terminate the linked list.  */
     tcg_ctx.gen_op_buf[tcg_ctx.gen_last_op_idx].next = -1;
