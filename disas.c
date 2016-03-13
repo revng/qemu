@@ -190,6 +190,12 @@ static int print_insn_od_target(bfd_vma pc, disassemble_info *info)
 void target_disas(FILE *out, CPUState *cpu, target_ulong code,
                   target_ulong size, int flags)
 {
+  target_disas_max(out, cpu, code, size, flags, -1);
+}
+
+void target_disas_max(FILE *out, CPUState *cpu, target_ulong code,
+                      target_ulong size, int flags, int max)
+{
     CPUClass *cc = CPU_GET_CLASS(cpu);
     target_ulong pc;
     int count;
@@ -271,7 +277,7 @@ void target_disas(FILE *out, CPUState *cpu, target_ulong code,
         s.info.print_insn = print_insn_od_target;
     }
 
-    for (pc = code; size > 0; pc += count, size -= count) {
+    for (pc = code; size > 0; pc += count, size -= count, max--) {
 	fprintf(out, "0x" TARGET_FMT_lx ":  ", pc);
 	count = s.info.print_insn(pc, &s.info);
 #if 0
@@ -287,7 +293,7 @@ void target_disas(FILE *out, CPUState *cpu, target_ulong code,
         }
 #endif
 	fprintf(out, "\n");
-	if (count < 0)
+	if (count < 0 || max == 1)
 	    break;
         if (size < count) {
             fprintf(out,

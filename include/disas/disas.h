@@ -8,6 +8,8 @@
 void disas(FILE *out, void *code, unsigned long size);
 void target_disas(FILE *out, CPUState *cpu, target_ulong code,
                   target_ulong size, int flags);
+void target_disas_max(FILE *out, CPUState *cpu, target_ulong code,
+                      target_ulong size, int flags, int max);
 
 void monitor_disas(Monitor *mon, CPUState *cpu,
                    target_ulong pc, int nb_insn, int is_physical, int flags);
