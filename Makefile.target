@@ -15,6 +15,8 @@ QEMU_CFLAGS += -I.. -I$(SRC_PATH)/target-$(TARGET_BASE_ARCH) -DNEED_CPU_H
 
 QEMU_CFLAGS+=-I$(SRC_PATH)/include
 
+PROGS_INSTALL_DIR := $(bindir)
+
 ifdef CONFIG_USER_ONLY
 # user emulator name
 QEMU_PROG=qemu-$(TARGET_NAME)
@@ -26,6 +28,8 @@ QEMU_PROG=libtinycode-$(TARGET_NAME).so
 QEMU_PROG_BUILD = $(QEMU_PROG)
 
 QEMU_CFLAGS+=-fPIC
+
+PROGS_INSTALL_DIR := $(libdir)
 
 endif
 
@@ -224,8 +228,11 @@ ifdef CONFIG_TRACE_SYSTEMTAP
 endif
 
 install: all
+ifdef CONFIG_LIBTINYCODE
+	$(INSTALL_DATA) $(SRC_PATH)/tcg/tcg-opc.h $(SRC_PATH)/linux-user/ptc.h "$(DESTDIR)$(includedir)"
+endif
 ifneq ($(PROGS),)
-	$(call install-prog,$(PROGS),$(DESTDIR)$(bindir))
+	$(call install-prog,$(PROGS),$(DESTDIR)$(PROGS_INSTALL_DIR))
 endif
 ifdef CONFIG_TRACE_SYSTEMTAP
 	$(INSTALL_DIR) "$(DESTDIR)$(qemu_datadir)/../systemtap/tapset"
