@@ -25,7 +25,7 @@
 #define MATCH5(pref, prefix, a, b, c, d, e) MATCH3(pref, prefix, a, b, e) + MATCH2(pref, prefix, c, d)
 #define MATCH7(pref, prefix, a, b, c, d, e, f, g) MATCH4(pref, prefix, a, b, c, d) + MATCH3(pref, prefix, e, f, g)
 
-static int constants_checks =
+static int constants_checks __attribute__((unused)) =
   MATCH3(TCG_, TYPE, I32, I64, COUNT) +
 
   MATCH4(TCG_, COND, NEVER, ALWAYS, EQ, NE) +
