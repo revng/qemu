@@ -53,14 +53,13 @@ static int constants_checks =
 unsigned long reserved_va = 0;
 int singlestep = 0;
 unsigned long guest_base = 0;
+unsigned long mmap_min_addr = 4096;
 
 abi_long do_brk(abi_ulong new_brk) { exit(-1); }
 
 void cpu_list_unlock(void) { /* exit(-1); */ }
 void cpu_list_lock(void) { /* exit(-1); */ }
 
-void mmap_unlock(void) { /* exit(-1); */ }
-void mmap_lock(void) { /* exit(-1); */ }
 
 static void dump_tinycode(TCGContext *s, PTCInstructionList *instructions);
 
