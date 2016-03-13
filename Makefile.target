@@ -33,6 +33,10 @@ PROGS_INSTALL_DIR := $(libdir)
 
 endif
 
+ifdef CONFIG_LLVM_HELPERS
+LLVM_HELPERS=libtinycode-helpers-$(TARGET_NAME).ll
+endif
+
 else
 # system emulator name
 QEMU_PROG=qemu-system-$(TARGET_NAME)$(EXESUF)
@@ -91,8 +95,13 @@ else
 stap:
 endif
 
-all: $(PROGS) stap
+ALL_TARGETS=$(PROGS)
 
+ifdef CONFIG_LLVM_HELPERS
+ALL_TARGETS += $(LLVM_HELPERS)
+endif
+
+all: $(ALL_TARGETS) stap
 # Dummy command so that make thinks it has done something
 	@true
 
@@ -210,6 +219,14 @@ ifdef CONFIG_DARWIN
 	$(call quiet-command,SetFile -a C $@,"  SETFILE $(TARGET_DIR)$@")
 endif
 
+ifdef CONFIG_LLVM_HELPERS
+ll-y := target-$(TARGET_BASE_ARCH)/ linux-user/
+ll-y += fpu/softfloat.ll thunk.ll util/cutils.ll util/crc32c.ll util/getauxval.ll
+dummy := $(call unnest-vars,,ll-y)
+$(LLVM_HELPERS): $(ll-y)
+	$(call quiet-command,$(LLVM_LINK) -S -o $@ $^,"  LINK.LL $@")
+endif
+
 gdbstub-xml.c: $(TARGET_XML_FILES) $(SRC_PATH)/scripts/feature_to_c.sh
 	$(call quiet-command,rm -f $@ && $(SHELL) $(SRC_PATH)/scripts/feature_to_c.sh $@ $(TARGET_XML_FILES),"  GEN   $(TARGET_DIR)$@")
 
@@ -228,6 +245,9 @@ ifdef CONFIG_TRACE_SYSTEMTAP
 endif
 
 install: all
+ifdef CONFIG_LLVM_HELPERS
+	$(INSTALL_LIB) $(LLVM_HELPERS) "$(DESTDIR)$(libdir)"
+endif
 ifdef CONFIG_LIBTINYCODE
 	$(INSTALL_DATA) $(SRC_PATH)/tcg/tcg-opc.h $(SRC_PATH)/linux-user/ptc.h "$(DESTDIR)$(includedir)"
 endif

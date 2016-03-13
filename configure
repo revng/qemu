@@ -338,6 +338,7 @@ libssh2=""
 vhdx=""
 numa=""
 tcmalloc="no"
+llvm_helpers="no"
 
 # parse CC options first
 for opt do
@@ -395,6 +396,10 @@ nm="${NM-${cross_prefix}nm}"
 strip="${STRIP-${cross_prefix}strip}"
 windres="${WINDRES-${cross_prefix}windres}"
 pkg_config_exe="${PKG_CONFIG-${cross_prefix}pkg-config}"
+llvm_config="${LLVM_CONFIG-llvm-config}"
+llvm_bindir="$(${llvm_config} --bindir)"
+clang="${llvm_bindir}/clang"
+llvm_link="${llvm_bindir}/llvm-link"
 query_pkg_config() {
     "${pkg_config_exe}" ${QEMU_PKG_CONFIG_FLAGS} "$@"
 }
@@ -1149,6 +1154,10 @@ for opt do
   ;;
   --enable-tcmalloc) tcmalloc="yes"
   ;;
+  --disable-llvm-helpers) llvm_helpers="no"
+  ;;
+  --enable-llvm-helpers) llvm_helpers="yes"
+  ;;
   *)
       echo "ERROR: unknown option $opt"
       echo "Try '$0 --help' for more information"
@@ -1375,6 +1384,7 @@ disabled with --disable-FEATURE, default is enabled if available:
   vhdx            support for the Microsoft VHDX image format
   numa            libnuma support
   tcmalloc        tcmalloc support
+  llvm-helpers    compile and install QEMU helpers as LLVM IR
 
 NOTE: The object files are built at the place where configure is launched
 EOF
@@ -3379,6 +3389,16 @@ EOF
 fi
 
 ##########################################
+# llvm_helpers
+
+if test "$llvm_helpers" = "yes" ; then
+  if test ! -e "$clang" -a -e "$llvm_link" ; then
+    error_exit "couldn't find clang or llvm-link, set LLVM_CONFIG to " \
+        "your llvm-config path"
+  fi
+fi
+
+##########################################
 # signalfd probe
 signalfd="no"
 cat > $TMPC << EOF
@@ -4590,6 +4610,7 @@ echo "snappy support    $snappy"
 echo "bzip2 support     $bzip2"
 echo "NUMA host support $numa"
 echo "tcmalloc support  $tcmalloc"
+echo "LLVM helpers      $llvm_helpers"
 
 if test "$sdl_too_old" = "yes"; then
 echo "-> Your SDL version is too old - please upgrade to have SDL support"
@@ -5175,6 +5196,8 @@ echo "LD=$ld" >> $config_host_mak
 echo "NM=$nm" >> $config_host_mak
 echo "WINDRES=$windres" >> $config_host_mak
 echo "LIBTOOL=$libtool" >> $config_host_mak
+echo "CLANG=$clang" >> $config_host_mak
+echo "LLVM_LINK=$llvm_link" >> $config_host_mak
 echo "CFLAGS=$CFLAGS" >> $config_host_mak
 echo "CFLAGS_NOPIE=$CFLAGS_NOPIE" >> $config_host_mak
 echo "QEMU_CFLAGS=$QEMU_CFLAGS" >> $config_host_mak
@@ -5469,6 +5492,9 @@ fi
 if test "$target_libtinycode_only" = "yes"; then
   echo "CONFIG_LINUX_USER=y" >> $config_target_mak
   echo "CONFIG_LIBTINYCODE=y" >> $config_target_mak
+fi
+if test "$llvm_helpers" = "yes" ; then
+  echo "CONFIG_LLVM_HELPERS=y" >> $config_host_mak
 fi
 
 list=""
