@@ -129,8 +129,8 @@ static void *l1_map[V_L1_SIZE];
 /* code generation context */
 TCGContext tcg_ctx;
 
-static void tb_link_page(TranslationBlock *tb, tb_page_addr_t phys_pc,
-                         tb_page_addr_t phys_page2);
+void tb_link_page(TranslationBlock *tb, tb_page_addr_t phys_pc,
+                  tb_page_addr_t phys_page2);
 static TranslationBlock *tb_find_pc(uintptr_t tc_ptr);
 
 void cpu_gen_init(void)
@@ -1332,8 +1332,8 @@ static inline void tb_alloc_page(TranslationBlock *tb,
 
 /* add a new TB and link it to the physical page tables. phys_page2 is
    (-1) to indicate that only one page contains the TB. */
-static void tb_link_page(TranslationBlock *tb, tb_page_addr_t phys_pc,
-                         tb_page_addr_t phys_page2)
+void tb_link_page(TranslationBlock *tb, tb_page_addr_t phys_pc,
+                  tb_page_addr_t phys_page2)
 {
     unsigned int h;
     TranslationBlock **ptb;

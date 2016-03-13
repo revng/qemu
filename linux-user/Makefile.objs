@@ -1,5 +1,5 @@
 ifdef CONFIG_LIBTINYCODE
-obj-y = ptc.o uaccess.o mmap.o
+obj-y = ptc.o uaccess.o mmap.o init_cpu.o
 else
 obj-y = main.o syscall.o strace.o mmap.o signal.o \
 	elfload.o linuxload.o uaccess.o uname.o

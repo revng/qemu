@@ -6,8 +6,10 @@
 #include "cpu.h"
 #include "tcg.h"
 #include "trace.h"
+#include "disas/disas.h"
 
 #include "ptc.h"
+#include "elf.h"
 
 #include "exec/exec-all.h"
 
@@ -60,6 +62,17 @@ abi_long do_brk(abi_ulong new_brk) { exit(-1); }
 void cpu_list_unlock(void) { /* exit(-1); */ }
 void cpu_list_lock(void) { /* exit(-1); */ }
 
+#ifdef TARGET_I386
+uint64_t cpu_get_tsc(CPUX86State *env) {
+    return 0;
+}
+
+int cpu_get_pic_interrupt(CPUX86State *env)
+{
+    return -1;
+}
+
+#endif
 
 static void dump_tinycode(TCGContext *s, PTCInstructionList *instructions);
 
@@ -70,6 +83,60 @@ unsigned ptc_helper_defs_size;
 static unsigned long cs_base = 0;
 static CPUState *cpu = NULL;
 
+#if defined(TARGET_X86_64)
+# define CPU_STRUCT X86CPU
+#elif defined(TARGET_ARM)
+# define CPU_STRUCT ARMCPU
+#elif defined(TARGET_MIPS)
+# define CPU_STRUCT MIPSCPU
+#endif
+
+typedef struct {
+  target_ulong start;
+  target_ulong end;
+} AddressRange;
+
+#define MAX_RANGES 10
+static AddressRange ranges[MAX_RANGES];
+
+static CPU_STRUCT initialized_state;
+
+int ptc_load(void *handle, PTCInterface *output) {
+
+  PTCInterface result = { 0 };
+
+  ptc_init();
+
+#if defined(TARGET_X86_64)
+  result.pc = offsetof(CPUX86State, eip);
+#elif defined(TARGET_ARM)
+  CPUARMState State;
+  result.pc = (uint8_t *) &State.regs[15] - (uint8_t *) &State;
+#elif defined(TARGET_MIPS)
+  result.pc = offsetof(CPUMIPSState, active_tc.PC);
+#endif
+
+  result.exception_index =
+    (offsetof(CPU_STRUCT, parent_obj) + offsetof(CPUState, exception_index))
+    - offsetof(CPU_STRUCT, env);
+
+  result.get_condition_name = &ptc_get_condition_name;
+  result.get_load_store_name = &ptc_get_load_store_name;
+  result.parse_load_store_arg = &ptc_parse_load_store_arg;
+  result.get_arg_label_id = &ptc_get_arg_label_id;
+  result.mmap = &ptc_mmap;
+  result.translate = &ptc_translate;
+  result.disassemble = &ptc_disassemble;
+
+  result.opcode_defs = ptc_opcode_defs;
+  result.helper_defs = ptc_helper_defs;
+  result.helper_defs_size = ptc_helper_defs_size;
+  result.initialized_env = (uint8_t *) &initialized_state.env;
+
+  *output = result;
+
+  return 0;
+}
 
 static void add_helper(gpointer key, gpointer value, gpointer user_data) {
   TCGHelperInfo *helper = value;
@@ -81,13 +148,15 @@ static void add_helper(gpointer key, gpointer value, gpointer user_data) {
   ptc_helper_defs[index].flags = helper->flags;
 }
 
+
+void initialize_cpu_state(CPUArchState *env);
+
 void ptc_init(void) {
   int i = 0;
 
   if (cpu == NULL) {
     /* init guest base */
-    guest_base = (unsigned long) mmap((void *)0xb0000000, 0x8000, PROT_EXEC|PROT_READ|PROT_WRITE,
-            MAP_FIXED|MAP_PRIVATE|MAP_ANON, -1, 0x0);
+    guest_base = 0xb0000000;
 
     /* init TCGContext */
     tcg_exec_init(0);
@@ -96,13 +165,29 @@ void ptc_init(void) {
     module_call_init(MODULE_INIT_QOM);
 
     /* init env and cpu */
+#ifdef TARGET_I386
+    cpu = cpu_init("qemu64");
+#elif defined(TARGET_MIPS)
+#if defined(TARGET_ABI_MIPSN32) || defined(TARGET_ABI_MIPSN64)
+    cpu = cpu_init("5KEf");
+#else
+    cpu = cpu_init("24Kf");
+#endif
+#else
     cpu = cpu_init("any");
+#endif
+
+    assert(cpu != NULL);
 
     /* Reset CPU */
     cpu_reset(cpu);
 
+    initialize_cpu_state(cpu->env_ptr);
+
     /* set logging for tiny code dumping */
     qemu_set_log(CPU_LOG_TB_OP | CPU_LOG_TB_OP_OPT);
+
+    initialized_state = *(container_of(cpu->env_ptr, CPU_STRUCT, env));
   }
 
   if (ptc_opcode_defs == NULL) {
@@ -127,7 +212,6 @@ void ptc_init(void) {
 
     g_hash_table_foreach(helper_table, add_helper, &helper_table_size);
   }
-
 }
 
 static TranslationBlock *tb_alloc2(target_ulong pc)
@@ -143,6 +227,26 @@ static TranslationBlock *tb_alloc2(target_ulong pc)
     tb->pc = pc;
     tb->cflags = 0;
     return tb;
+}
+
+static PTCTemp copy_temp(TCGTemp original) {
+  PTCTemp result = { 0 };
+
+  result.reg = original.reg;
+  result.mem_reg = original.mem_reg;
+  result.val_type = original.val_type;
+  result.base_type = original.base_type;
+  result.type = original.type;
+  result.fixed_reg = original.fixed_reg;
+  result.mem_coherent = original.mem_coherent;
+  result.mem_allocated = original.mem_allocated;
+  result.temp_local = original.temp_local;
+  result.temp_allocated = original.temp_allocated;
+  result.val = original.val;
+  result.mem_offset = original.mem_offset;
+  result.name = original.name;
+
+  return result;
 }
 
 static void dump_tinycode(TCGContext *s, PTCInstructionList *instructions) {
@@ -168,7 +272,7 @@ static void dump_tinycode(TCGContext *s, PTCInstructionList *instructions) {
 
       if (c == INDEX_op_debug_insn_start) {
         arguments_count += 2;
-      } else if (c == INDEX_op_call){
+      } else if (c == INDEX_op_call) {
         arguments_count += op->callo + op->calli + def->nb_cargs;
       } else {
         arguments_count += def->nb_oargs + def->nb_iargs + def->nb_cargs;
@@ -183,21 +287,8 @@ static void dump_tinycode(TCGContext *s, PTCInstructionList *instructions) {
     result.global_temps = s->nb_globals;
     result.temps = (PTCTemp *) calloc(sizeof(PTCTemp), result.total_temps);
 
-    for (oi = 0; oi < s->nb_temps; oi++) {
-      result.temps[oi].reg = s->temps[oi].reg;
-      result.temps[oi].mem_reg = s->temps[oi].mem_reg;
-      result.temps[oi].val_type = s->temps[oi].val_type;
-      result.temps[oi].base_type = s->temps[oi].base_type;
-      result.temps[oi].type = s->temps[oi].type;
-      result.temps[oi].fixed_reg = s->temps[oi].fixed_reg;
-      result.temps[oi].mem_coherent = s->temps[oi].mem_coherent;
-      result.temps[oi].mem_allocated = s->temps[oi].mem_allocated;
-      result.temps[oi].temp_local = s->temps[oi].temp_local;
-      result.temps[oi].temp_allocated = s->temps[oi].temp_allocated;
-      result.temps[oi].val = s->temps[oi].val;
-      result.temps[oi].mem_offset = s->temps[oi].mem_offset;
-      result.temps[oi].name = s->temps[oi].name;
-    }
+    for (oi = 0; oi < s->nb_temps; oi++)
+      result.temps[oi] = copy_temp(s->temps[oi]);
 
     /* Go through all the instructions again and collect the information */
 
@@ -237,12 +328,19 @@ static void dump_tinycode(TCGContext *s, PTCInstructionList *instructions) {
     *instructions = result;
 }
 
+extern void tb_link_page(TranslationBlock *tb, tb_page_addr_t phys_pc,
+                         tb_page_addr_t phys_page2);
+
 static TranslationBlock *tb_gen_code2(TCGContext *s, CPUState *cpu,
                                      target_ulong pc, target_ulong cs_base,
                                      int flags, int cflags)
 {
     CPUArchState *env = cpu->env_ptr;
     TranslationBlock *tb;
+    tb_page_addr_t phys_pc;
+    int i = 0;
+
+    phys_pc = get_page_addr_code(env, pc);
 
     if (use_icount) {
         cflags |= CF_USE_ICOUNT;
@@ -263,25 +361,66 @@ static TranslationBlock *tb_gen_code2(TCGContext *s, CPUState *cpu,
     tb->flags = flags;
     tb->cflags = cflags;
 
+    for (i = 0; i < MAX_RANGES; i++)
+      if (ranges[i].start <= pc && pc < ranges[i].end)
+        break;
+    assert(i != MAX_RANGES);
+    tb->max_pc = ranges[i].end;
+
     // From cpu_gen_code
     tcg_func_start(s);
 
     gen_intermediate_code(env, tb);
 
+    tb_link_page(tb, phys_pc, -1);
+
     return tb;
 }
 
-void ptc_translate(void *code, size_t code_size, PTCInstructionList *instructions) {
+void ptc_mmap(uint64_t virtual_address, const void *code, size_t code_size) {
+  abi_long mmapd_address;
+  unsigned i;
+
+  mmapd_address = target_mmap((abi_ulong) virtual_address,
+                              (abi_ulong) code_size,
+                              PROT_READ | PROT_WRITE | PROT_EXEC,
+                              MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED,
+                              -1,
+                              0);
+  memcpy((void *) g2h(virtual_address), code, code_size);
+
+  assert(mmapd_address == (abi_ulong) virtual_address);
+
+  for (i = 0; i < MAX_RANGES; i++) {
+    if (ranges[i].start == ranges[i].end
+        && ranges[i].end == 0) {
+      ranges[i].start = virtual_address;
+      ranges[i].end = virtual_address + code_size;
+      return;
+    }
+  }
+
+  assert(false);
+}
+
+size_t ptc_translate(uint64_t virtual_address, PTCInstructionList *instructions) {
     TCGContext *s = &tcg_ctx;
+    TranslationBlock *tb = NULL;
 
-    /* copy code over */
-    memcpy((void *) guest_base, code, code_size);
 
-    tb_gen_code2(s, cpu, (target_ulong) 0, cs_base, 0, 0);
+
+
+    target_ulong temp;
+    int flags = 0;
+    cpu_get_tb_cpu_state(cpu->env_ptr, &temp, &temp, &flags);
+
+    tb = tb_gen_code2(s, cpu, (target_ulong) virtual_address, cs_base, flags, 0);
 
     // tcg_dump_ops(s);
 
     dump_tinycode(s, instructions);
+
+    return (size_t) tb->size;
 }
 
 const char *ptc_get_condition_name(PTCCondition condition) {
@@ -346,4 +485,14 @@ PTCLoadStoreArg ptc_parse_load_store_arg(PTCInstructionArg arg) {
 unsigned ptc_get_arg_label_id(PTCInstructionArg arg) {
   TCGLabel *label = arg_label((TCGArg) arg);
   return label->id;
+}
+
+void ptc_disassemble(FILE *output, uint32_t buffer, size_t buffer_size,
+                     int max) {
+  int flags = 0;
+#ifdef TARGET_X86_64
+  /* Force 64-bit decoding */
+  flags = 2;
+#endif
+  target_disas_max(output, cpu, /* GUEST_BASE + */ buffer, buffer_size, flags, max);
 }
