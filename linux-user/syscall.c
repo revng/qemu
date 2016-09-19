@@ -4577,6 +4577,9 @@ static int do_fork(CPUArchState *env, unsigned int flags, abi_ulong newsp,
         flags &= ~(CLONE_VFORK | CLONE_VM);
 
     if (flags & CLONE_VM) {
+#ifdef LLVM_HELPERS
+        assert(false);
+#else
         TaskState *parent_ts = (TaskState *)cpu->opaque;
         new_thread_info info;
         pthread_attr_t attr;
@@ -4640,6 +4643,7 @@ static int do_fork(CPUArchState *env, unsigned int flags, abi_ulong newsp,
         pthread_cond_destroy(&info.cond);
         pthread_mutex_destroy(&info.mutex);
         pthread_mutex_unlock(&clone_lock);
+#endif
     } else {
         /* if no CLONE_VM, we consider it is a fork */
         if ((flags & ~(CSIGNAL | CLONE_NPTL_FLAGS2)) != 0)
@@ -4661,11 +4665,16 @@ static int do_fork(CPUArchState *env, unsigned int flags, abi_ulong newsp,
                 put_user_u32(gettid(), child_tidptr);
             if (flags & CLONE_PARENT_SETTID)
                 put_user_u32(gettid(), parent_tidptr);
-            ts = (TaskState *)cpu->opaque;
             if (flags & CLONE_SETTLS)
                 cpu_set_tls (env, newtls);
+
+#ifndef LLVM_HELPERS
+            ts = (TaskState *)cpu->opaque;
             if (flags & CLONE_CHILD_CLEARTID)
                 ts->child_tidptr = child_tidptr;
+#else
+            assert(!(flags & CLONE_CHILD_CLEARTID));
+#endif
         } else {
             fork_end(0);
         }
@@ -5685,7 +5694,6 @@ abi_long do_syscall(void *cpu_env, int num, abi_long arg1,
     case TARGET_NR_brk:
         ret = do_brk(arg1);
         break;
-#ifndef LLVM_HELPERS
     case TARGET_NR_fork:
         ret = get_errno(do_fork(cpu_env, SIGCHLD, 0, 0, 0, 0));
         break;
@@ -5714,7 +5722,6 @@ abi_long do_syscall(void *cpu_env, int num, abi_long arg1,
             }
         }
         break;
-#endif
 #endif
 #ifdef TARGET_NR_creat /* not on alpha */
     case TARGET_NR_creat:
@@ -5768,7 +5775,6 @@ abi_long do_syscall(void *cpu_env, int num, abi_long arg1,
         unlock_user(p, arg2, 0);
         break;
 #endif
-#ifndef LLVM_HELPERS
     case TARGET_NR_execve:
         {
             char **argp, **envp;
@@ -5859,7 +5865,6 @@ abi_long do_syscall(void *cpu_env, int num, abi_long arg1,
             }
         }
         break;
-#endif
     case TARGET_NR_chdir:
         if (!(p = lock_user_string(arg1)))
             goto efault;
@@ -7491,7 +7496,6 @@ abi_long do_syscall(void *cpu_env, int num, abi_long arg1,
     case TARGET_NR_fsync:
         ret = get_errno(fsync(arg1));
         break;
-#ifndef LLVM_HELPERS
     case TARGET_NR_clone:
         /* Linux manages to have three different orderings for its
          * arguments to clone(); the BACKWARDS and BACKWARDS2 defines
@@ -7509,7 +7513,6 @@ abi_long do_syscall(void *cpu_env, int num, abi_long arg1,
         ret = get_errno(do_fork(cpu_env, arg1, arg2, arg3, arg5, arg4));
 #endif
         break;
-#endif
 #ifdef __NR_exit_group
         /* new thread calls */
     case TARGET_NR_exit_group:
@@ -8257,13 +8260,11 @@ abi_long do_syscall(void *cpu_env, int num, abi_long arg1,
     case TARGET_NR_putpmsg:
         goto unimplemented;
 #endif
-#ifndef LLVM_HELPERS
 #ifdef TARGET_NR_vfork
     case TARGET_NR_vfork:
         ret = get_errno(do_fork(cpu_env, CLONE_VFORK | CLONE_VM | SIGCHLD,
                         0, 0, 0, 0));
         break;
-#endif
 #endif
 #ifdef TARGET_NR_ugetrlimit
     case TARGET_NR_ugetrlimit:

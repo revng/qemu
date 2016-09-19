@@ -109,7 +109,9 @@ static int pending_cpus;
 /* Make sure everything is in a consistent state for calling fork().  */
 void fork_start(void)
 {
+#ifndef LLVM_HELPERS
     pthread_mutex_lock(&tcg_ctx.tb_ctx.tb_lock);
+#endif
     pthread_mutex_lock(&exclusive_lock);
     mmap_fork_start();
 }
@@ -118,6 +120,7 @@ void fork_end(int child)
 {
     mmap_fork_end(child);
     if (child) {
+#ifndef LLVM_HELPERS
         CPUState *cpu, *next_cpu;
         /* Child processes created by fork() only have a single thread.
            Discard information about the parent threads.  */
@@ -126,16 +129,21 @@ void fork_end(int child)
                 QTAILQ_REMOVE(&cpus, thread_cpu, node);
             }
         }
+#endif
         pending_cpus = 0;
         pthread_mutex_init(&exclusive_lock, NULL);
         pthread_mutex_init(&cpu_list_mutex, NULL);
         pthread_cond_init(&exclusive_cond, NULL);
         pthread_cond_init(&exclusive_resume, NULL);
+#ifndef LLVM_HELPERS
         pthread_mutex_init(&tcg_ctx.tb_ctx.tb_lock, NULL);
         gdbserver_fork(thread_cpu);
+#endif
     } else {
         pthread_mutex_unlock(&exclusive_lock);
+#ifndef LLVM_HELPERS
         pthread_mutex_unlock(&tcg_ctx.tb_ctx.tb_lock);
+#endif
     }
 }
 
