@@ -19517,7 +19517,14 @@ static void decode_opc(CPUMIPSState *env, DisasContext *ctx)
         gen_set_label(l1);
     }
 
-    if (unlikely(qemu_loglevel_mask(CPU_LOG_TB_OP | CPU_LOG_TB_OP_OPT))) {
+#ifdef LLVM_HELPERS
+    // Do not generate the debug_insn if in a delay slot
+    unsigned skip = (ctx->hflags & MIPS_HFLAG_BMASK) != 0;
+#else
+    unsigned skip = 0;
+#endif
+    if (unlikely(qemu_loglevel_mask(CPU_LOG_TB_OP | CPU_LOG_TB_OP_OPT)
+                 && !skip)) {
         tcg_gen_debug_insn_start(ctx->pc);
     }
 
