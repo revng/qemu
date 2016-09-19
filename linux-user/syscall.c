@@ -5618,6 +5618,7 @@ abi_long do_syscall(void *cpu_env, int num, abi_long arg1,
            Do thread termination if we have more then one thread.  */
         /* FIXME: This probably breaks if a signal arrives.  We should probably
            be disabling signals.  */
+#ifndef LLVM_HELPERS
         if (CPU_NEXT(first_cpu)) {
             TaskState *ts;
 
@@ -5636,6 +5637,7 @@ abi_long do_syscall(void *cpu_env, int num, abi_long arg1,
             g_free(ts);
             pthread_exit(NULL);
         }
+#endif
 #ifdef TARGET_GPROF
         _mcleanup();
 #endif
