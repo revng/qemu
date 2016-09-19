@@ -148,7 +148,6 @@ static void add_helper(gpointer key, gpointer value, gpointer user_data) {
   ptc_helper_defs[index].flags = helper->flags;
 }
 
-
 void initialize_cpu_state(CPUArchState *env);
 
 void ptc_init(void) {
@@ -403,12 +402,10 @@ void ptc_mmap(uint64_t virtual_address, const void *code, size_t code_size) {
   assert(false);
 }
 
+/* TODO: error management */
 size_t ptc_translate(uint64_t virtual_address, PTCInstructionList *instructions) {
     TCGContext *s = &tcg_ctx;
     TranslationBlock *tb = NULL;
-
-
-
 
     target_ulong temp;
     int flags = 0;

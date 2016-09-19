@@ -46,7 +46,9 @@ unsigned long mmap_min_addr;
 #if defined(CONFIG_USE_GUEST_BASE)
 unsigned long guest_base;
 int have_guest_base;
-#if (TARGET_LONG_BITS == 32) && (HOST_LONG_BITS == 64)
+#if (TARGET_LONG_BITS == 32) \
+    && (HOST_LONG_BITS == 64) \
+    && (!defined(LLVM_HELPERS))
 /*
  * When running 32-on-64 we should make sure we can fit all of the possible
  * guest address space into a contiguous chunk of virtual host memory.
@@ -281,6 +283,15 @@ void cpu_loop(CPUX86State *env)
     for(;;) {
         cpu_exec_start(cs);
         trapnr = cpu_x86_exec(cs);
+
+#ifdef LLVM_HELPERS
+        // Initialization taken from x86_cpu_exec_enter
+        CC_SRC = env->eflags & (CC_O | CC_S | CC_Z | CC_A | CC_P | CC_C);
+        env->df = 1 - (2 * ((env->eflags >> 10) & 1));
+        CC_OP = CC_OP_EFLAGS;
+        env->eflags &= ~(DF_MASK | CC_O | CC_S | CC_Z | CC_A | CC_P | CC_C);
+#endif
+
         cpu_exec_end(cs);
         switch(trapnr) {
         case 0x80:
