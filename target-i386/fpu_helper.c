@@ -527,7 +527,6 @@ void helper_fsubr_STN_ST0(CPUX86State *env, int st_index)
 
 void helper_fdiv_STN_ST0(CPUX86State *env, int st_index)
 {
-    floatx80 *p;
     GET_st0;
     GET_st(st_index);
 
@@ -536,7 +535,6 @@ void helper_fdiv_STN_ST0(CPUX86State *env, int st_index)
 
 void helper_fdivr_STN_ST0(CPUX86State *env, int st_index)
 {
-    floatx80 *p;
     GET_st0;
     GET_st(st_index);
 

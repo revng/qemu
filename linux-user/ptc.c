@@ -148,8 +148,6 @@ static void add_helper(gpointer key, gpointer value, gpointer user_data) {
   ptc_helper_defs[index].flags = helper->flags;
 }
 
-void initialize_cpu_state(CPUArchState *env);
-
 void ptc_init(void) {
   int i = 0;
 
