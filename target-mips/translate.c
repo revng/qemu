@@ -11002,7 +11002,9 @@ static void gen_branch(DisasContext *ctx, int insn_bytes)
             break;
         default:
             fprintf(stderr, "unknown branch 0x%x\n", proc_hflags);
+#ifndef CONFIG_LIBTINYCODE
             abort();
+#endif
         }
     }
 }
