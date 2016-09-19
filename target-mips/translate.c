@@ -20285,7 +20285,7 @@ gen_intermediate_code_internal(MIPSCPU *cpu, TranslationBlock *tb,
             break;
         }
 
-        if (ctx.pc >= next_page_start) {
+        if (ctx.pc >= tb->max_pc) {
             break;
         }
 
