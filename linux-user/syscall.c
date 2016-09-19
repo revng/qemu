@@ -5641,7 +5641,9 @@ abi_long do_syscall(void *cpu_env, int num, abi_long arg1,
 #ifdef TARGET_GPROF
         _mcleanup();
 #endif
+#ifndef LLVM_HELPERS
         gdb_exit(cpu_env, arg1);
+#endif
         _exit(arg1);
         ret = 0; /* avoid warning */
         break;
@@ -7502,7 +7504,9 @@ abi_long do_syscall(void *cpu_env, int num, abi_long arg1,
 #ifdef TARGET_GPROF
         _mcleanup();
 #endif
+#ifndef LLVM_HELPERS
         gdb_exit(cpu_env, arg1);
+#endif
         ret = get_errno(exit_group(arg1));
         break;
 #endif
