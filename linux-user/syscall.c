@@ -4469,15 +4469,35 @@ abi_long do_arch_prctl(CPUX86State *env, int code, abi_ulong addr)
         else
             idx = R_FS;
         cpu_x86_load_seg(env, idx, 0);
-        env->segs[idx].base = addr;
+
+        switch (idx) {
+        case 0:
+            env->segs[0].base = addr;
+            break;
+        case 1:
+            env->segs[1].base = addr;
+            break;
+        case 2:
+            env->segs[2].base = addr;
+            break;
+        case 3:
+            env->segs[3].base = addr;
+            break;
+        case 4:
+            env->segs[4].base = addr;
+            break;
+        case 5:
+            env->segs[5].base = addr;
+            break;
+        }
         break;
     case TARGET_ARCH_GET_GS:
     case TARGET_ARCH_GET_FS:
-        if (code == TARGET_ARCH_GET_GS)
-            idx = R_GS;
-        else
-            idx = R_FS;
-        val = env->segs[idx].base;
+        if (code == TARGET_ARCH_GET_GS) {
+            val = env->segs[R_GS].base;
+        } else {
+            val = env->segs[R_FS].base;
+        }
         if (put_user(val, addr, abi_ulong))
             ret = -TARGET_EFAULT;
         break;
