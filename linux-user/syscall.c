@@ -5685,6 +5685,7 @@ abi_long do_syscall(void *cpu_env, int num, abi_long arg1,
     case TARGET_NR_brk:
         ret = do_brk(arg1);
         break;
+#ifndef LLVM_HELPERS
     case TARGET_NR_fork:
         ret = get_errno(do_fork(cpu_env, SIGCHLD, 0, 0, 0, 0));
         break;
@@ -5713,6 +5714,7 @@ abi_long do_syscall(void *cpu_env, int num, abi_long arg1,
             }
         }
         break;
+#endif
 #endif
 #ifdef TARGET_NR_creat /* not on alpha */
     case TARGET_NR_creat:
@@ -5766,6 +5768,7 @@ abi_long do_syscall(void *cpu_env, int num, abi_long arg1,
         unlock_user(p, arg2, 0);
         break;
 #endif
+#ifndef LLVM_HELPERS
     case TARGET_NR_execve:
         {
             char **argp, **envp;
@@ -5856,6 +5859,7 @@ abi_long do_syscall(void *cpu_env, int num, abi_long arg1,
             }
         }
         break;
+#endif
     case TARGET_NR_chdir:
         if (!(p = lock_user_string(arg1)))
             goto efault;
@@ -5917,6 +5921,7 @@ abi_long do_syscall(void *cpu_env, int num, abi_long arg1,
         ret = get_errno(getpid());
         break;
 #endif
+#ifndef LLVM_HELPERS
     case TARGET_NR_mount:
         {
             /* need to look at the data field */
@@ -5979,6 +5984,7 @@ abi_long do_syscall(void *cpu_env, int num, abi_long arg1,
         ret = get_errno(umount(p));
         unlock_user(p, arg1, 0);
         break;
+#endif
 #endif
 #ifdef TARGET_NR_stime /* not on alpha */
     case TARGET_NR_stime:
@@ -6263,6 +6269,7 @@ abi_long do_syscall(void *cpu_env, int num, abi_long arg1,
     case TARGET_NR_setsid:
         ret = get_errno(setsid());
         break;
+#ifndef LLVM_HELPERS
 #ifdef TARGET_NR_sigaction
     case TARGET_NR_sigaction:
         {
@@ -6632,6 +6639,7 @@ abi_long do_syscall(void *cpu_env, int num, abi_long arg1,
         /* NOTE: ret is eax, so not transcoding must be done */
         ret = do_rt_sigreturn(cpu_env);
         break;
+#endif
     case TARGET_NR_sethostname:
         if (!(p = lock_user_string(arg1)))
             goto efault;
@@ -6731,6 +6739,7 @@ abi_long do_syscall(void *cpu_env, int num, abi_long arg1,
 #endif
         break;
 #endif
+#ifndef LLVM_HELPERS
 #ifdef TARGET_NR_pselect6
     case TARGET_NR_pselect6:
         {
@@ -6834,6 +6843,7 @@ abi_long do_syscall(void *cpu_env, int num, abi_long arg1,
             }
         }
         break;
+#endif
 #endif
     case TARGET_NR_symlink:
         {
@@ -7481,6 +7491,7 @@ abi_long do_syscall(void *cpu_env, int num, abi_long arg1,
     case TARGET_NR_fsync:
         ret = get_errno(fsync(arg1));
         break;
+#ifndef LLVM_HELPERS
     case TARGET_NR_clone:
         /* Linux manages to have three different orderings for its
          * arguments to clone(); the BACKWARDS and BACKWARDS2 defines
@@ -7498,6 +7509,7 @@ abi_long do_syscall(void *cpu_env, int num, abi_long arg1,
         ret = get_errno(do_fork(cpu_env, arg1, arg2, arg3, arg5, arg4));
 #endif
         break;
+#endif
 #ifdef __NR_exit_group
         /* new thread calls */
     case TARGET_NR_exit_group:
@@ -8175,6 +8187,7 @@ abi_long do_syscall(void *cpu_env, int num, abi_long arg1,
         }
         break;
     }
+#ifndef LLVM_HELPERS
     case TARGET_NR_sigaltstack:
 #if defined(TARGET_I386) || defined(TARGET_ARM) || defined(TARGET_MIPS) || \
     defined(TARGET_SPARC) || defined(TARGET_PPC) || defined(TARGET_ALPHA) || \
@@ -8184,7 +8197,7 @@ abi_long do_syscall(void *cpu_env, int num, abi_long arg1,
 #else
         goto unimplemented;
 #endif
-
+#endif
 #ifdef CONFIG_SENDFILE
     case TARGET_NR_sendfile:
     {
@@ -8244,11 +8257,13 @@ abi_long do_syscall(void *cpu_env, int num, abi_long arg1,
     case TARGET_NR_putpmsg:
         goto unimplemented;
 #endif
+#ifndef LLVM_HELPERS
 #ifdef TARGET_NR_vfork
     case TARGET_NR_vfork:
         ret = get_errno(do_fork(cpu_env, CLONE_VFORK | CLONE_VM | SIGCHLD,
                         0, 0, 0, 0));
         break;
+#endif
 #endif
 #ifdef TARGET_NR_ugetrlimit
     case TARGET_NR_ugetrlimit:
@@ -8632,6 +8647,7 @@ abi_long do_syscall(void *cpu_env, int num, abi_long arg1,
         }
         break;
 #endif
+#ifndef LLVM_HELPERS
 #ifdef TARGET_NR_osf_sigprocmask
     /* Alpha specific.  */
     case TARGET_NR_osf_sigprocmask:
@@ -8661,6 +8677,7 @@ abi_long do_syscall(void *cpu_env, int num, abi_long arg1,
             ret = mask;
         }
         break;
+#endif
 #endif
 
 #ifdef TARGET_NR_getgid32
@@ -8965,11 +8982,13 @@ abi_long do_syscall(void *cpu_env, int num, abi_long arg1,
 	break;
     }
 #endif
+#ifndef LLVM_HELPERS
 #ifdef TARGET_NR_cacheflush
     case TARGET_NR_cacheflush:
         /* self-modifying code is handled automatically, so nothing needed */
         ret = 0;
         break;
+#endif
 #endif
 #ifdef TARGET_NR_security
     case TARGET_NR_security:
@@ -9681,6 +9700,7 @@ abi_long do_syscall(void *cpu_env, int num, abi_long arg1,
         break;
     }
 #endif
+#ifndef LLVM_HELPERS
 #ifdef TARGET_NR_atomic_cmpxchg_32
     case TARGET_NR_atomic_cmpxchg_32:
     {
@@ -9701,6 +9721,7 @@ abi_long do_syscall(void *cpu_env, int num, abi_long arg1,
         ret = mem_value;
         break;
     }
+#endif
 #endif
 #ifdef TARGET_NR_atomic_barrier
     case TARGET_NR_atomic_barrier:
