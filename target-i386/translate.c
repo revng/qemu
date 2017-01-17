@@ -212,6 +212,14 @@ static const uint8_t cc_op_live[CC_OP_NB] = {
     [CC_OP_CLR] = 0,
 };
 
+static void gen_update_cc_op(DisasContext *s)
+{
+    if (s->cc_op_dirty) {
+        tcg_gen_movi_i32(cpu_cc_op, s->cc_op);
+        s->cc_op_dirty = false;
+    }
+}
+
 static void set_cc_op(DisasContext *s, CCOp op)
 {
     int dead;
@@ -247,14 +255,7 @@ static void set_cc_op(DisasContext *s, CCOp op)
         s->cc_op_dirty = true;
     }
     s->cc_op = op;
-}
-
-static void gen_update_cc_op(DisasContext *s)
-{
-    if (s->cc_op_dirty) {
-        tcg_gen_movi_i32(cpu_cc_op, s->cc_op);
-        s->cc_op_dirty = false;
-    }
+    gen_update_cc_op(s);
 }
 
 #ifdef TARGET_X86_64
