@@ -804,6 +804,7 @@ static CCPrepare gen_prepare_eflags_c(DisasContext *s, TCGv reg)
     TCGv t0, t1;
     int size, shift;
 
+    s->cc_op = CC_OP_DYNAMIC;
     switch (s->cc_op) {
     case CC_OP_SUBB ... CC_OP_SUBQ:
         /* (DATA_TYPE)CC_SRCT < (DATA_TYPE)CC_SRC */
