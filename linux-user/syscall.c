@@ -5599,6 +5599,10 @@ static target_timer_t get_timer_id(abi_long arg)
     return timerid;
 }
 
+#ifdef LLVM_HELPERS
+void on_exit_syscall(void);
+#endif
+
 /* do_syscall() should always have a single exit point at the end so
    that actions, such as logging of syscall results, can be performed.
    All errnos that do_syscall() returns must be -TARGET_<errcode>. */
@@ -5652,6 +5656,8 @@ abi_long do_syscall(void *cpu_env, int num, abi_long arg1,
 #endif
 #ifndef LLVM_HELPERS
         gdb_exit(cpu_env, arg1);
+#else
+        on_exit_syscall();
 #endif
         _exit(arg1);
         ret = 0; /* avoid warning */
@@ -7521,6 +7527,8 @@ abi_long do_syscall(void *cpu_env, int num, abi_long arg1,
 #endif
 #ifndef LLVM_HELPERS
         gdb_exit(cpu_env, arg1);
+#else
+        on_exit_syscall();
 #endif
         ret = get_errno(exit_group(arg1));
         break;
