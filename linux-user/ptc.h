@@ -263,6 +263,7 @@ typedef struct {
   unsigned helper_defs_size;
 
   intptr_t pc;
+  intptr_t sp;
   intptr_t exception_index;
   uint8_t *initialized_env;
 

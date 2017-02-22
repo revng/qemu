@@ -109,11 +109,14 @@ int ptc_load(void *handle, PTCInterface *output) {
 
 #if defined(TARGET_X86_64)
   result.pc = offsetof(CPUX86State, eip);
+  result.sp = offsetof(CPUX86State, regs) + sizeof(target_ulong) * R_ESP;
 #elif defined(TARGET_ARM)
   CPUARMState State;
   result.pc = (uint8_t *) &State.regs[15] - (uint8_t *) &State;
+  result.sp = (uint8_t *) &State.regs[13] - (uint8_t *) &State;
 #elif defined(TARGET_MIPS)
   result.pc = offsetof(CPUMIPSState, active_tc.PC);
+  result.sp = offsetof(CPUMIPSState, active_tc.gpr) + sizeof(target_ulong) * 29;
 #endif
 
   result.exception_index =
