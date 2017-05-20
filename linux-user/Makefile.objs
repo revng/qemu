@@ -12,4 +12,5 @@ endif
 
 ifdef CONFIG_LLVM_HELPERS
 ll-y = main.ll syscall.ll mmap.ll signal.ll uaccess.ll init_cpu.ll uname.ll
+ll-$(TARGET_I386) += vm86.ll
 endif

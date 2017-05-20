@@ -18,6 +18,8 @@
  * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <sys/mman.h>
+#include "qemu.h"
 #include "cpu.h"
 #include "qemu/log.h"
 #include "exec/helper-proto.h"
@@ -1543,7 +1545,6 @@ void helper_load_seg(CPUX86State *env, int seg_reg, int selector)
 {
     uint32_t e1, e2;
     int cpl, dpl, rpl;
-    SegmentCache *dt;
     int index;
     target_ulong ptr;
 
@@ -1561,16 +1562,18 @@ void helper_load_seg(CPUX86State *env, int seg_reg, int selector)
         cpu_x86_load_seg_cache(env, seg_reg, selector, 0, 0, 0);
     } else {
 
-        if (selector & 0x4) {
-            dt = &env->ldt;
-        } else {
-            dt = &env->gdt;
-        }
         index = selector & ~7;
-        if ((index + 7) > dt->limit) {
+        if (selector & 0x4) {
+          if ((index + 7) > env->ldt.limit) {
             raise_exception_err(env, EXCP0D_GPF, selector & 0xfffc);
+          }
+          ptr = env->ldt.base + index;
+        } else {
+          if ((index + 7) > env->gdt.limit) {
+            raise_exception_err(env, EXCP0D_GPF, selector & 0xfffc);
+          }
+          ptr = env->gdt.base + index;
         }
-        ptr = dt->base + index;
         e1 = cpu_ldl_kernel(env, ptr);
         e2 = cpu_ldl_kernel(env, ptr + 4);
 
@@ -2601,4 +2604,59 @@ void helper_check_iow(CPUX86State *env, uint32_t t0)
 void helper_check_iol(CPUX86State *env, uint32_t t0)
 {
     check_io(env, t0, 4);
+}
+
+static void write_dt(void *ptr, unsigned long addr, unsigned long limit,
+                     int flags)
+{
+    unsigned int e1, e2;
+    uint32_t *p;
+    e1 = (addr << 16) | (limit & 0xffff);
+    e2 = ((addr >> 16) & 0xff) | (addr & 0xff000000) | (limit & 0x000f0000);
+    e2 |= flags;
+    p = ptr;
+    p[0] = tswap32(e1);
+    p[1] = tswap32(e2);
+}
+
+static void setup_global_descriptor_table(CPUX86State *env) {
+    uint64_t *gdt_table;
+    env->gdt.base = target_mmap(0, sizeof(uint64_t) * TARGET_GDT_ENTRIES,
+                                PROT_READ|PROT_WRITE,
+                                MAP_ANONYMOUS|MAP_PRIVATE, -1, 0);
+    env->gdt.limit = sizeof(uint64_t) * TARGET_GDT_ENTRIES - 1;
+    gdt_table = g2h(env->gdt.base);
+#ifdef TARGET_ABI32
+    write_dt(&gdt_table[__USER_CS >> 3], 0, 0xfffff,
+             DESC_G_MASK | DESC_B_MASK | DESC_P_MASK | DESC_S_MASK |
+             (3 << DESC_DPL_SHIFT) | (0xa << DESC_TYPE_SHIFT));
+#else
+    /* 64 bit code segment */
+    write_dt(&gdt_table[__USER_CS >> 3], 0, 0xfffff,
+             DESC_G_MASK | DESC_B_MASK | DESC_P_MASK | DESC_S_MASK |
+             DESC_L_MASK |
+             (3 << DESC_DPL_SHIFT) | (0xa << DESC_TYPE_SHIFT));
+#endif
+    write_dt(&gdt_table[__USER_DS >> 3], 0, 0xfffff,
+             DESC_G_MASK | DESC_B_MASK | DESC_P_MASK | DESC_S_MASK |
+             (3 << DESC_DPL_SHIFT) | (0x2 << DESC_TYPE_SHIFT));
+}
+
+void setup_segmentation(CPUX86State *env) {
+    setup_global_descriptor_table(env);
+    cpu_x86_load_seg(env, R_CS, __USER_CS);
+    cpu_x86_load_seg(env, R_SS, __USER_DS);
+#ifdef TARGET_ABI32
+    cpu_x86_load_seg(env, R_DS, __USER_DS);
+    cpu_x86_load_seg(env, R_ES, __USER_DS);
+    cpu_x86_load_seg(env, R_FS, __USER_DS);
+    cpu_x86_load_seg(env, R_GS, __USER_DS);
+    /* This hack makes Wine work... */
+    env->segs[R_FS].selector = 0;
+#else
+    cpu_x86_load_seg(env, R_DS, 0);
+    cpu_x86_load_seg(env, R_ES, 0);
+    cpu_x86_load_seg(env, R_FS, 0);
+    cpu_x86_load_seg(env, R_GS, 0);
+#endif
 }

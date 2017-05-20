@@ -83,7 +83,7 @@ unsigned ptc_helper_defs_size;
 static unsigned long cs_base = 0;
 static CPUState *cpu = NULL;
 
-#if defined(TARGET_X86_64)
+#if defined(TARGET_X86_64) || defined(TARGET_I386)
 # define CPU_STRUCT X86CPU
 #elif defined(TARGET_ARM)
 # define CPU_STRUCT ARMCPU
@@ -107,7 +107,7 @@ int ptc_load(void *handle, PTCInterface *output) {
 
   ptc_init();
 
-#if defined(TARGET_X86_64)
+#if defined(TARGET_X86_64) || defined(TARGET_I386)
   result.pc = offsetof(CPUX86State, eip);
   result.sp = offsetof(CPUX86State, regs) + sizeof(target_ulong) * R_ESP;
 #elif defined(TARGET_ARM)
@@ -165,8 +165,14 @@ void ptc_init(void) {
     module_call_init(MODULE_INIT_QOM);
 
     /* init env and cpu */
-#ifdef TARGET_I386
+#if defined(TARGET_I386)
+
+#if defined(TARGET_X86_64)
     cpu = cpu_init("qemu64");
+#else
+    cpu = cpu_init("qemu32");
+#endif
+
 #elif defined(TARGET_MIPS)
 #if defined(TARGET_ABI_MIPSN32) || defined(TARGET_ABI_MIPSN64)
     cpu = cpu_init("5KEf");

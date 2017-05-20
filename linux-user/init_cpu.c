@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <sys/mman.h>
 
 #include "qemu.h"
 #include "qemu-common.h"
@@ -14,21 +13,6 @@
 #include "exec/exec-all.h"
 
 /* Code copy/pasted from main.c */
-
-#if defined(TARGET_I386)
-static void write_dt(void *ptr, unsigned long addr, unsigned long limit,
-                     int flags)
-{
-    unsigned int e1, e2;
-    uint32_t *p;
-    e1 = (addr << 16) | (limit & 0xffff);
-    e2 = ((addr >> 16) & 0xff) | (addr & 0xff000000) | (limit & 0x000f0000);
-    e2 |= flags;
-    p = ptr;
-    p[0] = tswap32(e1);
-    p[1] = tswap32(e2);
-}
-#endif
 
 /* Beware of the XXXs */
 void initialize_cpu_state(CPUArchState *env) {
@@ -114,43 +98,8 @@ void initialize_cpu_state(CPUArchState *env) {
 /*     set_idt(0x80, 3); */
 
     /* linux segment setup */
-    {
-        uint64_t *gdt_table;
-        env->gdt.base = target_mmap(0, sizeof(uint64_t) * TARGET_GDT_ENTRIES,
-                                    PROT_READ|PROT_WRITE,
-                                    MAP_ANONYMOUS|MAP_PRIVATE, -1, 0);
-        env->gdt.limit = sizeof(uint64_t) * TARGET_GDT_ENTRIES - 1;
-        gdt_table = g2h(env->gdt.base);
-#ifdef TARGET_ABI32
-        write_dt(&gdt_table[__USER_CS >> 3], 0, 0xfffff,
-                 DESC_G_MASK | DESC_B_MASK | DESC_P_MASK | DESC_S_MASK |
-                 (3 << DESC_DPL_SHIFT) | (0xa << DESC_TYPE_SHIFT));
-#else
-        /* 64 bit code segment */
-        write_dt(&gdt_table[__USER_CS >> 3], 0, 0xfffff,
-                 DESC_G_MASK | DESC_B_MASK | DESC_P_MASK | DESC_S_MASK |
-                 DESC_L_MASK |
-                 (3 << DESC_DPL_SHIFT) | (0xa << DESC_TYPE_SHIFT));
-#endif
-        write_dt(&gdt_table[__USER_DS >> 3], 0, 0xfffff,
-                 DESC_G_MASK | DESC_B_MASK | DESC_P_MASK | DESC_S_MASK |
-                 (3 << DESC_DPL_SHIFT) | (0x2 << DESC_TYPE_SHIFT));
-    }
-    cpu_x86_load_seg(env, R_CS, __USER_CS);
-/*     cpu_x86_load_seg(env, R_SS, __USER_DS); */
-/* #ifdef TARGET_ABI32 */
-/*     cpu_x86_load_seg(env, R_DS, __USER_DS); */
-/*     cpu_x86_load_seg(env, R_ES, __USER_DS); */
-/*     cpu_x86_load_seg(env, R_FS, __USER_DS); */
-/*     cpu_x86_load_seg(env, R_GS, __USER_DS); */
-/*     /\* This hack makes Wine work... *\/ */
-/*     env->segs[R_FS].selector = 0; */
-/* #else */
-/*     cpu_x86_load_seg(env, R_DS, 0); */
-/*     cpu_x86_load_seg(env, R_ES, 0); */
-/*     cpu_x86_load_seg(env, R_FS, 0); */
-/*     cpu_x86_load_seg(env, R_GS, 0); */
-/* #endif */
+    setup_segmentation(env);
+
 #elif defined(TARGET_AARCH64)
     {
         int i;

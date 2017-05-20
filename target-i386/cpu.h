@@ -1143,6 +1143,8 @@ int x86_cpu_handle_mmu_fault(CPUState *cpu, vaddr addr,
                              int is_write, int mmu_idx);
 void x86_cpu_set_a20(X86CPU *cpu, int a20_state);
 
+void initialize_env(CPUX86State *env);
+
 #ifndef CONFIG_USER_ONLY
 uint8_t x86_ldub_phys(CPUState *cs, hwaddr addr);
 uint32_t x86_lduw_phys(CPUState *cs, hwaddr addr);
@@ -1394,6 +1396,7 @@ void cpu_vmexit(CPUX86State *nenv, uint32_t exit_code, uint64_t exit_info_1);
 
 /* seg_helper.c */
 void do_interrupt_x86_hardirq(CPUX86State *env, int intno, int is_hw);
+void setup_segmentation(CPUX86State *env);
 
 /* smm_helper.c */
 void do_smm_enter(X86CPU *cpu);

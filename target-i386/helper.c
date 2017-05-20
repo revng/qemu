@@ -25,6 +25,10 @@
 #include "monitor/monitor.h"
 #endif
 
+#include "exec/exec-all.h"
+#include "qemu.h"
+#include <sys/mman.h>
+
 static void cpu_x86_version(CPUX86State *env, int *family, int *model)
 {
     int cpuver = env->cpuid_version;
@@ -1368,4 +1372,12 @@ void x86_stq_phys(CPUState *cs, hwaddr addr, uint64_t val)
                       cpu_get_mem_attrs(env),
                       NULL);
 }
+#endif
+
+#ifdef CONFIG_LLVM_HELPERS
+#ifndef TARGET_X86_64
+void initialize_env(CPUX86State *env) {
+    setup_segmentation(env);
+}
+#endif
 #endif
