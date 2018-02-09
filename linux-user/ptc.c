@@ -89,6 +89,8 @@ static CPUState *cpu = NULL;
 # define CPU_STRUCT ARMCPU
 #elif defined(TARGET_MIPS)
 # define CPU_STRUCT MIPSCPU
+#elif defined(TARGET_S390X)
+# define CPU_STRUCT S390CPU
 #endif
 
 typedef struct {
@@ -116,6 +118,9 @@ int ptc_load(void *handle, PTCInterface *output) {
 #elif defined(TARGET_MIPS)
   result.pc = offsetof(CPUMIPSState, active_tc.PC);
   result.sp = offsetof(CPUMIPSState, active_tc.gpr[29]);
+#elif defined(TARGET_S390X)
+  result.pc = offsetof(CPUS390XState, psw.addr);
+  result.sp = offsetof(CPUS390XState, regs[15]);
 #endif
 
   result.exception_index =
