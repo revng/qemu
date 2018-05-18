@@ -1004,46 +1004,14 @@ static inline void cpu_x86_load_seg_cache(CPUX86State *env,
                                           unsigned int limit,
                                           unsigned int flags)
 {
+    SegmentCache *sc;
     unsigned int new_hflags;
 
-    switch(seg_reg) {
-    case 0:
-        env->segs[0].selector = selector;
-        env->segs[0].base = base;
-        env->segs[0].limit = limit;
-        env->segs[0].flags = flags;
-        break;
-    case 1:
-        env->segs[1].selector = selector;
-        env->segs[1].base = base;
-        env->segs[1].limit = limit;
-        env->segs[1].flags = flags;
-        break;
-    case 2:
-        env->segs[2].selector = selector;
-        env->segs[2].base = base;
-        env->segs[2].limit = limit;
-        env->segs[2].flags = flags;
-        break;
-    case 3:
-        env->segs[3].selector = selector;
-        env->segs[3].base = base;
-        env->segs[3].limit = limit;
-        env->segs[3].flags = flags;
-        break;
-    case 4:
-        env->segs[4].selector = selector;
-        env->segs[4].base = base;
-        env->segs[4].limit = limit;
-        env->segs[4].flags = flags;
-        break;
-    case 5:
-        env->segs[5].selector = selector;
-        env->segs[5].base = base;
-        env->segs[5].limit = limit;
-        env->segs[5].flags = flags;
-        break;
-    }
+    sc = &env->segs[seg_reg];
+    sc->selector = selector;
+    sc->base = base;
+    sc->limit = limit;
+    sc->flags = flags;
 
     /* update the hidden flags */
     {
@@ -1263,47 +1231,10 @@ static inline target_long lshift(target_long x, int n)
 }
 
 /* float macros */
-#define CASE(what, field, n, pre, post) \
-    case n:                             \
-    pre what[n]field post;              \
-    break;                              \
-
-#define SWITCH(what, field, index, pre, post) \
-    do {                                      \
-        switch((index)) {                     \
-        CASE(what, field, 0, pre, post)       \
-        CASE(what, field, 1, pre, post)       \
-        CASE(what, field, 2, pre, post)       \
-        CASE(what, field, 3, pre, post)       \
-        CASE(what, field, 4, pre, post)       \
-        CASE(what, field, 5, pre, post)       \
-        CASE(what, field, 6, pre, post)       \
-        CASE(what, field, 7, pre, post)       \
-        }                                     \
-    } while (0)
-
-#define READ_ENV(what, field, dest, index) SWITCH(what, field, index, (dest) =, )
-#define WRITE_ENV(what, field, index, src) SWITCH(what, field, index, , = (src))
-
 #define FT0    (env->ft0)
 #define ST0    (env->fpregs[env->fpstt].d)
 #define ST(n)  (env->fpregs[(env->fpstt + (n)) & 7].d)
 #define ST1    ST(1)
-
-#define GET_st0                                 \
-  floatx80 st0;                                 \
-  READ_ENV(env->fpregs, .d, st0, env->fpstt)
-
-#define GET_st(index)                           \
-  floatx80 sti;                                 \
-  READ_ENV(env->fpregs, .d, sti, (env->fpstt + (index)) & 7)
-
-#define WRITE_st0(value)                        \
-  WRITE_ENV(env->fpregs, .d, env->fpstt, (value))
-
-#define WRITE_st(index, value)                                  \
-  WRITE_ENV(env->fpregs, .d, (env->fpstt + (index)) & 7, (value));
-
 
 /* translate.c */
 void optimize_flags_init(void);

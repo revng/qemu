@@ -58,12 +58,12 @@
 static inline void fpush(CPUX86State *env)
 {
     env->fpstt = (env->fpstt - 1) & 7;
-    WRITE_ENV(env->fptags, , env->fpstt, 0);
+    env->fptags[env->fpstt] = 0; /* validate stack entry */
 }
 
 static inline void fpop(CPUX86State *env)
 {
-    WRITE_ENV(env->fptags, , env->fpstt, 1);
+    env->fptags[env->fpstt] = 1; /* invalidate stack entry */
     env->fpstt = (env->fpstt + 1) & 7;
 }
 
@@ -174,9 +174,9 @@ void helper_flds_ST0(CPUX86State *env, uint32_t val)
 
     new_fpstt = (env->fpstt - 1) & 7;
     u.i = val;
-    WRITE_ENV(env->fpregs, .d, new_fpstt, float32_to_floatx80(u.f, &env->fp_status));
+    env->fpregs[new_fpstt].d = float32_to_floatx80(u.f, &env->fp_status);
     env->fpstt = new_fpstt;
-    WRITE_ENV(env->fptags, , new_fpstt, 0);
+    env->fptags[new_fpstt] = 0; /* validate stack entry */
 }
 
 void helper_fldl_ST0(CPUX86State *env, uint64_t val)
@@ -189,9 +189,9 @@ void helper_fldl_ST0(CPUX86State *env, uint64_t val)
 
     new_fpstt = (env->fpstt - 1) & 7;
     u.i = val;
-    WRITE_ENV(env->fpregs, .d, new_fpstt, float64_to_floatx80(u.f, &env->fp_status));
+    env->fpregs[new_fpstt].d = float64_to_floatx80(u.f, &env->fp_status);
     env->fpstt = new_fpstt;
-    WRITE_ENV(env->fptags, , new_fpstt, 0);
+    env->fptags[new_fpstt] = 0; /* validate stack entry */
 }
 
 void helper_fildl_ST0(CPUX86State *env, int32_t val)
@@ -199,9 +199,9 @@ void helper_fildl_ST0(CPUX86State *env, int32_t val)
     int new_fpstt;
 
     new_fpstt = (env->fpstt - 1) & 7;
-    WRITE_ENV(env->fpregs, .d, new_fpstt, int32_to_floatx80(val, &env->fp_status));
+    env->fpregs[new_fpstt].d = int32_to_floatx80(val, &env->fp_status);
     env->fpstt = new_fpstt;
-    WRITE_ENV(env->fptags, , new_fpstt, 0);
+    env->fptags[new_fpstt] = 0; /* validate stack entry */
 }
 
 void helper_fildll_ST0(CPUX86State *env, int64_t val)
@@ -209,9 +209,9 @@ void helper_fildll_ST0(CPUX86State *env, int64_t val)
     int new_fpstt;
 
     new_fpstt = (env->fpstt - 1) & 7;
-    WRITE_ENV(env->fpregs, .d, new_fpstt, int64_to_floatx80(val, &env->fp_status));
+    env->fpregs[new_fpstt].d = int64_to_floatx80(val, &env->fp_status);
     env->fpstt = new_fpstt;
-    WRITE_ENV(env->fptags, , new_fpstt, 0);
+    env->fptags[new_fpstt] = 0; /* validate stack entry */
 }
 
 uint32_t helper_fsts_ST0(CPUX86State *env)
@@ -220,9 +220,8 @@ uint32_t helper_fsts_ST0(CPUX86State *env)
         float32 f;
         uint32_t i;
     } u;
-    GET_st0;
 
-    u.f = floatx80_to_float32(st0, &env->fp_status);
+    u.f = floatx80_to_float32(ST0, &env->fp_status);
     return u.i;
 }
 
@@ -232,18 +231,16 @@ uint64_t helper_fstl_ST0(CPUX86State *env)
         float64 f;
         uint64_t i;
     } u;
-    GET_st0;
 
-    u.f = floatx80_to_float64(st0, &env->fp_status);
+    u.f = floatx80_to_float64(ST0, &env->fp_status);
     return u.i;
 }
 
 int32_t helper_fist_ST0(CPUX86State *env)
 {
     int32_t val;
-    GET_st0;
 
-    val = floatx80_to_int32(st0, &env->fp_status);
+    val = floatx80_to_int32(ST0, &env->fp_status);
     if (val != (int16_t)val) {
         val = -32768;
     }
@@ -254,12 +251,11 @@ int32_t helper_fistl_ST0(CPUX86State *env)
 {
     int32_t val;
     signed char old_exp_flags;
-    GET_st0;
 
     old_exp_flags = get_float_exception_flags(&env->fp_status);
     set_float_exception_flags(0, &env->fp_status);
 
-    val = floatx80_to_int32(st0, &env->fp_status);
+    val = floatx80_to_int32(ST0, &env->fp_status);
     if (get_float_exception_flags(&env->fp_status) & float_flag_invalid) {
         val = 0x80000000;
     }
@@ -272,12 +268,11 @@ int64_t helper_fistll_ST0(CPUX86State *env)
 {
     int64_t val;
     signed char old_exp_flags;
-    GET_st0;
 
     old_exp_flags = get_float_exception_flags(&env->fp_status);
     set_float_exception_flags(0, &env->fp_status);
 
-    val = floatx80_to_int64(st0, &env->fp_status);
+    val = floatx80_to_int64(ST0, &env->fp_status);
     if (get_float_exception_flags(&env->fp_status) & float_flag_invalid) {
         val = 0x8000000000000000ULL;
     }
@@ -289,9 +284,8 @@ int64_t helper_fistll_ST0(CPUX86State *env)
 int32_t helper_fistt_ST0(CPUX86State *env)
 {
     int32_t val;
-    GET_st0;
 
-    val = floatx80_to_int32_round_to_zero(st0, &env->fp_status);
+    val = floatx80_to_int32_round_to_zero(ST0, &env->fp_status);
     if (val != (int16_t)val) {
         val = -32768;
     }
@@ -301,18 +295,16 @@ int32_t helper_fistt_ST0(CPUX86State *env)
 int32_t helper_fisttl_ST0(CPUX86State *env)
 {
     int32_t val;
-    GET_st0;
 
-    val = floatx80_to_int32_round_to_zero(st0, &env->fp_status);
+    val = floatx80_to_int32_round_to_zero(ST0, &env->fp_status);
     return val;
 }
 
 int64_t helper_fisttll_ST0(CPUX86State *env)
 {
     int64_t val;
-    GET_st0;
 
-    val = floatx80_to_int64_round_to_zero(st0, &env->fp_status);
+    val = floatx80_to_int64_round_to_zero(ST0, &env->fp_status);
     return val;
 }
 
@@ -321,17 +313,14 @@ void helper_fldt_ST0(CPUX86State *env, target_ulong ptr)
     int new_fpstt;
 
     new_fpstt = (env->fpstt - 1) & 7;
-
-    WRITE_ENV(env->fpregs, .d, new_fpstt, helper_fldt(env, ptr));
+    env->fpregs[new_fpstt].d = helper_fldt(env, ptr);
     env->fpstt = new_fpstt;
-    WRITE_ENV(env->fptags, , new_fpstt, 0);
+    env->fptags[new_fpstt] = 0; /* validate stack entry */
 }
 
 void helper_fstt_ST0(CPUX86State *env, target_ulong ptr)
 {
-    floatx80 tmp;
-    READ_ENV(env->fpregs, .d, tmp, env->fpstt);
-    helper_fstt(env, tmp, ptr);
+    helper_fstt(env, ST0, ptr);
 }
 
 void helper_fpush(CPUX86State *env)
@@ -365,37 +354,31 @@ void helper_ffree_STN(CPUX86State *env, int st_index)
 
 void helper_fmov_ST0_FT0(CPUX86State *env)
 {
-    WRITE_st0(FT0);
+    ST0 = FT0;
 }
 
 void helper_fmov_FT0_STN(CPUX86State *env, int st_index)
 {
-    floatx80 tmp;
-    READ_ENV(env->fpregs, .d, tmp, (env->fpstt + (st_index)) & 7);
-    FT0 = tmp;
+    FT0 = ST(st_index);
 }
 
 void helper_fmov_ST0_STN(CPUX86State *env, int st_index)
 {
-    floatx80 tmp;
-    READ_ENV(env->fpregs, .d, tmp, (env->fpstt + (st_index)) & 7);
-    WRITE_ENV(env->fpregs, .d, env->fpstt, tmp);
+    ST0 = ST(st_index);
 }
 
 void helper_fmov_STN_ST0(CPUX86State *env, int st_index)
 {
-    floatx80 tmp;
-    READ_ENV(env->fpregs, .d, tmp, env->fpstt);
-    WRITE_ENV(env->fpregs, .d, (env->fpstt + (st_index)) & 7, tmp);
+    ST(st_index) = ST0;
 }
 
 void helper_fxchg_ST0_STN(CPUX86State *env, int st_index)
 {
-    floatx80 tmp1, tmp2;
-    READ_ENV(env->fpregs, .d, tmp1, (env->fpstt + (st_index)) & 7);
-    READ_ENV(env->fpregs, .d, tmp2, env->fpstt);
-    WRITE_ENV(env->fpregs, .d, (env->fpstt + (st_index)) & 7, tmp2);
-    WRITE_ENV(env->fpregs, .d, env->fpstt, tmp1);
+    floatx80 tmp;
+
+    tmp = ST(st_index);
+    ST(st_index) = ST0;
+    ST0 = tmp;
 }
 
 /* FPU operations */
@@ -405,18 +388,16 @@ static const int fcom_ccval[4] = {0x0100, 0x4000, 0x0000, 0x4500};
 void helper_fcom_ST0_FT0(CPUX86State *env)
 {
     int ret;
-    GET_st0;
 
-    ret = floatx80_compare(st0, FT0, &env->fp_status);
+    ret = floatx80_compare(ST0, FT0, &env->fp_status);
     env->fpus = (env->fpus & ~0x4500) | fcom_ccval[ret + 1];
 }
 
 void helper_fucom_ST0_FT0(CPUX86State *env)
 {
     int ret;
-    GET_st0;
 
-    ret = floatx80_compare_quiet(st0, FT0, &env->fp_status);
+    ret = floatx80_compare_quiet(ST0, FT0, &env->fp_status);
     env->fpus = (env->fpus & ~0x4500) | fcom_ccval[ret + 1];
 }
 
@@ -426,9 +407,8 @@ void helper_fcomi_ST0_FT0(CPUX86State *env)
 {
     int eflags;
     int ret;
-    GET_st0;
 
-    ret = floatx80_compare(st0, FT0, &env->fp_status);
+    ret = floatx80_compare(ST0, FT0, &env->fp_status);
     eflags = cpu_cc_compute_all(env, CC_OP);
     eflags = (eflags & ~(CC_Z | CC_P | CC_C)) | fcomi_ccval[ret + 1];
     CC_SRC = eflags;
@@ -438,9 +418,8 @@ void helper_fucomi_ST0_FT0(CPUX86State *env)
 {
     int eflags;
     int ret;
-    GET_st0;
 
-    ret = floatx80_compare_quiet(st0, FT0, &env->fp_status);
+    ret = floatx80_compare_quiet(ST0, FT0, &env->fp_status);
     eflags = cpu_cc_compute_all(env, CC_OP);
     eflags = (eflags & ~(CC_Z | CC_P | CC_C)) | fcomi_ccval[ret + 1];
     CC_SRC = eflags;
@@ -448,145 +427,116 @@ void helper_fucomi_ST0_FT0(CPUX86State *env)
 
 void helper_fadd_ST0_FT0(CPUX86State *env)
 {
-    GET_st0;
-
-    st0 = floatx80_add(st0, FT0, &env->fp_status);
-    WRITE_st0(st0);
+    ST0 = floatx80_add(ST0, FT0, &env->fp_status);
 }
 
 void helper_fmul_ST0_FT0(CPUX86State *env)
 {
-    floatx80 st0;
-    READ_ENV(env->fpregs, .d, st0, env->fpstt);
-    st0 = floatx80_mul(st0, FT0, &env->fp_status);
-    WRITE_ENV(env->fpregs, .d, env->fpstt, st0);
+    ST0 = floatx80_mul(ST0, FT0, &env->fp_status);
 }
 
 void helper_fsub_ST0_FT0(CPUX86State *env)
 {
-    floatx80 st0;
-    READ_ENV(env->fpregs, .d, st0, env->fpstt);
-    st0 = floatx80_sub(st0, FT0, &env->fp_status);
-    WRITE_ENV(env->fpregs, .d, env->fpstt, st0);
+    ST0 = floatx80_sub(ST0, FT0, &env->fp_status);
 }
 
 void helper_fsubr_ST0_FT0(CPUX86State *env)
 {
-    floatx80 st0;
-    READ_ENV(env->fpregs, .d, st0, env->fpstt);
-    st0 = floatx80_sub(FT0, st0, &env->fp_status);
-    WRITE_ENV(env->fpregs, .d, env->fpstt, st0);
+    ST0 = floatx80_sub(FT0, ST0, &env->fp_status);
 }
 
 void helper_fdiv_ST0_FT0(CPUX86State *env)
 {
-    floatx80 st0;
-    READ_ENV(env->fpregs, .d, st0, env->fpstt);
-    st0 = helper_fdiv(env, st0, FT0);
-    WRITE_ENV(env->fpregs, .d, env->fpstt, st0);
+    ST0 = helper_fdiv(env, ST0, FT0);
 }
 
 void helper_fdivr_ST0_FT0(CPUX86State *env)
 {
-    floatx80 st0;
-    READ_ENV(env->fpregs, .d, st0, env->fpstt);
-    st0 = helper_fdiv(env, FT0, st0);
-    WRITE_ENV(env->fpregs, .d, env->fpstt, st0);
+    ST0 = helper_fdiv(env, FT0, ST0);
 }
 
 /* fp operations between STN and ST0 */
 
 void helper_fadd_STN_ST0(CPUX86State *env, int st_index)
 {
-    GET_st0;
-    GET_st(st_index);
-
-    WRITE_st(st_index, floatx80_add(sti, st0, &env->fp_status));
+    ST(st_index) = floatx80_add(ST(st_index), ST0, &env->fp_status);
 }
 
 void helper_fmul_STN_ST0(CPUX86State *env, int st_index)
 {
-    GET_st0;
-    GET_st(st_index);
-    WRITE_st(st_index, floatx80_mul(sti, st0, &env->fp_status));
+    ST(st_index) = floatx80_mul(ST(st_index), ST0, &env->fp_status);
 }
 
 void helper_fsub_STN_ST0(CPUX86State *env, int st_index)
 {
-    GET_st0;
-    GET_st(st_index);
-    WRITE_st(st_index, floatx80_sub(sti, st0, &env->fp_status));
+    ST(st_index) = floatx80_sub(ST(st_index), ST0, &env->fp_status);
 }
 
 void helper_fsubr_STN_ST0(CPUX86State *env, int st_index)
 {
-    GET_st0;
-    GET_st(st_index);
-    WRITE_st(st_index, floatx80_sub(st0, sti, &env->fp_status));
+    ST(st_index) = floatx80_sub(ST0, ST(st_index), &env->fp_status);
 }
 
 void helper_fdiv_STN_ST0(CPUX86State *env, int st_index)
 {
-    GET_st0;
-    GET_st(st_index);
+    floatx80 *p;
 
-    WRITE_st(st_index, helper_fdiv(env, sti, st0));
+    p = &ST(st_index);
+    *p = helper_fdiv(env, *p, ST0);
 }
 
 void helper_fdivr_STN_ST0(CPUX86State *env, int st_index)
 {
-    GET_st0;
-    GET_st(st_index);
+    floatx80 *p;
 
-    WRITE_st(st_index, helper_fdiv(env, st0, sti));
+    p = &ST(st_index);
+    *p = helper_fdiv(env, ST0, *p);
 }
 
 /* misc FPU operations */
 void helper_fchs_ST0(CPUX86State *env)
 {
-    GET_st0;
-    WRITE_st0(floatx80_chs(st0));
+    ST0 = floatx80_chs(ST0);
 }
 
 void helper_fabs_ST0(CPUX86State *env)
 {
-    GET_st0;
-    WRITE_st0(floatx80_abs(st0));
+    ST0 = floatx80_abs(ST0);
 }
 
 void helper_fld1_ST0(CPUX86State *env)
 {
-    WRITE_st0(floatx80_one);
+    ST0 = floatx80_one;
 }
 
 void helper_fldl2t_ST0(CPUX86State *env)
 {
-    WRITE_st0(floatx80_l2t);
+    ST0 = floatx80_l2t;
 }
 
 void helper_fldl2e_ST0(CPUX86State *env)
 {
-    WRITE_st0(floatx80_l2e);
+    ST0 = floatx80_l2e;
 }
 
 void helper_fldpi_ST0(CPUX86State *env)
 {
-    WRITE_st0(floatx80_pi);
+    ST0 = floatx80_pi;
 }
 
 void helper_fldlg2_ST0(CPUX86State *env)
 {
-    WRITE_st0(floatx80_lg2);
+    ST0 = floatx80_lg2;
 }
 
 void helper_fldln2_ST0(CPUX86State *env)
 {
-    WRITE_st0(floatx80_ln2);
+    ST0 = floatx80_ln2;
 }
 
 void helper_fldz_ST0(CPUX86State *env)
 {
-    WRITE_st0(floatx80_zero);
+    ST0 = floatx80_zero;
 }
 
 void helper_fldz_FT0(CPUX86State *env)
@@ -691,7 +641,7 @@ void helper_fbld_ST0(CPUX86State *env, target_ulong ptr)
         tmp = floatx80_chs(tmp);
     }
     fpush(env);
-    WRITE_st0(tmp);
+    ST0 = tmp;
 }
 
 void helper_fbst_ST0(CPUX86State *env, target_ulong ptr)
@@ -699,9 +649,8 @@ void helper_fbst_ST0(CPUX86State *env, target_ulong ptr)
     int v;
     target_ulong mem_ref, mem_end;
     int64_t val;
-    GET_st0;
 
-    val = floatx80_to_int64(st0, &env->fp_status);
+    val = floatx80_to_int64(ST0, &env->fp_status);
     mem_ref = ptr;
     mem_end = mem_ref + 9;
     if (val < 0) {
@@ -726,23 +675,20 @@ void helper_fbst_ST0(CPUX86State *env, target_ulong ptr)
 
 void helper_f2xm1(CPUX86State *env)
 {
-    GET_st0;
-    double val = floatx80_to_double(env, st0);
+    double val = floatx80_to_double(env, ST0);
 
     val = pow(2.0, val) - 1.0;
-    WRITE_st0(double_to_floatx80(env, val));
+    ST0 = double_to_floatx80(env, val);
 }
 
 void helper_fyl2x(CPUX86State *env)
 {
-    GET_st0;
-    GET_st(1);
-    double fptemp = floatx80_to_double(env, st0);
+    double fptemp = floatx80_to_double(env, ST0);
 
     if (fptemp > 0.0) {
         fptemp = log(fptemp) / log(2.0); /* log2(ST) */
-        fptemp *= floatx80_to_double(env, sti);
-        WRITE_st(1, double_to_floatx80(env, fptemp));
+        fptemp *= floatx80_to_double(env, ST1);
+        ST1 = double_to_floatx80(env, fptemp);
         fpop(env);
     } else {
         env->fpus &= ~0x4700;
@@ -752,16 +698,15 @@ void helper_fyl2x(CPUX86State *env)
 
 void helper_fptan(CPUX86State *env)
 {
-    GET_st0;
-    double fptemp = floatx80_to_double(env, st0);
+    double fptemp = floatx80_to_double(env, ST0);
 
     if ((fptemp > MAXTAN) || (fptemp < -MAXTAN)) {
         env->fpus |= 0x400;
     } else {
         fptemp = tan(fptemp);
-        WRITE_st0(double_to_floatx80(env, fptemp));
+        ST0 = double_to_floatx80(env, fptemp);
         fpush(env);
-        WRITE_st0(floatx80_one);
+        ST0 = floatx80_one;
         env->fpus &= ~0x400; /* C2 <-- 0 */
         /* the above code is for |arg| < 2**52 only */
     }
@@ -770,64 +715,57 @@ void helper_fptan(CPUX86State *env)
 void helper_fpatan(CPUX86State *env)
 {
     double fptemp, fpsrcop;
-    GET_st0;
-    GET_st(1);
 
-    fpsrcop = floatx80_to_double(env, sti);
-    fptemp = floatx80_to_double(env, st0);
-    WRITE_st(1, double_to_floatx80(env, atan2(fpsrcop, fptemp)));
+    fpsrcop = floatx80_to_double(env, ST1);
+    fptemp = floatx80_to_double(env, ST0);
+    ST1 = double_to_floatx80(env, atan2(fpsrcop, fptemp));
     fpop(env);
 }
 
 void helper_fxtract(CPUX86State *env)
 {
     CPU_LDoubleU temp;
-    GET_st0;
 
-    temp.d = st0;
+    temp.d = ST0;
 
-    if (floatx80_is_zero(st0)) {
+    if (floatx80_is_zero(ST0)) {
         /* Easy way to generate -inf and raising division by 0 exception */
-        WRITE_st0(floatx80_div(floatx80_chs(floatx80_one), floatx80_zero,
-                               &env->fp_status));
+        ST0 = floatx80_div(floatx80_chs(floatx80_one), floatx80_zero,
+                           &env->fp_status);
         fpush(env);
-        WRITE_st0(temp.d);
+        ST0 = temp.d;
     } else {
         int expdif;
 
         expdif = EXPD(temp) - EXPBIAS;
         /* DP exponent bias */
-        WRITE_st0(int32_to_floatx80(expdif, &env->fp_status));
+        ST0 = int32_to_floatx80(expdif, &env->fp_status);
         fpush(env);
         BIASEXPONENT(temp);
-        WRITE_st0(temp.d);
+        ST0 = temp.d;
     }
 }
 
 void helper_fprem1(CPUX86State *env)
 {
-    floatx80 st0_, st1_;
     double st0, st1, dblq, fpsrcop, fptemp;
     CPU_LDoubleU fpsrcop1, fptemp1;
     int expdif;
     signed long long int q;
 
-    READ_ENV(env->fpregs, .d, st0_, env->fpstt);
-    READ_ENV(env->fpregs, .d, st1_, (env->fpstt + 1) & 7);
-
-    st0 = floatx80_to_double(env, st0_);
-    st1 = floatx80_to_double(env, st1_);
+    st0 = floatx80_to_double(env, ST0);
+    st1 = floatx80_to_double(env, ST1);
 
     if (isinf(st0) || isnan(st0) || isnan(st1) || (st1 == 0.0)) {
-        WRITE_st0(double_to_floatx80(env, 0.0 / 0.0)); /* NaN */
+        ST0 = double_to_floatx80(env, 0.0 / 0.0); /* NaN */
         env->fpus &= ~0x4700; /* (C3,C2,C1,C0) <-- 0000 */
         return;
     }
 
     fpsrcop = st0;
     fptemp = st1;
-    fpsrcop1.d = st0_;
-    fptemp1.d = st1_;
+    fpsrcop1.d = ST0;
+    fptemp1.d = ST1;
     expdif = EXPD(fpsrcop1) - EXPD(fptemp1);
 
     if (expdif < 0) {
@@ -864,33 +802,29 @@ void helper_fprem1(CPUX86State *env)
                   -(floor(fabs(fpsrcop))) : floor(fpsrcop);
         st0 -= (st1 * fpsrcop * fptemp);
     }
-    WRITE_st0(double_to_floatx80(env, st0));
+    ST0 = double_to_floatx80(env, st0);
 }
 
 void helper_fprem(CPUX86State *env)
 {
-    floatx80 st0_, st1_;
     double st0, st1, dblq, fpsrcop, fptemp;
     CPU_LDoubleU fpsrcop1, fptemp1;
     int expdif;
     signed long long int q;
 
-    READ_ENV(env->fpregs, .d, st0_, env->fpstt);
-    READ_ENV(env->fpregs, .d, st1_, (env->fpstt + 1) & 7);
-
-    st0 = floatx80_to_double(env, st0_);
-    st1 = floatx80_to_double(env, st1_);
+    st0 = floatx80_to_double(env, ST0);
+    st1 = floatx80_to_double(env, ST1);
 
     if (isinf(st0) || isnan(st0) || isnan(st1) || (st1 == 0.0)) {
-        WRITE_st0(double_to_floatx80(env, 0.0 / 0.0)); /* NaN */
+        ST0 = double_to_floatx80(env, 0.0 / 0.0); /* NaN */
         env->fpus &= ~0x4700; /* (C3,C2,C1,C0) <-- 0000 */
         return;
     }
 
     fpsrcop = st0;
     fptemp = st1;
-    fpsrcop1.d = st0_;
-    fptemp1.d = st1_;
+    fpsrcop1.d = ST0;
+    fptemp1.d = ST1;
     expdif = EXPD(fpsrcop1) - EXPD(fptemp1);
 
     if (expdif < 0) {
@@ -929,19 +863,17 @@ void helper_fprem(CPUX86State *env)
                   -(floor(fabs(fpsrcop))) : floor(fpsrcop);
         st0 -= (st1 * fpsrcop * fptemp);
     }
-    WRITE_st0(double_to_floatx80(env, st0));
+    ST0 = double_to_floatx80(env, st0);
 }
 
 void helper_fyl2xp1(CPUX86State *env)
 {
-    GET_st0;
-    GET_st(1);
-    double fptemp = floatx80_to_double(env, st0);
+    double fptemp = floatx80_to_double(env, ST0);
 
     if ((fptemp + 1.0) > 0.0) {
         fptemp = log(fptemp + 1.0) / log(2.0); /* log2(ST + 1.0) */
-        fptemp *= floatx80_to_double(env, sti);
-        WRITE_st(1, double_to_floatx80(env, fptemp));
+        fptemp *= floatx80_to_double(env, ST1);
+        ST1 = double_to_floatx80(env, fptemp);
         fpop(env);
     } else {
         env->fpus &= ~0x4700;
@@ -951,25 +883,23 @@ void helper_fyl2xp1(CPUX86State *env)
 
 void helper_fsqrt(CPUX86State *env)
 {
-    GET_st0;
-    if (floatx80_is_neg(st0)) {
+    if (floatx80_is_neg(ST0)) {
         env->fpus &= ~0x4700;  /* (C3,C2,C1,C0) <-- 0000 */
         env->fpus |= 0x400;
     }
-    WRITE_st0(floatx80_sqrt(st0, &env->fp_status));
+    ST0 = floatx80_sqrt(ST0, &env->fp_status);
 }
 
 void helper_fsincos(CPUX86State *env)
 {
-    GET_st0;
-    double fptemp = floatx80_to_double(env, st0);
+    double fptemp = floatx80_to_double(env, ST0);
 
     if ((fptemp > MAXTAN) || (fptemp < -MAXTAN)) {
         env->fpus |= 0x400;
     } else {
-        WRITE_st0(double_to_floatx80(env, sin(fptemp)));
+        ST0 = double_to_floatx80(env, sin(fptemp));
         fpush(env);
-        WRITE_st0(double_to_floatx80(env, cos(fptemp)));
+        ST0 = double_to_floatx80(env, cos(fptemp));
         env->fpus &= ~0x400;  /* C2 <-- 0 */
         /* the above code is for |arg| < 2**63 only */
     }
@@ -977,31 +907,27 @@ void helper_fsincos(CPUX86State *env)
 
 void helper_frndint(CPUX86State *env)
 {
-    GET_st0;
-    WRITE_st0(floatx80_round_to_int(st0, &env->fp_status));
+    ST0 = floatx80_round_to_int(ST0, &env->fp_status);
 }
 
 void helper_fscale(CPUX86State *env)
 {
-    GET_st0;
-    GET_st(1);
-    if (floatx80_is_any_nan(sti)) {
-        WRITE_st0(sti);
+    if (floatx80_is_any_nan(ST1)) {
+        ST0 = ST1;
     } else {
-        int n = floatx80_to_int32_round_to_zero(sti, &env->fp_status);
-        WRITE_st0(floatx80_scalbn(st0, n, &env->fp_status));
+        int n = floatx80_to_int32_round_to_zero(ST1, &env->fp_status);
+        ST0 = floatx80_scalbn(ST0, n, &env->fp_status);
     }
 }
 
 void helper_fsin(CPUX86State *env)
 {
-    GET_st0;
-    double fptemp = floatx80_to_double(env, st0);
+    double fptemp = floatx80_to_double(env, ST0);
 
     if ((fptemp > MAXTAN) || (fptemp < -MAXTAN)) {
         env->fpus |= 0x400;
     } else {
-        WRITE_st0(double_to_floatx80(env, sin(fptemp)));
+        ST0 = double_to_floatx80(env, sin(fptemp));
         env->fpus &= ~0x400;  /* C2 <-- 0 */
         /* the above code is for |arg| < 2**53 only */
     }
@@ -1009,13 +935,12 @@ void helper_fsin(CPUX86State *env)
 
 void helper_fcos(CPUX86State *env)
 {
-    GET_st0;
-    double fptemp = floatx80_to_double(env, st0);
+    double fptemp = floatx80_to_double(env, ST0);
 
     if ((fptemp > MAXTAN) || (fptemp < -MAXTAN)) {
         env->fpus |= 0x400;
     } else {
-        WRITE_st0(double_to_floatx80(env, cos(fptemp)));
+        ST0 = double_to_floatx80(env, cos(fptemp));
         env->fpus &= ~0x400;  /* C2 <-- 0 */
         /* the above code is for |arg| < 2**63 only */
     }
@@ -1023,11 +948,10 @@ void helper_fcos(CPUX86State *env)
 
 void helper_fxam_ST0(CPUX86State *env)
 {
-    GET_st0;
     CPU_LDoubleU temp;
     int expdif;
 
-    temp.d = st0;
+    temp.d = ST0;
 
     env->fpus &= ~0x4700; /* (C3,C2,C1,C0) <-- 0000 */
     if (SIGND(temp)) {
@@ -1130,7 +1054,7 @@ void helper_fsave(CPUX86State *env, target_ulong ptr, int data32)
 
     ptr += (14 << data32);
     for (i = 0; i < 8; i++) {
-        READ_ENV(env->fpregs, .d, tmp, (env->fpstt + (i)) & 7);
+        tmp = ST(i);
         helper_fstt(env, tmp, ptr);
         ptr += 10;
     }
@@ -1159,7 +1083,7 @@ void helper_frstor(CPUX86State *env, target_ulong ptr, int data32)
 
     for (i = 0; i < 8; i++) {
         tmp = helper_fldt(env, ptr);
-        WRITE_ENV(env->fpregs, .d, (env->fpstt + (i)) & 7, tmp);
+        ST(i) = tmp;
         ptr += 10;
     }
 }
@@ -1210,7 +1134,7 @@ void helper_fxsave(CPUX86State *env, target_ulong ptr, int data64)
 
     addr = ptr + 0x20;
     for (i = 0; i < 8; i++) {
-        READ_ENV(env->fpregs, .d, tmp, (env->fpstt + (i)) & 7);
+        tmp = ST(i);
         helper_fstt(env, tmp, addr);
         addr += 16;
     }
@@ -1262,7 +1186,7 @@ void helper_fxrstor(CPUX86State *env, target_ulong ptr, int data64)
     addr = ptr + 0x20;
     for (i = 0; i < 8; i++) {
         tmp = helper_fldt(env, addr);
-        WRITE_ENV(env->fpregs, .d, (env->fpstt + (i)) & 7, tmp);
+        ST(i) = tmp;
         addr += 16;
     }
 

@@ -649,37 +649,7 @@ static int do_strex(CPUARMState *env)
         goto fail;
     }
 
-#define CASE(n, pre, post)      \
-    case n:                     \
-        pre env->regs[n] post;  \
-        break;                  \
-
-#define SWITCH(index, pre, post) \
-    do {                         \
-        switch((index)) {        \
-            CASE(0, pre, post)   \
-            CASE(1, pre, post)   \
-            CASE(2, pre, post)   \
-            CASE(3, pre, post)   \
-            CASE(4, pre, post)   \
-            CASE(5, pre, post)   \
-            CASE(6, pre, post)   \
-            CASE(7, pre, post)   \
-            CASE(8, pre, post)   \
-            CASE(9, pre, post)   \
-            CASE(10, pre, post)  \
-            CASE(11, pre, post)  \
-            CASE(12, pre, post)  \
-            CASE(13, pre, post)  \
-            CASE(14, pre, post)  \
-            CASE(15, pre, post)  \
-        }                        \
-    } while (0);
-
-#define READ_ENV(dest, index) SWITCH(index, dest =, )
-#define WRITE_ENV(index, src) SWITCH(index, , = src)
-
-    READ_ENV(val, (env->exclusive_info >> 8) & 0xf);
+    val = env->regs[(env->exclusive_info >> 8) & 0xf];
     switch (size) {
     case 0:
         segv = put_user_u8(val, addr);
@@ -697,7 +667,7 @@ static int do_strex(CPUARMState *env)
         goto done;
     }
     if (size == 3) {
-        READ_ENV(val, (env->exclusive_info >> 12) & 0xf);
+        val = env->regs[(env->exclusive_info >> 12) & 0xf];
         segv = put_user_u32(val, addr + 4);
         if (segv) {
             env->exception.vaddress = addr + 4;
@@ -707,16 +677,10 @@ static int do_strex(CPUARMState *env)
     rc = 0;
 fail:
     env->regs[15] += 4;
-    WRITE_ENV((env->exclusive_info >> 4) & 0xf, rc);
+    env->regs[(env->exclusive_info >> 4) & 0xf] = rc;
 done:
     end_exclusive();
     return segv;
-
-#undef READ_ENV
-#undef WRITE_ENV
-#undef SWITCH
-#undef CASE
-
 }
 
 void cpu_loop(CPUARMState *env)
@@ -2380,51 +2344,6 @@ static const uint8_t mips_syscall_args[] = {
 #  undef MIPS_SYS
 # endif /* O32 */
 
-// Hack to make writes to a GPR explicit so we can track them easily
-static void write_gpr(CPUMIPSState *env, int reg, target_ulong value) {
-#define CASE(i) \
-    case i:                            \
-        env->active_tc.gpr[i] = value; \
-        break;                         \
-
-    switch (reg) {
-        CASE(0)
-        CASE(1)
-        CASE(2)
-        CASE(3)
-        CASE(4)
-        CASE(5)
-        CASE(6)
-        CASE(7)
-        CASE(8)
-        CASE(9)
-        CASE(10)
-        CASE(11)
-        CASE(12)
-        CASE(13)
-        CASE(14)
-        CASE(15)
-        CASE(16)
-        CASE(17)
-        CASE(18)
-        CASE(19)
-        CASE(20)
-        CASE(21)
-        CASE(22)
-        CASE(23)
-        CASE(24)
-        CASE(25)
-        CASE(26)
-        CASE(27)
-        CASE(28)
-        CASE(29)
-        CASE(30)
-        CASE(31)
-    }
-
-#undef CASE
-}
-
 static int do_store_exclusive(CPUMIPSState *env)
 {
     target_ulong addr;
@@ -2452,7 +2371,7 @@ static int do_store_exclusive(CPUMIPSState *env)
         }
         if (!segv) {
             if (val != env->llval) {
-                write_gpr(env, reg, 0);
+                env->active_tc.gpr[reg] = 0;
             } else {
                 if (d) {
                     segv = put_user_u64(env->llnewval, addr);
@@ -2460,7 +2379,7 @@ static int do_store_exclusive(CPUMIPSState *env)
                     segv = put_user_u32(env->llnewval, addr);
                 }
                 if (!segv) {
-                    write_gpr(env, reg, 1);
+                    env->active_tc.gpr[reg] = 1;
                 }
             }
         }
