@@ -157,7 +157,6 @@ static TCGv_i64 cc_src;
 static TCGv_i64 cc_dst;
 static TCGv_i64 cc_vr;
 
-static char cpu_reg_names[32][4];
 static TCGv_i64 regs[16];
 static TCGv_i64 fregs[16];
 
@@ -165,6 +164,42 @@ static uint8_t gen_opc_cc_op[OPC_BUF_SIZE];
 
 void s390x_translate_init(void)
 {
+    static const char cpu_reg_names[32][4] = {
+        // general purpose registers
+        [0]  = "r0",
+        [1]  = "r1",
+        [2]  = "r2",
+        [3]  = "r3",
+        [4]  = "r4",
+        [5]  = "r5",
+        [6]  = "r6",
+        [7]  = "r7",
+        [8]  = "r8",
+        [9]  = "r9",
+        [10] = "r10",
+        [11] = "r11",
+        [12] = "r12",
+        [13] = "r13",
+        [14] = "r14",
+        [15] = "r15",
+        // floating point registers
+        [16] = "f0",
+        [17] = "f1",
+        [18] = "f2",
+        [19] = "f3",
+        [20] = "f4",
+        [21] = "f5",
+        [22] = "f6",
+        [23] = "f7",
+        [24] = "f8",
+        [25] = "f9",
+        [26] = "f10",
+        [27] = "f11",
+        [28] = "f12",
+        [29] = "f13",
+        [30] = "f14",
+        [31] = "f15",
+    };
     int i;
 
     cpu_env = tcg_global_reg_new_ptr(TCG_AREG0, "env");
@@ -188,14 +223,12 @@ void s390x_translate_init(void)
                                    "cc_vr");
 
     for (i = 0; i < 16; i++) {
-        snprintf(cpu_reg_names[i], sizeof(cpu_reg_names[0]), "r%d", i);
         regs[i] = tcg_global_mem_new(TCG_AREG0,
                                      offsetof(CPUS390XState, regs[i]),
                                      cpu_reg_names[i]);
     }
 
     for (i = 0; i < 16; i++) {
-        snprintf(cpu_reg_names[i + 16], sizeof(cpu_reg_names[0]), "f%d", i);
         fregs[i] = tcg_global_mem_new(TCG_AREG0,
                                       offsetof(CPUS390XState, vregs[i][0].d),
                                       cpu_reg_names[i + 16]);
