@@ -5346,6 +5346,7 @@ static ExitStatus translate_one(CPUS390XState *env, DisasContext *s)
         gen_helper_per_check_exception(cpu_env);
     }
 #endif
+    update_cc_op(s);
 
     /* Advance to the next instruction.  */
     s->pc = s->next_pc;
