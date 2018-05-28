@@ -2,7 +2,7 @@
  * Linux o32 style syscalls are in the range from 4000 to 4999.
  */
 #define TARGET_NR_Linux			4000
-#define TARGET_NR_syscall		(TARGET_NR_Linux +   0)
+// #define TARGET_NR_syscall		(TARGET_NR_Linux +   0)
 #define TARGET_NR_exit			(TARGET_NR_Linux +   1)
 #define TARGET_NR_fork			(TARGET_NR_Linux +   2)
 #define TARGET_NR_read			(TARGET_NR_Linux +   3)

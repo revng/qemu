@@ -120,7 +120,7 @@
                                                 /* 110 */
 #define TARGET_NR_vhangup                       111
 #define TARGET_NR_idle                          112
-#define TARGET_NR_syscall                       113
+// #define TARGET_NR_syscall                       113
 #define TARGET_NR_wait4                         114
 #define TARGET_NR_swapoff                       115
 #define TARGET_NR_sysinfo                       116
