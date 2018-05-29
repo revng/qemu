@@ -5,9 +5,11 @@
 
 /* Helpers for instruction counting code generation.  */
 
+#ifndef CONFIG_LIBTINYCODE
 static TCGArg *icount_arg;
 static TCGLabel *icount_label;
 static TCGLabel *exitreq_label;
+#endif
 
 static inline void gen_tb_start(TranslationBlock *tb)
 {
