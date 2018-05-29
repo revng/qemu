@@ -324,9 +324,14 @@ static void blkverify_refresh_filename(BlockDriverState *bs)
     }
 
     if (bs->file->exact_filename[0] && s->test_file->exact_filename[0]) {
-        snprintf(bs->exact_filename, sizeof(bs->exact_filename),
-                 "blkverify:%s:%s",
-                 bs->file->exact_filename, s->test_file->exact_filename);
+        int ret = snprintf(bs->exact_filename, sizeof(bs->exact_filename),
+                           "blkverify:%s:%s",
+                            bs->file->exact_filename,
+                            s->test_file->exact_filename);
+        if (ret >= sizeof(bs->exact_filename)) {
+            /* An overflow makes the filename unusable, so do not report any */
+            bs->exact_filename[0] = 0;
+	}
     }
 }
 
