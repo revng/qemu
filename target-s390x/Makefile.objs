@@ -3,3 +3,8 @@ obj-y += int_helper.o fpu_helper.o cc_helper.o mem_helper.o misc_helper.o
 obj-y += gdbstub.o
 obj-$(CONFIG_SOFTMMU) += machine.o ioinst.o arch_dump.o mmu_helper.o
 obj-$(CONFIG_KVM) += kvm.o
+
+ifdef CONFIG_LLVM_HELPERS
+ll-y += helper.ll
+ll-y += int_helper.ll fpu_helper.ll cc_helper.ll mem_helper.ll misc_helper.ll
+endif
