@@ -53,7 +53,11 @@ static inline void gen_tb_start(TranslationBlock *tb)
 
 static void gen_tb_end(TranslationBlock *tb, int num_insns)
 {
-#ifndef CONFIG_LIBTINYCODE
+
+#ifdef CONFIG_LIBTINYCODE
+    if (tcg_ctx.gen_op_buf[tcg_ctx.gen_last_op_idx].opc != INDEX_op_exit_tb)
+        tcg_gen_exit_tb(0);
+#else
     gen_set_label(exitreq_label);
     tcg_gen_exit_tb((uintptr_t)tb + TB_EXIT_REQUESTED);
 
