@@ -422,6 +422,10 @@ size_t ptc_translate(uint64_t virtual_address, PTCInstructionList *instructions)
     int flags = 0;
     cpu_get_tb_cpu_state(cpu->env_ptr, &temp, &temp, &flags);
 
+#if defined(TARGET_S390X)
+    flags |= FLAG_MASK_32 | FLAG_MASK_64;
+#endif
+
     tb = tb_gen_code2(s, cpu, (target_ulong) virtual_address, cs_base, flags, 0);
 
     // tcg_dump_ops(s);
