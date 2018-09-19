@@ -313,6 +313,7 @@ void cpu_loop(CPUX86State *env)
                                           env->regs[R_EDI],
                                           env->regs[R_EBP],
                                           0, 0);
+            env->eip = env->exception_next_eip;
             break;
 #ifndef TARGET_ABI32
         case EXCP_SYSCALL:
@@ -326,6 +327,7 @@ void cpu_loop(CPUX86State *env)
                                           env->regs[8],
                                           env->regs[9],
                                           0, 0);
+            env->eip = env->exception_next_eip;
             break;
 #endif
         case EXCP0B_NOSEG:
