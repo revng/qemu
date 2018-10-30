@@ -19517,7 +19517,7 @@ static void decode_opc(CPUMIPSState *env, DisasContext *ctx)
         gen_set_label(l1);
     }
 
-#ifdef LLVM_HELPERS
+#ifdef CONFIG_LIBTINYCODE
     // Do not generate the debug_insn if in a delay slot
     unsigned skip = (ctx->hflags & MIPS_HFLAG_BMASK) != 0;
 #else
