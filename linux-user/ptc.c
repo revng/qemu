@@ -85,7 +85,7 @@ static CPUState *cpu = NULL;
 
 #if defined(TARGET_X86_64) || defined(TARGET_I386)
 # define CPU_STRUCT X86CPU
-#elif defined(TARGET_ARM)
+#elif defined(TARGET_ARM) || defined(TARGET_AARCH64)
 # define CPU_STRUCT ARMCPU
 #elif defined(TARGET_MIPS)
 # define CPU_STRUCT MIPSCPU
@@ -113,8 +113,13 @@ int ptc_load(void *handle, PTCInterface *output) {
   result.pc = offsetof(CPUX86State, eip);
   result.sp = offsetof(CPUX86State, regs[R_ESP]);
 #elif defined(TARGET_ARM)
+#if defined(TARGET_AARCH64)
+  result.pc = offsetof(CPUARMState, pc);
+  result.sp = offsetof(CPUARMState, xregs[31]);
+#else
   result.pc = offsetof(CPUARMState, regs[15]);
   result.sp = offsetof(CPUARMState, regs[13]);
+#endif
 #elif defined(TARGET_MIPS)
   result.pc = offsetof(CPUMIPSState, active_tc.PC);
   result.sp = offsetof(CPUMIPSState, active_tc.gpr[29]);

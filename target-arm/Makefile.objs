@@ -13,4 +13,5 @@ obj-y += crypto_helper.o
 
 ifdef CONFIG_LLVM_HELPERS
 ll-y += helper.ll op_helper.ll neon_helper.ll
+ll-$(TARGET_AARCH64) += helper-a64.ll
 endif
