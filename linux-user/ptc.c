@@ -160,7 +160,7 @@ void ptc_init(void) {
 
   if (cpu == NULL) {
     /* init guest base */
-    guest_base = 0xb0000000;
+    guest_base = 0x40000000;
 
     /* init TCGContext */
     tcg_exec_init(0);
