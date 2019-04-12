@@ -8062,7 +8062,8 @@ static inline void gen_intermediate_code_internal(X86CPU *cpu,
         /* if too long translation, stop generation too */
         if (tcg_op_buf_full() ||
             (pc_ptr - pc_start) >= (TARGET_PAGE_SIZE - 32) ||
-            num_insns >= max_insns) {
+            num_insns >= max_insns ||
+            dc->pc >= tb->max_pc) {
             gen_jmp_im(pc_ptr - dc->cs_base);
             gen_eob(dc);
             break;
