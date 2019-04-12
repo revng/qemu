@@ -297,7 +297,7 @@ static void rcu_init_complete(void)
     /* The caller is assumed to have iothread lock, so the call_rcu thread
      * must have been quiescent even after forking, just recreate it.
      */
-#ifndef LLVM_HELPERS
+#if !defined(LLVM_HELPERS) && !defined(CONFIG_LIBTINYCODE)
     qemu_thread_create(&thread, "call_rcu", call_rcu_thread,
                        NULL, QEMU_THREAD_DETACHED);
 #endif
