@@ -128,9 +128,8 @@ int ptc_load(void *handle, PTCInterface *output) {
   result.sp = offsetof(CPUS390XState, regs[15]);
 #endif
 
-  result.exception_index =
-    (offsetof(CPU_STRUCT, parent_obj) + offsetof(CPUState, exception_index))
-    - offsetof(CPU_STRUCT, env);
+  result.exception_index = (offsetof(CPU_STRUCT, parent_obj)
+                            + offsetof(CPUState, exception_index));
 
   result.get_condition_name = &ptc_get_condition_name;
   result.get_load_store_name = &ptc_get_load_store_name;
