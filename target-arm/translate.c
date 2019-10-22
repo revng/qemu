@@ -811,7 +811,9 @@ void arm_gen_test_cc(int cc, TCGLabel *label)
         break;
     default:
         fprintf(stderr, "Bad condition code 0x%x\n", cc);
+#ifndef CONFIG_LIBTINYCODE
         abort();
+#endif
     }
 }
 
@@ -2722,8 +2724,10 @@ static TCGv_i32 gen_load_and_replicate(DisasContext *s, TCGv_i32 addr, int size)
     case 2:
         gen_aa32_ld32u(tmp, addr, get_mem_index(s));
         break;
+#ifndef CONFIG_LIBTINYCODE
     default: /* Avoid compiler warnings.  */
         abort();
+#endif
     }
     return tmp;
 }
