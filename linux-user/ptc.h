@@ -216,6 +216,12 @@ typedef struct PTCHelperDef {
   /* unsigned sizemask; */
 } PTCHelperDef;
 
+/* Code types */
+typedef enum {
+  PTC_CODE_REGULAR = 0,
+  PTC_CODE_ARM_THUMB = 1
+} PTCCodeType;
+
 /* Exported functions */
 
 #define FUNC_PTR(ret, name, params) typedef ret (*name ## _ptr_t) params
@@ -243,9 +249,8 @@ EXPORTED(const char *, ptc_get_condition_name, (PTCCondition condition));
 EXPORTED(const char *, ptc_get_load_store_name, (PTCLoadStoreType condition));
 EXPORTED(PTCLoadStoreArg, ptc_parse_load_store_arg, (PTCInstructionArg arg));
 EXPORTED(unsigned, ptc_get_arg_label_id, (PTCInstructionArg arg));
-// EXPORTED(size_t, ptc_translate, (long long va, const void *code, size_t code_size, PTCInstructionList *instructions));
 EXPORTED(void, ptc_mmap, (uint64_t virtual_address, const void *code, size_t code_size));
-EXPORTED(size_t, ptc_translate, (uint64_t va, PTCInstructionList *instructions));
+EXPORTED(size_t, ptc_translate, (uint64_t virtual_address, PTCCodeType type, PTCInstructionList *instructions));
 
 #undef EXPORTED
 
@@ -264,6 +269,7 @@ typedef struct {
 
   intptr_t pc;
   intptr_t sp;
+  intptr_t is_thumb;
   intptr_t exception_index;
   uint8_t *initialized_env;
 

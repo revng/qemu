@@ -119,6 +119,7 @@ int ptc_load(void *handle, PTCInterface *output) {
 #else
   result.pc = offsetof(CPUARMState, regs[15]);
   result.sp = offsetof(CPUARMState, regs[13]);
+  result.is_thumb = offsetof(CPUARMState, thumb);
 #endif
 #elif defined(TARGET_MIPS)
   result.pc = offsetof(CPUMIPSState, active_tc.PC);
@@ -418,7 +419,7 @@ void ptc_mmap(uint64_t virtual_address, const void *code, size_t code_size) {
 }
 
 /* TODO: error management */
-size_t ptc_translate(uint64_t virtual_address, PTCInstructionList *instructions) {
+size_t ptc_translate(uint64_t virtual_address, PTCCodeType type, PTCInstructionList *instructions) {
     TCGContext *s = &tcg_ctx;
     TranslationBlock *tb = NULL;
 
@@ -428,6 +429,14 @@ size_t ptc_translate(uint64_t virtual_address, PTCInstructionList *instructions)
 
 #if defined(TARGET_S390X)
     flags |= FLAG_MASK_32 | FLAG_MASK_64;
+#endif
+
+  bool is_thumb = (type & PTC_CODE_ARM_THUMB) != 0;
+#ifdef TARGET_ARM
+  if (is_thumb)
+    flags |= (1 << ARM_TBFLAG_THUMB_SHIFT);
+#else
+  assert(!is_thumb);
 #endif
 
     tb = tb_gen_code2(s, cpu, (target_ulong) virtual_address, cs_base, flags, 0);
@@ -503,12 +512,12 @@ unsigned ptc_get_arg_label_id(PTCInstructionArg arg) {
   return label->id;
 }
 
-void ptc_disassemble(FILE *output, uint32_t buffer, size_t buffer_size,
-                     int max) {
+void ptc_disassemble(FILE *output, uint32_t buffer, size_t buffer_size, int max) {
   int flags = 0;
 #ifdef TARGET_X86_64
   /* Force 64-bit decoding */
   flags = 2;
 #endif
+
   target_disas_max(output, cpu, /* GUEST_BASE + */ buffer, buffer_size, flags, max);
 }
