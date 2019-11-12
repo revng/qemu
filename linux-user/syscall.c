@@ -5981,10 +5981,12 @@ abi_long do_syscall(void *cpu_env, int num, abi_long arg1,
 #ifdef TARGET_NR_stime /* not on alpha */
     case TARGET_NR_stime:
         {
-            time_t host_time;
-            if (get_user_sal(host_time, arg1))
-                goto efault;
-            ret = get_errno(stime(&host_time));
+            struct timespec ts;
+            ts.tv_nsec = 0;
+            if (get_user_sal(ts.tv_sec, arg1)) {
+                return -TARGET_EFAULT;
+            }
+            return get_errno(clock_settime(CLOCK_REALTIME, &ts));
         }
         break;
 #endif
