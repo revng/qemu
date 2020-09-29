@@ -34,7 +34,7 @@ PROGS_INSTALL_DIR := $(libdir)
 endif
 
 ifdef CONFIG_LLVM_HELPERS
-LLVM_HELPERS=libtinycode-helpers-$(TARGET_NAME).ll
+LLVM_HELPERS=libtinycode-helpers-$(TARGET_NAME).bc
 endif
 
 else
@@ -224,7 +224,7 @@ ll-y := target-$(TARGET_BASE_ARCH)/ linux-user/
 ll-y += fpu/softfloat.ll thunk.ll util/cutils.ll util/crc32c.ll util/getauxval.ll util/rcu.ll util/qemu-thread-posix.ll
 dummy := $(call unnest-vars,,ll-y)
 $(LLVM_HELPERS): $(ll-y)
-	$(call quiet-command,$(LLVM_LINK) -S -o $@ $^,"  LINK.LL $@")
+	$(call quiet-command,$(LLVM_LINK) -o $@ $^,"  LINK.BC $@")
 endif
 
 gdbstub-xml.c: $(TARGET_XML_FILES) $(SRC_PATH)/scripts/feature_to_c.sh
