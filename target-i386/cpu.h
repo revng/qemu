@@ -983,6 +983,10 @@ typedef struct CPUX86State {
     TPRAccess tpr_access_type;
 } CPUX86State;
 
+#ifdef LLVM_HELPERS
+void helper_cpu_exec_enter(CPUX86State *env);
+#endif
+
 #include "cpu-qom.h"
 
 X86CPU *cpu_x86_init(const char *cpu_model);

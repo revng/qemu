@@ -1375,9 +1375,28 @@ void x86_stq_phys(CPUState *cs, hwaddr addr, uint64_t val)
 #endif
 
 #ifdef CONFIG_LLVM_HELPERS
-#ifndef TARGET_X86_64
-void initialize_env(CPUX86State *env) {
-    setup_segmentation(env);
+
+#ifdef LLVM_HELPERS
+void helper_cpu_exec_enter(CPUX86State *env) {
+    // Initialization taken from x86_cpu_exec_enter
+    CC_SRC = env->eflags & (CC_O | CC_S | CC_Z | CC_A | CC_P | CC_C);
+    env->df = 1 - (2 * ((env->eflags >> 10) & 1));
+    CC_OP = CC_OP_EFLAGS;
+    env->eflags &= ~(DF_MASK | CC_O | CC_S | CC_Z | CC_A | CC_P | CC_C);
 }
 #endif
+
+
+void initialize_env(CPUX86State *env) {
+
+#ifndef TARGET_X86_64
+    setup_segmentation(env);
+#endif
+
+#ifdef LLVM_HELPERS
+    helper_cpu_exec_enter(env);
+#endif
+
+}
+
 #endif

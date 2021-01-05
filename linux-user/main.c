@@ -293,11 +293,7 @@ void cpu_loop(CPUX86State *env)
         trapnr = cpu_x86_exec(cs);
 
 #ifdef LLVM_HELPERS
-        // Initialization taken from x86_cpu_exec_enter
-        CC_SRC = env->eflags & (CC_O | CC_S | CC_Z | CC_A | CC_P | CC_C);
-        env->df = 1 - (2 * ((env->eflags >> 10) & 1));
-        CC_OP = CC_OP_EFLAGS;
-        env->eflags &= ~(DF_MASK | CC_O | CC_S | CC_Z | CC_A | CC_P | CC_C);
+        helper_cpu_exec_enter(env);
 #endif
 
         cpu_exec_end(cs);

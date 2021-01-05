@@ -6332,7 +6332,7 @@ abi_long do_syscall(CPUArchState *cpu_env, int num, abi_long arg1,
             } else {
                 pact = NULL;
             }
-            ret = get_errno(do_sigaction(arg1, pact, &oact));
+            ret = 0; // get_errno(do_sigaction(arg1, pact, &oact));
             if (!is_error(ret) && arg3) {
                 if (!lock_user_struct(VERIFY_WRITE, old_act, arg3, 0))
                     goto efault;
@@ -6387,7 +6387,7 @@ abi_long do_syscall(CPUArchState *cpu_env, int num, abi_long arg1,
                 }
             } else
                 oact = NULL;
-            ret = get_errno(do_sigaction(arg1, act, oact));
+            ret = 0; // get_errno(do_sigaction(arg1, act, oact));
 	rt_sigaction_fail:
             if (act)
                 unlock_user_struct(act, arg2, 0);
@@ -6520,7 +6520,7 @@ abi_long do_syscall(CPUArchState *cpu_env, int num, abi_long arg1,
                 how = 0;
                 set_ptr = NULL;
             }
-            ret = get_errno(do_sigprocmask(how, set_ptr, &oldset));
+            ret = 0; //get_errno(do_sigprocmask(how, set_ptr, &oldset));
             if (!is_error(ret) && arg3) {
                 if (!(p = lock_user(VERIFY_WRITE, arg3, sizeof(target_sigset_t), 0)))
                     goto efault;
