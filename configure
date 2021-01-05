@@ -396,10 +396,8 @@ nm="${NM-${cross_prefix}nm}"
 strip="${STRIP-${cross_prefix}strip}"
 windres="${WINDRES-${cross_prefix}windres}"
 pkg_config_exe="${PKG_CONFIG-${cross_prefix}pkg-config}"
-llvm_config="${LLVM_CONFIG-llvm-config}"
-llvm_bindir="$(${llvm_config} --bindir)"
-clang="${llvm_bindir}/clang"
-llvm_link="${llvm_bindir}/llvm-link"
+clang="${CLANG-clang}"
+llvm_link="${LLVM_LINK-llvm-link}"
 query_pkg_config() {
     "${pkg_config_exe}" ${QEMU_PKG_CONFIG_FLAGS} "$@"
 }
@@ -3385,16 +3383,6 @@ EOF
     LIBS="-ltcmalloc $LIBS"
   else
     feature_not_found "tcmalloc" "install gperftools devel"
-  fi
-fi
-
-##########################################
-# llvm_helpers
-
-if test "$llvm_helpers" = "yes" ; then
-  if test ! -e "$clang" -a -e "$llvm_link" ; then
-    error_exit "couldn't find clang or llvm-link, set LLVM_CONFIG to " \
-        "your llvm-config path"
   fi
 fi
 
