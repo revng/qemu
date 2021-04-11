@@ -54,7 +54,8 @@ expand-objs = $(strip $(sort $(filter %.o,$1)) \
                   $(filter-out %.o %.mo,$1))
 
 %.ll: %.c
-	$(call quiet-command,$(CLANG) -DLLVM_HELPERS -Wno-unknown-warning-option -S -emit-llvm $(QEMU_INCLUDES) $(QEMU_CFLAGS) $(CFLAGS) $($@-cflags) -g -Wno-unused-function -Wno-unused-variable -Wno-unused-label -O0 -c -o $@ $<,"  CC.LL $(TARGET_DIR)$@")
+	$(call quiet-command,$(CLANG) -Xclang -disable-O0-optnone -DLLVM_HELPERS -Wno-unknown-warning-option -S -emit-llvm $(QEMU_INCLUDES) $(QEMU_CFLAGS) $(CFLAGS) $($@-cflags) -g -Wno-unused-function -Wno-unused-variable -Wno-unused-label -O0 -c -o $@ $<,"  CC.LL $(TARGET_DIR)$@")
+
 %.o: %.c
 	$(call quiet-command,$(CC) $(QEMU_INCLUDES) $(QEMU_CFLAGS) $(QEMU_DGFLAGS) $(CFLAGS) $($@-cflags) -c -o $@ $<,"  CC    $(TARGET_DIR)$@")
 %.o: %.rc
