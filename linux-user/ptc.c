@@ -98,7 +98,7 @@ typedef struct {
   target_ulong end;
 } AddressRange;
 
-#define MAX_RANGES 10
+#define MAX_RANGES 256
 static AddressRange ranges[MAX_RANGES];
 
 static CPU_STRUCT initialized_state;
