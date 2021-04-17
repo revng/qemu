@@ -53,7 +53,7 @@ static int glue(compute_all_add, SUFFIX)(DATA_TYPE dst, DATA_TYPE src1)
     return cf | pf | af | zf | sf | of;
 }
 
-static int glue(compute_c_add, SUFFIX)(DATA_TYPE dst, DATA_TYPE src1)
+static int glue(compute_c_add, SUFFIX)(DATA_TYPE dst, DATA_TYPE src1) INLINE
 {
     return dst < src1;
 }
@@ -74,7 +74,7 @@ static int glue(compute_all_adc, SUFFIX)(DATA_TYPE dst, DATA_TYPE src1,
 }
 
 static int glue(compute_c_adc, SUFFIX)(DATA_TYPE dst, DATA_TYPE src1,
-                                       DATA_TYPE src3)
+                                       DATA_TYPE src3) INLINE
 {
     return src3 ? dst <= src1 : dst < src1;
 }
@@ -93,7 +93,7 @@ static int glue(compute_all_sub, SUFFIX)(DATA_TYPE dst, DATA_TYPE src2)
     return cf | pf | af | zf | sf | of;
 }
 
-static int glue(compute_c_sub, SUFFIX)(DATA_TYPE dst, DATA_TYPE src2)
+static int glue(compute_c_sub, SUFFIX)(DATA_TYPE dst, DATA_TYPE src2) INLINE
 {
     DATA_TYPE src1 = dst + src2;
 
@@ -116,7 +116,7 @@ static int glue(compute_all_sbb, SUFFIX)(DATA_TYPE dst, DATA_TYPE src2,
 }
 
 static int glue(compute_c_sbb, SUFFIX)(DATA_TYPE dst, DATA_TYPE src2,
-                                       DATA_TYPE src3)
+                                       DATA_TYPE src3) INLINE
 {
     DATA_TYPE src1 = dst + src2 + src3;
 
@@ -182,7 +182,7 @@ static int glue(compute_all_shl, SUFFIX)(DATA_TYPE dst, DATA_TYPE src1)
     return cf | pf | af | zf | sf | of;
 }
 
-static int glue(compute_c_shl, SUFFIX)(DATA_TYPE dst, DATA_TYPE src1)
+static int glue(compute_c_shl, SUFFIX)(DATA_TYPE dst, DATA_TYPE src1) INLINE
 {
     return (src1 >> (DATA_BITS - 1)) & CC_C;
 }
@@ -230,7 +230,7 @@ static int glue(compute_all_bmilg, SUFFIX)(DATA_TYPE dst, DATA_TYPE src1)
     return cf | pf | af | zf | sf | of;
 }
 
-static int glue(compute_c_bmilg, SUFFIX)(DATA_TYPE dst, DATA_TYPE src1)
+static int glue(compute_c_bmilg, SUFFIX)(DATA_TYPE dst, DATA_TYPE src1) INLINE
 {
     return src1 == 0;
 }

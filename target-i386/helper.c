@@ -29,6 +29,9 @@
 #include "qemu.h"
 #include <sys/mman.h>
 
+#define INLINE __attribute__((section("revng_inline")))
+#define EXCEPTIONAL __attribute__((section("revng_exceptional")))
+
 static void cpu_x86_version(CPUX86State *env, int *family, int *model)
 {
     int cpuver = env->cpuid_version;

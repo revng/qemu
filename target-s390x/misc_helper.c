@@ -46,9 +46,12 @@
 #define HELPER_LOG(x...)
 #endif
 
+#define INLINE __attribute__((section("revng_inline")))
+#define EXCEPTIONAL __attribute__((section("revng_exceptional")))
+
 /* Raise an exception dynamically from a helper function.  */
 void QEMU_NORETURN runtime_exception(CPUS390XState *env, int excp,
-                                     uintptr_t retaddr)
+                                     uintptr_t retaddr) EXCEPTIONAL
 {
     CPUState *cs = CPU(s390_env_get_cpu(env));
     int t;
@@ -68,7 +71,7 @@ void QEMU_NORETURN runtime_exception(CPUS390XState *env, int excp,
 }
 
 /* Raise an exception statically from a TB.  */
-void HELPER(exception)(CPUS390XState *env, uint32_t excp)
+void HELPER(exception)(CPUS390XState *env, uint32_t excp) EXCEPTIONAL
 {
     CPUState *cs = CPU(s390_env_get_cpu(env));
 

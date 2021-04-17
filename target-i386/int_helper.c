@@ -23,6 +23,8 @@
 
 //#define DEBUG_MULDIV
 
+#define INLINE __attribute__((section("revng_inline")))
+
 /* modulo 9 table */
 static const uint8_t rclb_table[32] = {
     0, 1, 2, 3, 4, 5, 6, 7,
@@ -41,7 +43,7 @@ static const uint8_t rclw_table[32] = {
 
 /* division, flags are undefined */
 
-void helper_divb_AL(CPUX86State *env, target_ulong t0)
+void helper_divb_AL(CPUX86State *env, target_ulong t0) INLINE
 {
     unsigned int num, den, q, r;
 
@@ -59,7 +61,7 @@ void helper_divb_AL(CPUX86State *env, target_ulong t0)
     env->regs[R_EAX] = (env->regs[R_EAX] & ~0xffff) | (r << 8) | q;
 }
 
-void helper_idivb_AL(CPUX86State *env, target_ulong t0)
+void helper_idivb_AL(CPUX86State *env, target_ulong t0) INLINE
 {
     int num, den, q, r;
 
@@ -77,7 +79,7 @@ void helper_idivb_AL(CPUX86State *env, target_ulong t0)
     env->regs[R_EAX] = (env->regs[R_EAX] & ~0xffff) | (r << 8) | q;
 }
 
-void helper_divw_AX(CPUX86State *env, target_ulong t0)
+void helper_divw_AX(CPUX86State *env, target_ulong t0) INLINE
 {
     unsigned int num, den, q, r;
 
@@ -96,7 +98,7 @@ void helper_divw_AX(CPUX86State *env, target_ulong t0)
     env->regs[R_EDX] = (env->regs[R_EDX] & ~0xffff) | r;
 }
 
-void helper_idivw_AX(CPUX86State *env, target_ulong t0)
+void helper_idivw_AX(CPUX86State *env, target_ulong t0) INLINE
 {
     int num, den, q, r;
 
@@ -115,7 +117,7 @@ void helper_idivw_AX(CPUX86State *env, target_ulong t0)
     env->regs[R_EDX] = (env->regs[R_EDX] & ~0xffff) | r;
 }
 
-void helper_divl_EAX(CPUX86State *env, target_ulong t0)
+void helper_divl_EAX(CPUX86State *env, target_ulong t0) INLINE
 {
     unsigned int den, r;
     uint64_t num, q;
@@ -134,7 +136,7 @@ void helper_divl_EAX(CPUX86State *env, target_ulong t0)
     env->regs[R_EDX] = (uint32_t)r;
 }
 
-void helper_idivl_EAX(CPUX86State *env, target_ulong t0)
+void helper_idivl_EAX(CPUX86State *env, target_ulong t0) INLINE
 {
     int den, r;
     int64_t num, q;
@@ -156,7 +158,7 @@ void helper_idivl_EAX(CPUX86State *env, target_ulong t0)
 /* bcd */
 
 /* XXX: exception */
-void helper_aam(CPUX86State *env, int base)
+void helper_aam(CPUX86State *env, int base) INLINE
 {
     int al, ah;
 
@@ -167,7 +169,7 @@ void helper_aam(CPUX86State *env, int base)
     CC_DST = al;
 }
 
-void helper_aad(CPUX86State *env, int base)
+void helper_aad(CPUX86State *env, int base) INLINE
 {
     int al, ah;
 
@@ -285,7 +287,7 @@ void helper_das(CPUX86State *env)
 }
 
 #ifdef TARGET_X86_64
-static void add128(uint64_t *plow, uint64_t *phigh, uint64_t a, uint64_t b)
+static void add128(uint64_t *plow, uint64_t *phigh, uint64_t a, uint64_t b) INLINE
 {
     *plow += a;
     /* carry test */
@@ -295,7 +297,7 @@ static void add128(uint64_t *plow, uint64_t *phigh, uint64_t a, uint64_t b)
     *phigh += b;
 }
 
-static void neg128(uint64_t *plow, uint64_t *phigh)
+static void neg128(uint64_t *plow, uint64_t *phigh) INLINE
 {
     *plow = ~*plow;
     *phigh = ~*phigh;
@@ -303,7 +305,7 @@ static void neg128(uint64_t *plow, uint64_t *phigh)
 }
 
 /* return TRUE if overflow */
-static int div64(uint64_t *plow, uint64_t *phigh, uint64_t b)
+static int div64(uint64_t *plow, uint64_t *phigh, uint64_t b) INLINE
 {
     uint64_t q, r, a1, a0;
     int i, qb, ab;
@@ -343,7 +345,7 @@ static int div64(uint64_t *plow, uint64_t *phigh, uint64_t b)
 }
 
 /* return TRUE if overflow */
-static int idiv64(uint64_t *plow, uint64_t *phigh, int64_t b)
+static int idiv64(uint64_t *plow, uint64_t *phigh, int64_t b) INLINE
 {
     int sa, sb;
 
@@ -374,7 +376,7 @@ static int idiv64(uint64_t *plow, uint64_t *phigh, int64_t b)
     return 0;
 }
 
-void helper_divq_EAX(CPUX86State *env, target_ulong t0)
+void helper_divq_EAX(CPUX86State *env, target_ulong t0) INLINE
 {
     uint64_t r0, r1;
 
@@ -390,7 +392,7 @@ void helper_divq_EAX(CPUX86State *env, target_ulong t0)
     env->regs[R_EDX] = r1;
 }
 
-void helper_idivq_EAX(CPUX86State *env, target_ulong t0)
+void helper_idivq_EAX(CPUX86State *env, target_ulong t0) INLINE
 {
     uint64_t r0, r1;
 

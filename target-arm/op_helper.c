@@ -24,8 +24,11 @@
 #define SIGNBIT (uint32_t)0x80000000
 #define SIGNBIT64 ((uint64_t)1 << 63)
 
+#define INLINE __attribute__((section("revng_inline")))
+#define EXCEPTIONAL __attribute__((section("revng_exceptional")))
+
 static void raise_exception(CPUARMState *env, uint32_t excp,
-                            uint32_t syndrome, uint32_t target_el)
+                            uint32_t syndrome, uint32_t target_el) EXCEPTIONAL
 {
     CPUState *cs = CPU(arm_env_get_cpu(env));
 
@@ -120,7 +123,7 @@ void tlb_fill(CPUState *cs, target_ulong addr, int is_write, int mmu_idx,
 }
 #endif
 
-uint32_t HELPER(add_setq)(CPUARMState *env, uint32_t a, uint32_t b)
+uint32_t HELPER(add_setq)(CPUARMState *env, uint32_t a, uint32_t b) INLINE
 {
     uint32_t res = a + b;
     if (((res ^ a) & SIGNBIT) && !((a ^ b) & SIGNBIT))
@@ -352,7 +355,7 @@ void HELPER(yield)(CPUARMState *env)
  * the guest (those must all have syndrome information and thus should
  * use exception_with_syndrome).
  */
-void HELPER(exception_internal)(CPUARMState *env, uint32_t excp)
+void HELPER(exception_internal)(CPUARMState *env, uint32_t excp) EXCEPTIONAL
 {
     CPUState *cs = CPU(arm_env_get_cpu(env));
 
@@ -363,7 +366,7 @@ void HELPER(exception_internal)(CPUARMState *env, uint32_t excp)
 
 /* Raise an exception with the specified syndrome register value */
 void HELPER(exception_with_syndrome)(CPUARMState *env, uint32_t excp,
-                                     uint32_t syndrome, uint32_t target_el)
+                                     uint32_t syndrome, uint32_t target_el) EXCEPTIONAL
 {
     raise_exception(env, excp, syndrome, target_el);
 }
@@ -910,7 +913,7 @@ void arm_debug_excp_handler(CPUState *cs)
 
 /* Similarly for variable shift instructions.  */
 
-uint32_t HELPER(shl_cc)(CPUARMState *env, uint32_t x, uint32_t i)
+uint32_t HELPER(shl_cc)(CPUARMState *env, uint32_t x, uint32_t i) INLINE
 {
     int shift = i & 0xff;
     if (shift >= 32) {
@@ -926,7 +929,7 @@ uint32_t HELPER(shl_cc)(CPUARMState *env, uint32_t x, uint32_t i)
     return x;
 }
 
-uint32_t HELPER(shr_cc)(CPUARMState *env, uint32_t x, uint32_t i)
+uint32_t HELPER(shr_cc)(CPUARMState *env, uint32_t x, uint32_t i) INLINE
 {
     int shift = i & 0xff;
     if (shift >= 32) {
@@ -942,7 +945,7 @@ uint32_t HELPER(shr_cc)(CPUARMState *env, uint32_t x, uint32_t i)
     return x;
 }
 
-uint32_t HELPER(sar_cc)(CPUARMState *env, uint32_t x, uint32_t i)
+uint32_t HELPER(sar_cc)(CPUARMState *env, uint32_t x, uint32_t i) INLINE
 {
     int shift = i & 0xff;
     if (shift >= 32) {
@@ -955,7 +958,7 @@ uint32_t HELPER(sar_cc)(CPUARMState *env, uint32_t x, uint32_t i)
     return x;
 }
 
-uint32_t HELPER(ror_cc)(CPUARMState *env, uint32_t x, uint32_t i)
+uint32_t HELPER(ror_cc)(CPUARMState *env, uint32_t x, uint32_t i) INLINE
 {
     int shift1, shift;
     shift1 = i & 0xff;

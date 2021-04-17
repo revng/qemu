@@ -24,6 +24,9 @@ static inline bool get_phys_addr(CPUARMState *env, target_ulong address,
 #define PMCRE   0x1
 #endif
 
+#define INLINE __attribute__((section("revng_inline")))
+#define EXCEPTIONAL __attribute__((section("revng_exceptional")))
+
 static int vfp_gdb_get_reg(CPUARMState *env, uint8_t *buf, int reg)
 {
     int nregs;
@@ -4493,7 +4496,7 @@ void cpsr_write(CPUARMState *env, uint32_t val, uint32_t mask)
 }
 
 /* Sign/zero extend */
-uint32_t HELPER(sxtb16)(uint32_t x)
+uint32_t HELPER(sxtb16)(uint32_t x) INLINE
 {
     uint32_t res;
     res = (uint16_t)(int8_t)x;
@@ -4501,7 +4504,7 @@ uint32_t HELPER(sxtb16)(uint32_t x)
     return res;
 }
 
-uint32_t HELPER(uxtb16)(uint32_t x)
+uint32_t HELPER(uxtb16)(uint32_t x) INLINE
 {
     uint32_t res;
     res = (uint16_t)(uint8_t)x;
@@ -4514,7 +4517,7 @@ uint32_t HELPER(clz)(uint32_t x)
     return clz32(x);
 }
 
-int32_t HELPER(sdiv)(int32_t num, int32_t den)
+int32_t HELPER(sdiv)(int32_t num, int32_t den) INLINE
 {
     if (den == 0)
       return 0;
@@ -4523,7 +4526,7 @@ int32_t HELPER(sdiv)(int32_t num, int32_t den)
     return num / den;
 }
 
-uint32_t HELPER(udiv)(uint32_t num, uint32_t den)
+uint32_t HELPER(udiv)(uint32_t num, uint32_t den) INLINE
 {
     if (den == 0)
       return 0;
@@ -6959,7 +6962,7 @@ uint32_t HELPER(usad8)(uint32_t a, uint32_t b)
 }
 
 /* For ARMv6 SEL instruction.  */
-uint32_t HELPER(sel_flags)(uint32_t flags, uint32_t a, uint32_t b)
+uint32_t HELPER(sel_flags)(uint32_t flags, uint32_t a, uint32_t b) INLINE
 {
     uint32_t mask;
 

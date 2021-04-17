@@ -20,6 +20,9 @@
 #include "cpu.h"
 #include "exec/helper-proto.h"
 
+#define INLINE __attribute__((section("revng_inline")))
+#define EXCEPTIONAL __attribute__((section("revng_exceptional")))
+
 const uint8_t parity_table[256] = {
     CC_P, 0, 0, CC_P, 0, CC_P, CC_P, 0,
     0, CC_P, CC_P, 0, CC_P, 0, 0, CC_P,
@@ -75,26 +78,29 @@ const uint8_t parity_table[256] = {
 
 #endif
 
+#define INLINE __attribute__((section("revng_inline")))
+#define EXCEPTIONAL __attribute__((section("revng_exceptional")))
+
 static target_ulong compute_all_adcx(target_ulong dst, target_ulong src1,
-                                     target_ulong src2)
+                                     target_ulong src2) INLINE
 {
     return (src1 & ~CC_C) | (dst * CC_C);
 }
 
 static target_ulong compute_all_adox(target_ulong dst, target_ulong src1,
-                                     target_ulong src2)
+                                     target_ulong src2) INLINE
 {
     return (src1 & ~CC_O) | (src2 * CC_O);
 }
 
 static target_ulong compute_all_adcox(target_ulong dst, target_ulong src1,
-                                      target_ulong src2)
+                                      target_ulong src2) INLINE
 {
     return (src1 & ~(CC_C | CC_O)) | (dst * CC_C) | (src2 * CC_O);
 }
 
 target_ulong helper_cc_compute_all(target_ulong dst, target_ulong src1,
-                                   target_ulong src2, int op)
+                                   target_ulong src2, int op) INLINE
 {
     switch (op) {
     default: /* should never happen */
@@ -216,13 +222,13 @@ target_ulong helper_cc_compute_all(target_ulong dst, target_ulong src1,
     }
 }
 
-uint32_t cpu_cc_compute_all(CPUX86State *env, int op)
+uint32_t cpu_cc_compute_all(CPUX86State *env, int op) INLINE
 {
     return helper_cc_compute_all(CC_DST, CC_SRC, CC_SRC2, op);
 }
 
 target_ulong helper_cc_compute_c(target_ulong dst, target_ulong src1,
-                                 target_ulong src2, int op)
+                                 target_ulong src2, int op) INLINE
 {
     switch (op) {
     default: /* should never happen */
@@ -326,7 +332,7 @@ void helper_write_eflags(CPUX86State *env, target_ulong t0,
     cpu_load_eflags(env, t0, update_mask);
 }
 
-target_ulong helper_read_eflags(CPUX86State *env)
+target_ulong helper_read_eflags(CPUX86State *env) INLINE
 {
     uint32_t eflags;
 
@@ -336,45 +342,45 @@ target_ulong helper_read_eflags(CPUX86State *env)
     return eflags;
 }
 
-void helper_clts(CPUX86State *env)
+void helper_clts(CPUX86State *env) INLINE
 {
     env->cr[0] &= ~CR0_TS_MASK;
     env->hflags &= ~HF_TS_MASK;
 }
 
-void helper_reset_rf(CPUX86State *env)
+void helper_reset_rf(CPUX86State *env) INLINE
 {
     env->eflags &= ~RF_MASK;
 }
 
-void helper_cli(CPUX86State *env)
+void helper_cli(CPUX86State *env) INLINE
 {
     env->eflags &= ~IF_MASK;
 }
 
-void helper_sti(CPUX86State *env)
+void helper_sti(CPUX86State *env) INLINE
 {
     env->eflags |= IF_MASK;
 }
 
-void helper_clac(CPUX86State *env)
+void helper_clac(CPUX86State *env) INLINE
 {
     env->eflags &= ~AC_MASK;
 }
 
-void helper_stac(CPUX86State *env)
+void helper_stac(CPUX86State *env) INLINE
 {
     env->eflags |= AC_MASK;
 }
 
 #if 0
 /* vm86plus instructions */
-void helper_cli_vm(CPUX86State *env)
+void helper_cli_vm(CPUX86State *env) INLINE
 {
     env->eflags &= ~VIF_MASK;
 }
 
-void helper_sti_vm(CPUX86State *env)
+void helper_sti_vm(CPUX86State *env) INLINE
 {
     env->eflags |= VIF_MASK;
     if (env->eflags & VIP_MASK) {
@@ -383,12 +389,12 @@ void helper_sti_vm(CPUX86State *env)
 }
 #endif
 
-void helper_set_inhibit_irq(CPUX86State *env)
+void helper_set_inhibit_irq(CPUX86State *env) INLINE
 {
     env->hflags |= HF_INHIBIT_IRQ_MASK;
 }
 
-void helper_reset_inhibit_irq(CPUX86State *env)
+void helper_reset_inhibit_irq(CPUX86State *env) INLINE
 {
     env->hflags &= ~HF_INHIBIT_IRQ_MASK;
 }

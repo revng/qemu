@@ -29,7 +29,10 @@
 #define HELPER_LOG(x...)
 #endif
 
-static uint32_t cc_calc_ltgt_32(int32_t src, int32_t dst)
+#define INLINE __attribute__((section("revng_inline")))
+#define EXCEPTIONAL __attribute__((section("revng_exceptional")))
+
+static uint32_t cc_calc_ltgt_32(int32_t src, int32_t dst) INLINE
 {
     if (src == dst) {
         return 0;
@@ -40,12 +43,12 @@ static uint32_t cc_calc_ltgt_32(int32_t src, int32_t dst)
     }
 }
 
-static uint32_t cc_calc_ltgt0_32(int32_t dst)
+static uint32_t cc_calc_ltgt0_32(int32_t dst) INLINE
 {
     return cc_calc_ltgt_32(dst, 0);
 }
 
-static uint32_t cc_calc_ltgt_64(int64_t src, int64_t dst)
+static uint32_t cc_calc_ltgt_64(int64_t src, int64_t dst) INLINE
 {
     if (src == dst) {
         return 0;
@@ -56,12 +59,12 @@ static uint32_t cc_calc_ltgt_64(int64_t src, int64_t dst)
     }
 }
 
-static uint32_t cc_calc_ltgt0_64(int64_t dst)
+static uint32_t cc_calc_ltgt0_64(int64_t dst) INLINE
 {
     return cc_calc_ltgt_64(dst, 0);
 }
 
-static uint32_t cc_calc_ltugtu_32(uint32_t src, uint32_t dst)
+static uint32_t cc_calc_ltugtu_32(uint32_t src, uint32_t dst) INLINE
 {
     if (src == dst) {
         return 0;
@@ -72,7 +75,7 @@ static uint32_t cc_calc_ltugtu_32(uint32_t src, uint32_t dst)
     }
 }
 
-static uint32_t cc_calc_ltugtu_64(uint64_t src, uint64_t dst)
+static uint32_t cc_calc_ltugtu_64(uint64_t src, uint64_t dst) INLINE
 {
     if (src == dst) {
         return 0;
@@ -83,7 +86,7 @@ static uint32_t cc_calc_ltugtu_64(uint64_t src, uint64_t dst)
     }
 }
 
-static uint32_t cc_calc_tm_32(uint32_t val, uint32_t mask)
+static uint32_t cc_calc_tm_32(uint32_t val, uint32_t mask) INLINE
 {
     uint32_t r = val & mask;
 
@@ -96,7 +99,7 @@ static uint32_t cc_calc_tm_32(uint32_t val, uint32_t mask)
     }
 }
 
-static uint32_t cc_calc_tm_64(uint64_t val, uint64_t mask)
+static uint32_t cc_calc_tm_64(uint64_t val, uint64_t mask) INLINE
 {
     uint64_t r = val & mask;
 
@@ -114,12 +117,12 @@ static uint32_t cc_calc_tm_64(uint64_t val, uint64_t mask)
     }
 }
 
-static uint32_t cc_calc_nz(uint64_t dst)
+static uint32_t cc_calc_nz(uint64_t dst) INLINE
 {
     return !!dst;
 }
 
-static uint32_t cc_calc_add_64(int64_t a1, int64_t a2, int64_t ar)
+static uint32_t cc_calc_add_64(int64_t a1, int64_t a2, int64_t ar) INLINE
 {
     if ((a1 > 0 && a2 > 0 && ar < 0) || (a1 < 0 && a2 < 0 && ar > 0)) {
         return 3; /* overflow */
@@ -134,12 +137,12 @@ static uint32_t cc_calc_add_64(int64_t a1, int64_t a2, int64_t ar)
     }
 }
 
-static uint32_t cc_calc_addu_64(uint64_t a1, uint64_t a2, uint64_t ar)
+static uint32_t cc_calc_addu_64(uint64_t a1, uint64_t a2, uint64_t ar) INLINE
 {
     return (ar != 0) + 2 * (ar < a1);
 }
 
-static uint32_t cc_calc_addc_64(uint64_t a1, uint64_t a2, uint64_t ar)
+static uint32_t cc_calc_addc_64(uint64_t a1, uint64_t a2, uint64_t ar) INLINE
 {
     /* Recover a2 + carry_in.  */
     uint64_t a2c = ar - a1;
@@ -149,7 +152,7 @@ static uint32_t cc_calc_addc_64(uint64_t a1, uint64_t a2, uint64_t ar)
     return (ar != 0) + 2 * carry_out;
 }
 
-static uint32_t cc_calc_sub_64(int64_t a1, int64_t a2, int64_t ar)
+static uint32_t cc_calc_sub_64(int64_t a1, int64_t a2, int64_t ar) INLINE
 {
     if ((a1 > 0 && a2 < 0 && ar < 0) || (a1 < 0 && a2 > 0 && ar > 0)) {
         return 3; /* overflow */
@@ -164,7 +167,7 @@ static uint32_t cc_calc_sub_64(int64_t a1, int64_t a2, int64_t ar)
     }
 }
 
-static uint32_t cc_calc_subu_64(uint64_t a1, uint64_t a2, uint64_t ar)
+static uint32_t cc_calc_subu_64(uint64_t a1, uint64_t a2, uint64_t ar) INLINE
 {
     if (ar == 0) {
         return 2;
@@ -177,7 +180,7 @@ static uint32_t cc_calc_subu_64(uint64_t a1, uint64_t a2, uint64_t ar)
     }
 }
 
-static uint32_t cc_calc_subb_64(uint64_t a1, uint64_t a2, uint64_t ar)
+static uint32_t cc_calc_subb_64(uint64_t a1, uint64_t a2, uint64_t ar) INLINE
 {
     int borrow_out;
 
@@ -190,7 +193,7 @@ static uint32_t cc_calc_subb_64(uint64_t a1, uint64_t a2, uint64_t ar)
     return (ar != 0) + 2 * !borrow_out;
 }
 
-static uint32_t cc_calc_abs_64(int64_t dst)
+static uint32_t cc_calc_abs_64(int64_t dst) INLINE
 {
     if ((uint64_t)dst == 0x8000000000000000ULL) {
         return 3;
@@ -201,12 +204,12 @@ static uint32_t cc_calc_abs_64(int64_t dst)
     }
 }
 
-static uint32_t cc_calc_nabs_64(int64_t dst)
+static uint32_t cc_calc_nabs_64(int64_t dst) INLINE
 {
     return !!dst;
 }
 
-static uint32_t cc_calc_comp_64(int64_t dst)
+static uint32_t cc_calc_comp_64(int64_t dst) INLINE
 {
     if ((uint64_t)dst == 0x8000000000000000ULL) {
         return 3;
@@ -220,7 +223,7 @@ static uint32_t cc_calc_comp_64(int64_t dst)
 }
 
 
-static uint32_t cc_calc_add_32(int32_t a1, int32_t a2, int32_t ar)
+static uint32_t cc_calc_add_32(int32_t a1, int32_t a2, int32_t ar) INLINE
 {
     if ((a1 > 0 && a2 > 0 && ar < 0) || (a1 < 0 && a2 < 0 && ar > 0)) {
         return 3; /* overflow */
@@ -235,12 +238,12 @@ static uint32_t cc_calc_add_32(int32_t a1, int32_t a2, int32_t ar)
     }
 }
 
-static uint32_t cc_calc_addu_32(uint32_t a1, uint32_t a2, uint32_t ar)
+static uint32_t cc_calc_addu_32(uint32_t a1, uint32_t a2, uint32_t ar) INLINE
 {
     return (ar != 0) + 2 * (ar < a1);
 }
 
-static uint32_t cc_calc_addc_32(uint32_t a1, uint32_t a2, uint32_t ar)
+static uint32_t cc_calc_addc_32(uint32_t a1, uint32_t a2, uint32_t ar) INLINE
 {
     /* Recover a2 + carry_in.  */
     uint32_t a2c = ar - a1;
@@ -250,7 +253,7 @@ static uint32_t cc_calc_addc_32(uint32_t a1, uint32_t a2, uint32_t ar)
     return (ar != 0) + 2 * carry_out;
 }
 
-static uint32_t cc_calc_sub_32(int32_t a1, int32_t a2, int32_t ar)
+static uint32_t cc_calc_sub_32(int32_t a1, int32_t a2, int32_t ar) INLINE
 {
     if ((a1 > 0 && a2 < 0 && ar < 0) || (a1 < 0 && a2 > 0 && ar > 0)) {
         return 3; /* overflow */
@@ -265,7 +268,7 @@ static uint32_t cc_calc_sub_32(int32_t a1, int32_t a2, int32_t ar)
     }
 }
 
-static uint32_t cc_calc_subu_32(uint32_t a1, uint32_t a2, uint32_t ar)
+static uint32_t cc_calc_subu_32(uint32_t a1, uint32_t a2, uint32_t ar) INLINE
 {
     if (ar == 0) {
         return 2;
@@ -278,7 +281,7 @@ static uint32_t cc_calc_subu_32(uint32_t a1, uint32_t a2, uint32_t ar)
     }
 }
 
-static uint32_t cc_calc_subb_32(uint32_t a1, uint32_t a2, uint32_t ar)
+static uint32_t cc_calc_subb_32(uint32_t a1, uint32_t a2, uint32_t ar) INLINE
 {
     int borrow_out;
 
@@ -291,7 +294,7 @@ static uint32_t cc_calc_subb_32(uint32_t a1, uint32_t a2, uint32_t ar)
     return (ar != 0) + 2 * !borrow_out;
 }
 
-static uint32_t cc_calc_abs_32(int32_t dst)
+static uint32_t cc_calc_abs_32(int32_t dst) INLINE
 {
     if ((uint32_t)dst == 0x80000000UL) {
         return 3;
@@ -302,12 +305,12 @@ static uint32_t cc_calc_abs_32(int32_t dst)
     }
 }
 
-static uint32_t cc_calc_nabs_32(int32_t dst)
+static uint32_t cc_calc_nabs_32(int32_t dst) INLINE
 {
     return !!dst;
 }
 
-static uint32_t cc_calc_comp_32(int32_t dst)
+static uint32_t cc_calc_comp_32(int32_t dst) INLINE
 {
     if ((uint32_t)dst == 0x80000000UL) {
         return 3;
@@ -335,7 +338,7 @@ static uint32_t cc_calc_icm(uint64_t mask, uint64_t val)
     }
 }
 
-static uint32_t cc_calc_sla_32(uint32_t src, int shift)
+static uint32_t cc_calc_sla_32(uint32_t src, int shift) INLINE
 {
     uint32_t mask = ((1U << shift) - 1U) << (32 - shift);
     uint32_t sign = 1U << 31;
@@ -362,7 +365,7 @@ static uint32_t cc_calc_sla_32(uint32_t src, int shift)
     return 2;
 }
 
-static uint32_t cc_calc_sla_64(uint64_t src, int shift)
+static uint32_t cc_calc_sla_64(uint64_t src, int shift) INLINE
 {
     uint64_t mask = ((1ULL << shift) - 1ULL) << (64 - shift);
     uint64_t sign = 1ULL << 63;
@@ -389,13 +392,13 @@ static uint32_t cc_calc_sla_64(uint64_t src, int shift)
     return 2;
 }
 
-static uint32_t cc_calc_flogr(uint64_t dst)
+static uint32_t cc_calc_flogr(uint64_t dst) INLINE
 {
     return dst ? 2 : 0;
 }
 
 static uint32_t do_calc_cc(CPUS390XState *env, uint32_t cc_op,
-                                  uint64_t src, uint64_t dst, uint64_t vr)
+                                  uint64_t src, uint64_t dst, uint64_t vr) INLINE
 {
     S390CPU *cpu = s390_env_get_cpu(env);
     uint32_t r = 0;
@@ -524,13 +527,13 @@ static uint32_t do_calc_cc(CPUS390XState *env, uint32_t cc_op,
 }
 
 uint32_t calc_cc(CPUS390XState *env, uint32_t cc_op, uint64_t src, uint64_t dst,
-                 uint64_t vr)
+                 uint64_t vr) INLINE
 {
     return do_calc_cc(env, cc_op, src, dst, vr);
 }
 
 uint32_t HELPER(calc_cc)(CPUS390XState *env, uint32_t cc_op, uint64_t src,
-                         uint64_t dst, uint64_t vr)
+                         uint64_t dst, uint64_t vr) INLINE
 {
     return do_calc_cc(env, cc_op, src, dst, vr);
 }
@@ -542,7 +545,7 @@ void HELPER(load_psw)(CPUS390XState *env, uint64_t mask, uint64_t addr)
     cpu_loop_exit(CPU(s390_env_get_cpu(env)));
 }
 
-void HELPER(sacf)(CPUS390XState *env, uint64_t a1)
+void HELPER(sacf)(CPUS390XState *env, uint64_t a1) INLINE
 {
     HELPER_LOG("%s: %16" PRIx64 "\n", __func__, a1);
 
