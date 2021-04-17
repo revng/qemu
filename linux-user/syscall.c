@@ -5503,6 +5503,7 @@ static int open_net_route(void *cpu_env, int fd)
 
 static int do_openat(void *cpu_env, int dirfd, const char *pathname, int flags, mode_t mode)
 {
+#if 0
     struct fake_open {
         const char *filename;
         int (*fill)(void *cpu_env, int fd);
@@ -5555,7 +5556,7 @@ static int do_openat(void *cpu_env, int dirfd, const char *pathname, int flags, 
 
         return fd;
     }
-
+#endif
     return get_errno(sys_openat(dirfd, path(pathname), flags, mode));
 }
 
