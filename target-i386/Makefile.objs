@@ -7,7 +7,7 @@ obj-$(CONFIG_KVM) += kvm.o
 obj-$(call lnot,$(CONFIG_KVM)) += kvm-stub.o
 
 ifdef CONFIG_LLVM_HELPERS
-ll-y += helper.ll cc_helper.ll
+ll-y += helper.ll
 ll-y += excp_helper.ll fpu_helper.ll cc_helper.ll int_helper.ll svm_helper.ll
 ll-y += smm_helper.ll misc_helper.ll mem_helper.ll seg_helper.ll
 endif
