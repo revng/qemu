@@ -698,7 +698,7 @@ void cpu_watchpoint_remove_all(CPUState *cpu, int mask);
 #define EXCEPTIONAL
 #endif
 
-void QEMU_NORETURN cpu_abort(CPUState *cpu, const char *fmt, ...)
+void QEMU_NORETURN cpu_abort(CPUState *cpu, const char *fmt, ...) EXCEPTIONAL
     GCC_FMT_ATTR(2, 3);
 void cpu_exec_exit(CPUState *cpu);
 
