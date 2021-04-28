@@ -71,7 +71,7 @@ typedef struct S390CPU {
     uint32_t irqstate_saved_size;
 } S390CPU;
 
-static inline S390CPU *s390_env_get_cpu(CPUS390XState *env)
+static inline S390CPU *s390_env_get_cpu(CPUS390XState *env) INLINE
 {
     return container_of(env, S390CPU, env);
 }

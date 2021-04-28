@@ -116,7 +116,7 @@ typedef struct X86CPU {
     Notifier machine_done;
 } X86CPU;
 
-static inline X86CPU *x86_env_get_cpu(CPUX86State *env)
+static inline X86CPU *x86_env_get_cpu(CPUX86State *env) INLINE
 {
     return container_of(env, X86CPU, env);
 }

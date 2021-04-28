@@ -193,7 +193,7 @@ typedef struct AArch64CPUClass {
     /*< public >*/
 } AArch64CPUClass;
 
-static inline ARMCPU *arm_env_get_cpu(CPUARMState *env)
+static inline ARMCPU *arm_env_get_cpu(CPUARMState *env) INLINE
 {
     return container_of(env, ARMCPU, env);
 }
