@@ -690,6 +690,14 @@ int cpu_watchpoint_remove(CPUState *cpu, vaddr addr,
 void cpu_watchpoint_remove_by_ref(CPUState *cpu, CPUWatchpoint *watchpoint);
 void cpu_watchpoint_remove_all(CPUState *cpu, int mask);
 
+#ifdef LLVM_HELPERS
+#define INLINE __attribute__((section("revng_inline")))
+#define EXCEPTIONAL __attribute__((section("revng_exceptional")))
+#else
+#define INLINE
+#define EXCEPTIONAL
+#endif
+
 void QEMU_NORETURN cpu_abort(CPUState *cpu, const char *fmt, ...)
     GCC_FMT_ATTR(2, 3);
 void cpu_exec_exit(CPUState *cpu);
@@ -707,8 +715,5 @@ extern const struct VMStateDescription vmstate_cpu_common;
     .flags = VMS_STRUCT,                                                    \
     .offset = 0,                                                            \
 }
-
-#define INLINE __attribute__((section("revng_inline")))
-#define EXCEPTIONAL __attribute__((section("revng_exceptional")))
 
 #endif
