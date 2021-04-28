@@ -29,9 +29,6 @@
 #define HELPER_LOG(x...)
 #endif
 
-#define INLINE __attribute__((section("revng_inline")))
-#define EXCEPTIONAL __attribute__((section("revng_exceptional")))
-
 /* 64/32 -> 32 signed division */
 int64_t HELPER(divs32)(CPUS390XState *env, int64_t a, int64_t b64) INLINE
 {

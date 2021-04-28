@@ -20,9 +20,6 @@
 #include "cpu.h"
 #include "exec/helper-proto.h"
 
-#define INLINE __attribute__((section("revng_inline")))
-#define EXCEPTIONAL __attribute__((section("revng_exceptional")))
-
 const uint8_t parity_table[256] = {
     CC_P, 0, 0, CC_P, 0, CC_P, CC_P, 0,
     0, CC_P, CC_P, 0, CC_P, 0, 0, CC_P,

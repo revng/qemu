@@ -46,9 +46,6 @@
 #define HELPER_LOG(x...)
 #endif
 
-#define INLINE __attribute__((section("revng_inline")))
-#define EXCEPTIONAL __attribute__((section("revng_exceptional")))
-
 /* Raise an exception dynamically from a helper function.  */
 void QEMU_NORETURN runtime_exception(CPUS390XState *env, int excp,
                                      uintptr_t retaddr) EXCEPTIONAL

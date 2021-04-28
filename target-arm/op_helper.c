@@ -24,9 +24,6 @@
 #define SIGNBIT (uint32_t)0x80000000
 #define SIGNBIT64 ((uint64_t)1 << 63)
 
-#define INLINE __attribute__((section("revng_inline")))
-#define EXCEPTIONAL __attribute__((section("revng_exceptional")))
-
 static void raise_exception(CPUARMState *env, uint32_t excp,
                             uint32_t syndrome, uint32_t target_el) EXCEPTIONAL
 {

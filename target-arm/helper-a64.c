@@ -27,9 +27,6 @@
 #include "qemu/crc32c.h"
 #include <zlib.h> /* For crc32 */
 
-#define INLINE __attribute__((section("revng_inline")))
-#define EXCEPTIONAL __attribute__((section("revng_exceptional")))
-
 /* C2.4.7 Multiply and divide */
 /* special cases for 0 and LLONG_MIN are mandated by the standard */
 uint64_t HELPER(udiv64)(uint64_t num, uint64_t den) INLINE

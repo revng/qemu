@@ -708,4 +708,7 @@ extern const struct VMStateDescription vmstate_cpu_common;
     .offset = 0,                                                            \
 }
 
+#define INLINE __attribute__((section("revng_inline")))
+#define EXCEPTIONAL __attribute__((section("revng_exceptional")))
+
 #endif

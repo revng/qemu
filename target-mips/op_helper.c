@@ -27,9 +27,6 @@
 static inline void cpu_mips_tlb_flush (CPUMIPSState *env, int flush_global);
 #endif
 
-#define INLINE __attribute__((section("revng_inline")))
-#define EXCEPTIONAL __attribute__((section("revng_exceptional")))
-
 /*****************************************************************************/
 /* Exceptions processing helpers */
 

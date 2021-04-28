@@ -29,9 +29,6 @@
 #define HELPER_LOG(x...)
 #endif
 
-#define INLINE __attribute__((section("revng_inline")))
-#define EXCEPTIONAL __attribute__((section("revng_exceptional")))
-
 static uint32_t cc_calc_ltgt_32(int32_t src, int32_t dst) INLINE
 {
     if (src == dst) {
