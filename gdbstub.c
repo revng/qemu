@@ -35,6 +35,16 @@
 #include "exec/gdbstub.h"
 #endif
 
+#ifdef _WIN32
+void gdb_do_syscall(gdb_syscall_complete_cb cb, const char *fmt, ...) {}
+void gdb_exit(CPUArchState *env, int code) {}
+bool gdb_has_xml;
+void gdb_register_coprocessor(CPUState *cpu,
+                              gdb_reg_cb get_reg, gdb_reg_cb set_reg,
+                              int num_regs, const char *xml, int g_pos) {}
+int use_gdb_syscalls(void) { return 0; }
+#else
+
 #define MAX_PACKET_LENGTH 4096
 
 #include "cpu.h"
@@ -1766,4 +1776,6 @@ int gdbserver_start(const char *device)
 
     return 0;
 }
+#endif
+
 #endif

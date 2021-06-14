@@ -25,8 +25,17 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/mman.h>
+
+#ifdef _WIN32
+
+#define MAP_NORESERVE 0
+
+#else
+
 #include <linux/mman.h>
 #include <linux/unistd.h>
+
+#endif
 
 #include "qemu.h"
 #include "qemu-common.h"
@@ -178,9 +187,11 @@ static int mmap_frag(abi_ulong real_start,
         if (!(prot1 & PROT_WRITE))
             mprotect(host_start, qemu_host_page_size, prot1 | PROT_WRITE);
 
+#ifndef _WIN32
         /* read the corresponding file data */
         if (pread(fd, g2h(start), end - start, offset) == -1)
             return -1;
+#endif
 
         /* put final protection */
         if (prot_new != (prot1 | PROT_WRITE))
@@ -425,12 +436,12 @@ abi_long target_mmap(abi_ulong start, abi_ulong len, int prot,
     }
 
     /* When mapping files into a memory area larger than the file, accesses
-       to pages beyond the file size will cause a SIGBUS. 
+       to pages beyond the file size will cause a SIGBUS.
 
        For example, if mmaping a file of 100 bytes on a host with 4K pages
        emulating a target with 8K pages, the target expects to be able to
        access the first 8K. But the host will trap us on any access beyond
-       4K.  
+       4K.
 
        When emulating a target with a larger page-size than the hosts, we
        may need to truncate file maps at EOF and add extra anonymous pages
@@ -445,7 +456,7 @@ abi_long target_mmap(abi_ulong start, abi_ulong len, int prot,
 
        /* Are we trying to create a map beyond EOF?.  */
        if (offset + len > sb.st_size) {
-           /* If so, truncate the file map at eof aligned with 
+           /* If so, truncate the file map at eof aligned with
               the hosts real pagesize. Additional anonymous maps
               will be created beyond EOF.  */
            len = (sb.st_size - offset);
@@ -514,8 +525,10 @@ abi_long target_mmap(abi_ulong start, abi_ulong len, int prot,
                                   -1, 0);
             if (retaddr == -1)
                 goto fail;
+#ifndef _WIN32
             if (pread(fd, g2h(start), len, offset) == -1)
                 goto fail;
+#endif
             if (!(prot & PROT_WRITE)) {
                 ret = target_mprotect(start, len, prot);
                 if (ret != 0) {
@@ -525,7 +538,7 @@ abi_long target_mmap(abi_ulong start, abi_ulong len, int prot,
             }
             goto the_end;
         }
-        
+
         /* handle the start of the mapping */
         if (start > real_start) {
             if (real_end == real_start + qemu_host_page_size) {
@@ -695,6 +708,7 @@ abi_long target_mremap(abi_ulong old_addr, abi_ulong old_size,
 
     mmap_lock();
 
+#ifndef _WIN32
     if (flags & MREMAP_FIXED) {
         host_addr = (void *) syscall(__NR_mremap, g2h(old_addr),
                                      old_size, new_size,
@@ -723,7 +737,9 @@ abi_long target_mremap(abi_ulong old_addr, abi_ulong old_size,
                 mmap_reserve(old_addr, old_size);
             }
         }
-    } else {
+    } else
+#endif
+{
         int prot = 0;
         if (RESERVED_VA && old_size < new_size) {
             abi_ulong addr;
@@ -734,10 +750,14 @@ abi_long target_mremap(abi_ulong old_addr, abi_ulong old_size,
             }
         }
         if (prot == 0) {
+#ifdef _WIN32
+            abort();
+#else
             host_addr = mremap(g2h(old_addr), old_size, new_size, flags);
             if (host_addr != MAP_FAILED && RESERVED_VA && old_size > new_size) {
                 mmap_reserve(old_addr + old_size, new_size - old_size);
             }
+#endif
         } else {
             errno = ENOMEM;
             host_addr = MAP_FAILED;

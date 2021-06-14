@@ -143,9 +143,15 @@ struct target_sock_fprog {
     abi_ulong filter;
 };
 
+#ifdef _WIN32
+#undef s_addr
+#endif
 struct target_in_addr {
     uint32_t s_addr; /* big endian */
 };
+#ifdef _WIN32
+#define s_addr
+#endif
 
 struct target_ip_mreq {
     struct target_in_addr imr_multiaddr;
@@ -351,6 +357,7 @@ static inline void target_siginitset(target_sigset_t *d, abi_ulong set)
         d->sig[i] = 0;
 }
 
+#ifndef _WIN32
 void host_to_target_sigset(target_sigset_t *d, const sigset_t *s);
 void target_to_host_sigset(sigset_t *d, const target_sigset_t *s);
 void host_to_target_old_sigset(abi_ulong *old_sigset,
@@ -360,6 +367,7 @@ void target_to_host_old_sigset(sigset_t *sigset,
 struct target_sigaction;
 int do_sigaction(int sig, const struct target_sigaction *act,
                  struct target_sigaction *oact);
+#endif
 
 #if defined(TARGET_I386) || defined(TARGET_ARM) || defined(TARGET_SPARC) \
     || defined(TARGET_PPC) || defined(TARGET_MIPS) || defined(TARGET_SH4) \
@@ -663,6 +671,11 @@ typedef struct {
 #endif
 
 #define TARGET_SI_PAD_SIZE ((TARGET_SI_MAX_SIZE - TARGET_SI_PREAMBLE_SIZE) / sizeof(int))
+
+#ifdef _WIN32
+typedef int pit_t;
+typedef int uid_t;
+#endif
 
 typedef struct target_siginfo {
 #ifdef TARGET_MIPS

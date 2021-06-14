@@ -23,8 +23,12 @@ QEMU_PROG=qemu-$(TARGET_NAME)
 QEMU_PROG_BUILD = $(QEMU_PROG)
 
 ifdef CONFIG_LIBTINYCODE
-# user emulator name
+
+ifdef CONFIG_WIN32
+QEMU_PROG=libtinycode-$(TARGET_NAME).dll
+else
 QEMU_PROG=libtinycode-$(TARGET_NAME).so
+endif
 QEMU_PROG_BUILD = $(QEMU_PROG)
 
 QEMU_CFLAGS+=-fPIC
@@ -50,8 +54,10 @@ else
 QEMU_PROG_BUILD = $(QEMU_PROG)
 endif
 
-PROGS=$(QEMU_PROG) $(QEMU_PROGW)
+endif
 
+ifndef CONFIG_LLVM_HELPERS
+PROGS=$(QEMU_PROG) $(QEMU_PROGW)
 endif
 
 STPFILES=

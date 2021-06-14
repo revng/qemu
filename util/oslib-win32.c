@@ -452,6 +452,7 @@ gint g_poll(GPollFD *fds, guint nfds, gint timeout)
     return retval;
 }
 
+#if 0
 size_t getpagesize(void)
 {
     SYSTEM_INFO system_info;
@@ -459,6 +460,7 @@ size_t getpagesize(void)
     GetSystemInfo(&system_info);
     return system_info.dwPageSize;
 }
+#endif
 
 void os_mem_prealloc(int fd, char *area, size_t memory)
 {

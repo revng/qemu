@@ -24,6 +24,10 @@
 #include "exec/cpu_ldst.h"
 #include "translate-all.h"
 
+#ifdef _WIN32
+void cpu_resume_from_signal(CPUState *cpu, void *puc) {}
+#else
+
 #undef EAX
 #undef ECX
 #undef EDX
@@ -674,5 +678,7 @@ int cpu_signal_handler(int host_signum, void *pinfo,
 #else
 
 #error host CPU specific signal handler needed
+
+#endif
 
 #endif

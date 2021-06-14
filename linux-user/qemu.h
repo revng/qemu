@@ -230,14 +230,18 @@ extern int do_strace;
 void process_pending_signals(CPUArchState *cpu_env);
 void signal_init(void);
 int queue_signal(CPUArchState *env, int sig, target_siginfo_t *info);
+#ifndef _WIN32
 void host_to_target_siginfo(target_siginfo_t *tinfo, const siginfo_t *info);
 void target_to_host_siginfo(siginfo_t *info, const target_siginfo_t *tinfo);
+#endif
 int target_to_host_signal(int sig);
 int host_to_target_signal(int sig);
 long do_sigreturn(CPUArchState *env);
 long do_rt_sigreturn(CPUArchState *env);
 abi_long do_sigaltstack(abi_ulong uss_addr, abi_ulong uoss_addr, abi_ulong sp);
+#ifndef _WIN32
 int do_sigprocmask(int how, const sigset_t *set, sigset_t *oldset);
+#endif
 
 #ifdef TARGET_I386
 /* vm86.c */

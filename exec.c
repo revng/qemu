@@ -842,12 +842,14 @@ void cpu_abort(CPUState *cpu, const char *fmt, ...) EXCEPTIONAL
     va_end(ap2);
     va_end(ap);
 #if defined(CONFIG_USER_ONLY)
+#ifndef _WIN32
     {
         struct sigaction act;
         sigfillset(&act.sa_mask);
         act.sa_handler = SIG_DFL;
         sigaction(SIGABRT, &act, NULL);
     }
+#endif
 #endif
     abort();
 }
