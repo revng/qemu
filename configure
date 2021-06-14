@@ -338,7 +338,6 @@ libssh2=""
 vhdx=""
 numa=""
 tcmalloc="no"
-llvm_helpers="no"
 
 # parse CC options first
 for opt do
@@ -1152,10 +1151,6 @@ for opt do
   ;;
   --enable-tcmalloc) tcmalloc="yes"
   ;;
-  --disable-llvm-helpers) llvm_helpers="no"
-  ;;
-  --enable-llvm-helpers) llvm_helpers="yes"
-  ;;
   *)
       echo "ERROR: unknown option $opt"
       echo "Try '$0 --help' for more information"
@@ -1243,6 +1238,7 @@ if [ "$bsd_user" = "yes" ]; then
     mak_wilds="${mak_wilds} $source_path/default-configs/*-bsd-user.mak"
 fi
 mak_wilds="${mak_wilds} $source_path/default-configs/*-libtinycode.mak"
+mak_wilds="${mak_wilds} $source_path/default-configs/*-llvmhelpers.mak"
 
 for config in $mak_wilds; do
     default_target_list="${default_target_list} $(basename "$config" .mak)"
@@ -1382,7 +1378,6 @@ disabled with --disable-FEATURE, default is enabled if available:
   vhdx            support for the Microsoft VHDX image format
   numa            libnuma support
   tcmalloc        tcmalloc support
-  llvm-helpers    compile and install QEMU helpers as LLVM IR
 
 NOTE: The object files are built at the place where configure is launched
 EOF
@@ -4612,7 +4607,6 @@ echo "snappy support    $snappy"
 echo "bzip2 support     $bzip2"
 echo "NUMA host support $numa"
 echo "tcmalloc support  $tcmalloc"
-echo "LLVM helpers      $llvm_helpers"
 
 if test "$sdl_too_old" = "yes"; then
 echo "-> Your SDL version is too old - please upgrade to have SDL support"
@@ -5282,6 +5276,7 @@ target_user_only="no"
 target_linux_user="no"
 target_bsd_user="no"
 target_libtinycode_only="no"
+llvm_helpers="no"
 case "$target" in
   ${target_name}-softmmu)
     target_softmmu="yes"
@@ -5304,6 +5299,12 @@ case "$target" in
     target_user_only="yes"
     target_linux_user="yes"
     target_libtinycode_only="yes"
+    ;;
+  ${target_name}-llvmhelpers)
+    target_user_only="yes"
+    target_linux_user="yes"
+    target_libtinycode_only="yes"
+    llvm_helpers="yes"
     ;;
   *)
     error_exit "Target '$target' not recognised"
@@ -5500,7 +5501,7 @@ if test "$target_libtinycode_only" = "yes"; then
   echo "CONFIG_LIBTINYCODE=y" >> $config_target_mak
 fi
 if test "$llvm_helpers" = "yes" ; then
-  echo "CONFIG_LLVM_HELPERS=y" >> $config_host_mak
+  echo "CONFIG_LLVM_HELPERS=y" >> $config_target_mak
 fi
 
 list=""

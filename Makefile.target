@@ -49,9 +49,11 @@ QEMU_PROG_BUILD = $(QEMU_PROGW)
 else
 QEMU_PROG_BUILD = $(QEMU_PROG)
 endif
-endif
 
 PROGS=$(QEMU_PROG) $(QEMU_PROGW)
+
+endif
+
 STPFILES=
 
 config-target.h: config-target.h-timestamp
@@ -95,10 +97,10 @@ else
 stap:
 endif
 
-ALL_TARGETS=$(PROGS)
-
 ifdef CONFIG_LLVM_HELPERS
 ALL_TARGETS += $(LLVM_HELPERS)
+else
+ALL_TARGETS=$(PROGS)
 endif
 
 all: $(ALL_TARGETS) stap
@@ -209,6 +211,8 @@ all-obj-y += $(common-obj-y)
 all-obj-y += $(target-obj-y)
 all-obj-$(CONFIG_SOFTMMU) += $(block-obj-y)
 
+ifndef CONFIG_LLVM_HELPERS
+
 $(QEMU_PROG_BUILD): config-devices.mak
 
 # build either PROG or PROGW
@@ -219,12 +223,14 @@ ifdef CONFIG_DARWIN
 	$(call quiet-command,SetFile -a C $@,"  SETFILE $(TARGET_DIR)$@")
 endif
 
-ifdef CONFIG_LLVM_HELPERS
+else
+
 ll-y := target-$(TARGET_BASE_ARCH)/ linux-user/
 ll-y += fpu/softfloat.ll thunk.ll util/cutils.ll util/crc32c.ll util/getauxval.ll util/rcu.ll util/qemu-thread-posix.ll
 dummy := $(call unnest-vars,,ll-y)
 $(LLVM_HELPERS): $(ll-y)
 	$(call quiet-command,$(LLVM_LINK) -o $@ $^,"  LINK.BC $@")
+
 endif
 
 gdbstub-xml.c: $(TARGET_XML_FILES) $(SRC_PATH)/scripts/feature_to_c.sh
