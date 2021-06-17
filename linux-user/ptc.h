@@ -9,10 +9,6 @@ extern "C" {
 #include <stdlib.h>
 #include <assert.h>
 
-#ifdef USE_DYNAMIC_PTC
-# include <dlfcn.h>
-#endif
-
 /* Exported data structures */
 
 /* This corresponds to TCGArg, whose size is target-dependent. We always use a 64-bit value. */

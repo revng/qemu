@@ -2552,6 +2552,7 @@ typedef int32_t target_timer_t;
                                 - TARGET_SIGEV_PREAMBLE_SIZE) \
                                / sizeof(int32_t))
 
+#ifndef _WIN32
 struct target_sigevent {
     target_sigval_t sigev_value;
     int32_t sigev_signo;
@@ -2566,6 +2567,7 @@ struct target_sigevent {
         } _sigev_thread;
     } _sigev_un;
 };
+#endif
 
 struct target_user_cap_header {
     uint32_t version;

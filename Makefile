@@ -146,7 +146,9 @@ include $(SRC_PATH)/Makefile.objs
 endif
 
 ifeq ($(CONFIG_LIBTINYCODE),y)
+ifndef CONFIG_WIN32
 QEMU_CFLAGS+=-fPIC
+endif
 endif
 
 dummy := $(call unnest-vars,, \
