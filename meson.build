@@ -3506,6 +3506,7 @@ subdir('fpu')
 subdir('accel')
 subdir('plugins')
 subdir('ebpf')
+subdir('libtcg')
 
 common_user_inc = []
 
@@ -3870,6 +3871,19 @@ foreach target : target_dirs
         'dependencies': specific_fuzz.dependencies(),
       }]
     endif
+  elif have_libtcg
+    install_headers('include/libtcg/libtcg.h', subdir: 'qemu/libtcg')
+    emulator = shared_library('qemu-' + target_name,
+                              include_directories: target_inc,
+                              install: true,
+                              objects: lib.extract_all_objects(recursive: true),
+                              dependencies: arch_deps + deps,
+                              c_args: c_args,
+                              link_depends: [block_syms, qemu_syms],
+                              link_language: link_language,
+                              link_args: link_args)
+
+    execs = []
   else
     execs = [{
       'name': 'qemu-' + target_name,
