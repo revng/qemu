@@ -1121,6 +1121,7 @@ static void do_st16_mmu(CPUState *cpu, vaddr addr, Int128 val,
     clear_helper_retaddr();
 }
 
+#ifndef CONFIG_LIBTCG
 uint32_t cpu_ldub_code(CPUArchState *env, abi_ptr ptr)
 {
     uint32_t ret;
@@ -1160,6 +1161,7 @@ uint64_t cpu_ldq_code(CPUArchState *env, abi_ptr ptr)
     clear_helper_retaddr();
     return ret;
 }
+#endif
 
 uint8_t cpu_ldb_code_mmu(CPUArchState *env, abi_ptr addr,
                          MemOpIdx oi, uintptr_t ra)
