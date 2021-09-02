@@ -18,6 +18,7 @@
 
 static void set_can_do_io(DisasContextBase *db, bool val)
 {
+#ifndef CONFIG_LIBTCG
     if (db->saved_can_do_io != val) {
         db->saved_can_do_io = val;
 
@@ -26,6 +27,7 @@ static void set_can_do_io(DisasContextBase *db, bool val)
                         offsetof(ArchCPU, parent_obj.neg.can_do_io) -
                         offsetof(ArchCPU, env));
     }
+#endif
 }
 
 bool translator_io_start(DisasContextBase *db)
@@ -129,7 +131,9 @@ void translator_loop(CPUState *cpu, TranslationBlock *tb, int *max_insns,
 {
     uint32_t cflags = tb_cflags(tb);
     TCGOp *icount_start_insn;
+#ifndef CONFIG_LIBTCG
     bool plugin_enabled;
+#endif
 
     /* Initialize DisasContext */
     db->tb = tb;
@@ -148,20 +152,25 @@ void translator_loop(CPUState *cpu, TranslationBlock *tb, int *max_insns,
 
     /* Start translating.  */
     icount_start_insn = gen_tb_start(db, cflags);
+#ifndef CONFIG_LIBTCG
     ops->tb_start(db, cpu);
+#ifndef CONFIG_LIBTCG
     tcg_debug_assert(db->is_jmp == DISAS_NEXT);  /* no early exit */
 
     plugin_enabled = plugin_gen_tb_start(cpu, db, cflags & CF_MEMI_ONLY);
     db->plugin_enabled = plugin_enabled;
+#endif
 
     while (true) {
         *max_insns = ++db->num_insns;
         ops->insn_start(db, cpu);
         tcg_debug_assert(db->is_jmp == DISAS_NEXT);  /* no early exit */
 
+#ifndef CONFIG_LIBTCG
         if (plugin_enabled) {
             plugin_gen_insn_start(cpu, db);
         }
+#endif
 
         /*
          * Disassemble one instruction.  The translate_insn hook should
@@ -184,9 +193,11 @@ void translator_loop(CPUState *cpu, TranslationBlock *tb, int *max_insns,
          * needs to see a matching plugin_gen_insn_{start,end}() pair in order
          * to accurately track instrumented helpers that might access memory.
          */
+#ifndef CONFIG_LIBTCG
         if (plugin_enabled) {
             plugin_gen_insn_end();
         }
+#endif
 
         /* Stop translation if translate_insn so indicated.  */
         if (db->is_jmp != DISAS_NEXT) {
@@ -205,9 +216,11 @@ void translator_loop(CPUState *cpu, TranslationBlock *tb, int *max_insns,
     ops->tb_stop(db, cpu);
     gen_tb_end(tb, cflags, icount_start_insn, db->num_insns);
 
+#ifndef CONFIG_LIBTCG
     if (plugin_enabled) {
         plugin_gen_tb_end(cpu, db->num_insns);
     }
+#endif
 
     /* The disas_log hook may use these values rather than recompute.  */
     tb->size = db->pc_next - db->pc_first;
@@ -225,6 +238,7 @@ void translator_loop(CPUState *cpu, TranslationBlock *tb, int *max_insns,
     }
 }
 
+#ifndef CONFIG_LIBTSCG
 static void *translator_access(CPUArchState *env, DisasContextBase *db,
                                vaddr pc, size_t len)
 {
@@ -289,6 +303,7 @@ static void *translator_access(CPUArchState *env, DisasContextBase *db,
     tcg_debug_assert(pc >= base);
     return host + (pc - base);
 }
+#endif
 
 static void plugin_insn_append(abi_ptr pc, const void *from, size_t size)
 {
