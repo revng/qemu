@@ -2,6 +2,6 @@ obj-y = fpa11.o fpa11_cpdo.o fpa11_cpdt.o fpa11_cprt.o fpopcode.o
 obj-y += single_cpdo.o double_cpdo.o extended_cpdo.o
 
 ifdef CONFIG_LLVM_HELPERS
-ll-y += fpa11.ll fpa11_cpdo.ll fpa11_cpdt.ll fpa11_cprt.ll fpopcode.ll
-ll-y += single_cpdo.ll double_cpdo.ll extended_cpdo.ll
+bc-y += fpa11.bc fpa11_cpdo.bc fpa11_cpdt.bc fpa11_cprt.bc fpopcode.bc
+bc-y += single_cpdo.bc double_cpdo.bc extended_cpdo.bc
 endif

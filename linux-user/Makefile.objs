@@ -11,6 +11,6 @@ obj-$(TARGET_M68K) += m68k-sim.o
 endif
 
 ifdef CONFIG_LLVM_HELPERS
-ll-y = main.ll syscall.ll mmap.ll signal.ll uaccess.ll init_cpu.ll uname.ll
-ll-$(TARGET_I386) += vm86.ll
+bc-y = main.bc syscall.bc mmap.bc signal.bc uaccess.bc init_cpu.bc uname.bc
+bc-$(TARGET_I386) += vm86.bc
 endif

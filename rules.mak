@@ -53,8 +53,8 @@ expand-objs = $(strip $(sort $(filter %.o,$1)) \
                   $(foreach o,$(filter %.mo,$1),$($o-objs)) \
                   $(filter-out %.o %.mo,$1))
 
-%.ll: %.c
-	$(call quiet-command,$(CLANG) -Xclang -disable-O0-optnone -DLLVM_HELPERS -Wno-unknown-warning-option -S -emit-llvm $(QEMU_INCLUDES) $(QEMU_CFLAGS) $(CFLAGS) $($@-cflags) -g -Wno-unused-function -Wno-unused-variable -Wno-unused-label -O0 -c -o $@ $<,"  CC.LL $(TARGET_DIR)$@")
+%.bc: %.c
+	$(call quiet-command,$(CLANG) -Xclang -disable-O0-optnone -DLLVM_HELPERS -Wno-unknown-warning-option -emit-llvm $(QEMU_INCLUDES) $(QEMU_CFLAGS) $(CFLAGS) $($@-cflags) -g -Wno-unused-function -Wno-unused-variable -Wno-unused-label -O0 -c -o $@ $<,"  CC.BC $(TARGET_DIR)$@")
 
 %.o: %.c
 	$(call quiet-command,$(CC) $(QEMU_INCLUDES) $(QEMU_CFLAGS) $(QEMU_DGFLAGS) $(CFLAGS) $($@-cflags) -c -o $@ $<,"  CC    $(TARGET_DIR)$@")
@@ -371,6 +371,6 @@ define unnest-vars
                 $(error $o added in $v but $o-objs is not set)))
         $(shell mkdir -p ./ $(sort $(dir $($v))))
         # Include all the .d files
-        $(eval -include $(patsubst %.ll,%.d,$(patsubst %.o,%.d,$(patsubst %.mo,%.d,$($v)))))
+        $(eval -include $(patsubst %.bc,%.d,$(patsubst %.o,%.d,$(patsubst %.mo,%.d,$($v)))))
         $(eval $v := $(filter-out %/,$($v))))
 endef

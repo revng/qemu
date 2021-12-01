@@ -4,5 +4,5 @@ obj-$(CONFIG_SOFTMMU) += machine.o
 obj-$(CONFIG_KVM) += kvm.o
 
 ifdef CONFIG_LLVM_HELPERS
-ll-y += helper.ll dsp_helper.ll op_helper.ll lmi_helper.ll msa_helper.ll
+bc-y += helper.bc dsp_helper.bc op_helper.bc lmi_helper.bc msa_helper.bc
 endif

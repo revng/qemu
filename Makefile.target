@@ -220,10 +220,10 @@ ifdef CONFIG_DARWIN
 endif
 
 ifdef CONFIG_LLVM_HELPERS
-ll-y := target-$(TARGET_BASE_ARCH)/ linux-user/
-ll-y += fpu/softfloat.ll thunk.ll util/cutils.ll util/crc32c.ll util/getauxval.ll util/rcu.ll util/qemu-thread-posix.ll
-dummy := $(call unnest-vars,,ll-y)
-$(LLVM_HELPERS): $(ll-y)
+bc-y := target-$(TARGET_BASE_ARCH)/ linux-user/
+bc-y += fpu/softfloat.bc thunk.bc util/cutils.bc util/crc32c.bc util/getauxval.bc util/rcu.bc util/qemu-thread-posix.bc
+dummy := $(call unnest-vars,,bc-y)
+$(LLVM_HELPERS): $(bc-y)
 	$(call quiet-command,$(LLVM_LINK) -o $@ $^,"  LINK.BC $@")
 endif
 

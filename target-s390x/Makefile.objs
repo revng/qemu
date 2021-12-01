@@ -5,6 +5,6 @@ obj-$(CONFIG_SOFTMMU) += machine.o ioinst.o arch_dump.o mmu_helper.o
 obj-$(CONFIG_KVM) += kvm.o
 
 ifdef CONFIG_LLVM_HELPERS
-ll-y += helper.ll
-ll-y += int_helper.ll fpu_helper.ll cc_helper.ll mem_helper.ll misc_helper.ll
+bc-y += helper.bc
+bc-y += int_helper.bc fpu_helper.bc cc_helper.bc mem_helper.bc misc_helper.bc
 endif

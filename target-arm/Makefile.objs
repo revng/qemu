@@ -12,6 +12,6 @@ obj-$(TARGET_AARCH64) += cpu64.o translate-a64.o helper-a64.o gdbstub64.o
 obj-y += crypto_helper.o
 
 ifdef CONFIG_LLVM_HELPERS
-ll-y += helper.ll op_helper.ll neon_helper.ll
-ll-$(TARGET_AARCH64) += helper-a64.ll
+bc-y += helper.bc op_helper.bc neon_helper.bc
+bc-$(TARGET_AARCH64) += helper-a64.bc
 endif
