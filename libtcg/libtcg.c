@@ -54,7 +54,8 @@ CPU_MEMORY_ACCESS_FUNC(uint64_t, uint64_t, cpu_ldq_code )
  * especially when printing. Here we assign them names in accordance to what is
  * printed in `tcg_dump_ops`.
  */
-static inline void tinycode_temp_create_name(TinyCodeTemp *temp) {
+static inline void tinycode_temp_create_name(TinyCodeTemp *temp)
+{
     switch (temp->kind) {
     case LIBTCG_TEMP_FIXED:
     case LIBTCG_TEMP_GLOBAL: {
@@ -96,7 +97,8 @@ static inline void tinycode_temp_create_name(TinyCodeTemp *temp) {
     }
 }
 
-static inline bool instruction_has_label_argument(TCGOpcode opc) {
+static inline bool instruction_has_label_argument(TCGOpcode opc)
+{
     return (opc == INDEX_op_set_label  ||
             opc == INDEX_op_br         ||
             opc == INDEX_op_brcond_i32 ||
@@ -104,7 +106,35 @@ static inline bool instruction_has_label_argument(TCGOpcode opc) {
             opc == INDEX_op_brcond2_i32);
 }
 
-TinyCodeInstructionList translate(char *buffer, size_t size, uint64_t virtual_address) {
+const char *get_instruction_name(TinyCodeOpcode opcode)
+{
+    TCGOpDef def = tcg_op_defs[(TCGOpcode) opcode];
+    return def.name;
+}
+
+TinyCodeCallInfo get_call_info(TinyCodeInstruction *insn)
+{
+    /*
+     * For a call instruction, the first constant argument holds
+     * a pointer to a TCGHelperInfo struct allocated in a static
+     * hash table g_helper_table.
+     *
+     * NOTE(anjo): This function needs to be kept up to date with
+                   tcg_call_info(op), since we effectively
+                   reimplement it here.
+     *
+     */
+    assert(insn->opcode == LIBTCG_op_call);
+    uintptr_t ptr_to_helper_info = insn->constant_args[1].constant;
+    TCGHelperInfo *info = (void *) ptr_to_helper_info;
+    return (TinyCodeCallInfo) {
+        .func_name = info->name,
+        .func_flags = info->flags,
+    };
+}
+
+TinyCodeInstructionList translate(char *buffer, size_t size, uint64_t virtual_address)
+{
     BytecodeRegion region = {
         .buffer = buffer,
         .size = size,
@@ -116,9 +146,7 @@ TinyCodeInstructionList translate(char *buffer, size_t size, uint64_t virtual_ad
     uint32_t elf_flags = 0;
     const char *cpu_model = cpu_get_model(elf_flags);
     const char *cpu_type = parse_cpu_option(cpu_model);
-    /* Initializes accel/tcg */
-    {
-        AccelClass *ac = ACCEL_GET_CLASS(current_accel());
+    /* Initializes accel/tcg */ { AccelClass *ac = ACCEL_GET_CLASS(current_accel());
 
         accel_init_interfaces(ac);
         ac->init_machine(NULL);
@@ -177,7 +205,6 @@ TinyCodeInstructionList translate(char *buffer, size_t size, uint64_t virtual_ad
     /*
      * Loop over each TCG op and translate it to our format that we expose.
      */
-
     uint32_t index = 0;
     TCGOp *op = NULL;
     QTAILQ_FOREACH(op, &tcg_ctx->ops, link) {
@@ -186,14 +213,12 @@ TinyCodeInstructionList translate(char *buffer, size_t size, uint64_t virtual_ad
 
         TinyCodeInstruction insn = {
             .opcode = (TinyCodeOpcode) opc,
+            .flags = def.flags,
             .nb_oargs = def.nb_oargs,
             .nb_iargs = def.nb_iargs,
             .nb_cargs = def.nb_cargs,
             .nb_args = def.nb_args,
         };
-
-        strncpy(insn.name, def.name, LIBTCG_MAX_NAME_LEN-1);
-        insn.flags = def.flags;
 
         if (opc == INDEX_op_call) {
             const TCGHelperInfo *info = tcg_call_info(op);
@@ -204,17 +229,14 @@ TinyCodeInstructionList translate(char *buffer, size_t size, uint64_t virtual_ad
 
             void *func = tcg_call_func(op);
             assert(func == info->func);
-
-            strncpy(insn.func_name, info->name, LIBTCG_MAX_NAME_LEN-1);
-            insn.func_flags = info->flags;
         }
 
         /*
          * Here we handle `temp` arguments so output and input args.
          * Note: `insn.args[i]` and `op->args[i]` may have different
-         * integer sizes
+         * integer sizes.
          */
-        for (uint32_t i = 0; i < insn.nb_oargs + insn.nb_iargs; ++i) {
+        for (uint32_t i = 0; i < insn.nb_oargs; ++i) {
             TCGTemp *ts = arg_temp(op->args[i]);
             int idx = temp_idx(ts);
             /*
@@ -233,29 +255,57 @@ TinyCodeInstructionList translate(char *buffer, size_t size, uint64_t virtual_ad
                 tinycode_temp_create_name(temp);
             }
 
-            insn.args[i] = (TinyCodeArgument) {
+            insn.output_args[i] = (TinyCodeArgument) {
+                .kind = LIBTCG_ARG_TEMP,
+                .temp = temp,
+            };
+        }
+
+        for (uint32_t i = 0; i < insn.nb_iargs; ++i) {
+            TCGTemp *ts = arg_temp(op->args[insn.nb_oargs + i]);
+            int idx = temp_idx(ts);
+            /*
+             * TODO(anjo): Here we are casting between TCG's enums and ours.
+             * This can ofcourse cause problems. I am here assuming that the
+             * TCG enums are stable.
+             */
+            TinyCodeTemp *temp = &instruction_list.temps[idx];
+            temp->kind = (TinyCodeTempKind) ts->kind;
+            temp->type = (TinyCodeTempType) ts->type;
+            temp->val = ts->val;
+            temp->num = idx - tcg_ctx->nb_globals;
+            if (ts->name) {
+                strncpy(temp->name, ts->name, LIBTCG_MAX_NAME_LEN-1);
+            } else {
+                tinycode_temp_create_name(temp);
+            }
+
+            insn.input_args[i] = (TinyCodeArgument) {
                 .kind = LIBTCG_ARG_TEMP,
                 .temp = temp,
             };
         }
 
         /*
-         * Here we handle constant args
+         * Here we handle constant args.
          */
         for (uint32_t i = 0; i < insn.nb_cargs; ++i) {
             if (i == 0 && instruction_has_label_argument(opc)) {
-                TCGLabel *label = arg_label(op->args[i]);
+                TCGLabel *label = arg_label(op->args[insn.nb_oargs + insn.nb_iargs + i]);
                 TinyCodeLabel *our_label = &instruction_list.labels[label->id];
                 our_label->id = label->id;
-                insn.args[insn.nb_oargs + insn.nb_iargs + i] = (TinyCodeArgument) {
+                insn.constant_args[i] = (TinyCodeArgument) {
                     .kind = LIBTCG_ARG_LABEL,
                     .label = our_label
                 };
             } else {
-                /* If we get to here the constant arg was actually a constant */
-                insn.args[insn.nb_oargs + insn.nb_iargs + i] = (TinyCodeArgument) {
+                /*
+                 * If we get to here the constant arg was actually a
+                 * constant
+                 */
+                insn.constant_args[i] = (TinyCodeArgument) {
                     .kind = LIBTCG_ARG_CONSTANT,
-                        .constant = op->args[insn.nb_oargs + insn.nb_iargs + i],
+                    .constant = op->args[insn.nb_oargs + insn.nb_iargs + i],
                 };
             }
         }

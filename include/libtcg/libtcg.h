@@ -252,37 +252,43 @@ typedef struct TinyCodeArgument {
     };
 } TinyCodeArgument;
 
-typedef struct TinyCodeInstruction {
-  TinyCodeOpcode opcode;
-  char name[LIBTCG_MAX_NAME_LEN];
-  uint32_t flags;
-  /*
-   * Arguments are handled in the same way as in QEMU,
-   * so output args first, followed by input, followed
-   * by constants. Output and input arguments are temps.
-   */
-  uint8_t nb_oargs;
-  uint8_t nb_iargs;
-  uint8_t nb_cargs;
-  uint8_t nb_args;
-  TinyCodeArgument args[LIBTCG_INSN_MAX_ARGS];
+typedef struct TinyCodeCallInfo {
+    const char *func_name;
+    /*
+     * TODO(anjo): Does the func_flags replace def.flags?
+     *             In that case move func_flags -> insn.flags
+     */
+    uint32_t func_flags;
+} TinyCodeCallInfo;
 
-  /* If it's a call op then we need some extra info */
-  char func_name[LIBTCG_MAX_NAME_LEN];
-  uint32_t func_flags;
+typedef struct TinyCodeInstruction {
+    TinyCodeOpcode opcode;
+    uint32_t flags;
+    /*
+     * Arguments are handled in the same way as in QEMU,
+     * so output args first, followed by input, followed
+     * by constants. Output and input arguments are temps.
+     */
+    uint8_t nb_oargs;
+    uint8_t nb_iargs;
+    uint8_t nb_cargs;
+    uint8_t nb_args;
+    TinyCodeArgument output_args[LIBTCG_INSN_MAX_ARGS];
+    TinyCodeArgument input_args[LIBTCG_INSN_MAX_ARGS];
+    TinyCodeArgument constant_args[LIBTCG_INSN_MAX_ARGS];
 } TinyCodeInstruction;
 
 typedef struct TinyCodeInstructionList {
-  TinyCodeInstruction *list;
-  size_t instruction_count;
+    TinyCodeInstruction *list;
+    size_t instruction_count;
 
-  /* Keeps track of all temporaries */
-  TinyCodeTemp *temps;
-  size_t temp_count;
+    /* Keeps track of all temporaries */
+    TinyCodeTemp *temps;
+    size_t temp_count;
 
-  /* Keeps track of all labels */
-  TinyCodeLabel *labels;
-  size_t label_count;
+    /* Keeps track of all labels */
+    TinyCodeLabel *labels;
+    size_t label_count;
 } TinyCodeInstructionList;
 
 /*
@@ -291,6 +297,9 @@ typedef struct TinyCodeInstructionList {
 
 void dump_instruction_to_buffer(TinyCodeInstruction *insn, char *buf,
                                 size_t size);
+
+const char *get_instruction_name(TinyCodeOpcode opcode);
+TinyCodeCallInfo get_call_info(TinyCodeInstruction* insn);
 
 TinyCodeInstructionList translate(char *buffer, size_t size,
                                   uint64_t virtual_address);
