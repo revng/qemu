@@ -17,24 +17,32 @@
  */
 #include "libtcg/libtcg.h"
 
-static char *global_buffer = NULL;
-static size_t global_size = 0;
-static uint64_t global_virtual_address = 0;
+/*
+ * Here we hold some information about the bytecode we're going
+ * to translate. This struct will be passed via CPUState->opaque
+ * to the memory access functions below.
+ */
+typedef struct BytecodeRegion {
+  char *buffer;
+  size_t size;
+  uint64_t virtual_address;
+} BytecodeRegion;
 
 /*
  * Here we have the functions to replace QEMUs memory access functions in
- * accel/tcg/user-exec.c. We override them to read bytecode from a buffer
- * instead.
+ * accel/tcg/user-exec.c. We override them to read bytecode from the
+ * BytecodeRegion struct passed by via CPUState->opaque instead.
  */
-
 #define CPU_MEMORY_ACCESS_FUNC(return_type, read_type, name)            \
     return_type name(CPUArchState *env, abi_ptr ptr) {                  \
-        uint64_t offset = (uintptr_t)ptr - global_virtual_address;      \
-        assert(offset + sizeof(read_type) <= global_size);              \
-        return *(read_type *) ((uintptr_t) global_buffer + offset);     \
+        CPUState *cpu = env_cpu(env);                                   \
+        BytecodeRegion *region = cpu->opaque;                           \
+        uint64_t offset = (uintptr_t)ptr - region->virtual_address;     \
+        assert(offset + sizeof(read_type) <= region->size);             \
+        return *(read_type *) ((uintptr_t) region->buffer + offset);    \
     }
 
-CPU_MEMORY_ACCESS_FUNC(uint32_t,  uint8_t, cpu_ldub_code)
+CPU_MEMORY_ACCESS_FUNC(uint32_t, uint8_t,  cpu_ldub_code)
 CPU_MEMORY_ACCESS_FUNC(uint32_t, uint16_t, cpu_lduw_code)
 CPU_MEMORY_ACCESS_FUNC(uint32_t, uint32_t, cpu_ldl_code )
 CPU_MEMORY_ACCESS_FUNC(uint64_t, uint64_t, cpu_ldq_code )
@@ -97,9 +105,11 @@ static inline bool instruction_has_label_argument(TCGOpcode opc) {
 }
 
 TinyCodeInstructionList translate(char *buffer, size_t size, uint64_t virtual_address) {
-    global_buffer = buffer;
-    global_size = size;
-    global_virtual_address = virtual_address;
+    BytecodeRegion region = {
+        .buffer = buffer,
+        .size = size,
+        .virtual_address = virtual_address,
+    };
 
     qemu_init_cpu_list() ;
     module_call_init(MODULE_INIT_QOM);
@@ -120,6 +130,7 @@ TinyCodeInstructionList translate(char *buffer, size_t size, uint64_t virtual_ad
     struct target_pt_regs regs1, *regs = &regs1;
     memset(regs, 0, sizeof(struct target_pt_regs));
     target_cpu_copy_regs(cpu->env_ptr, regs);
+    cpu->opaque = &region;
 
     /* Needed to initialize fields in `tcg_ctx` */
     tcg_func_start(tcg_ctx);
