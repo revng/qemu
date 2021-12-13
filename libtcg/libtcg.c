@@ -1,4 +1,6 @@
 /* TODO(anjo): Can we cut down on these includes? */
+#include <stdint.h>
+#include <stdbool.h>
 #include "qemu/osdep.h"
 #include "cpu.h"
 #include "disas/disas.h"
@@ -17,15 +19,20 @@
  */
 #include "libtcg/libtcg.h"
 
+typedef struct LibTinyCodeContext {
+    LibTinyCodeDesc desc;
+    CPUState *cpu;
+} LibTinyCodeContext;
+
 /*
  * Here we hold some information about the bytecode we're going
  * to translate. This struct will be passed via CPUState->opaque
  * to the memory access functions below.
  */
 typedef struct BytecodeRegion {
-  char *buffer;
-  size_t size;
-  uint64_t virtual_address;
+    char *buffer;
+    size_t size;
+    uint64_t virtual_address;
 } BytecodeRegion;
 
 /*
@@ -54,7 +61,7 @@ CPU_MEMORY_ACCESS_FUNC(uint64_t, uint64_t, cpu_ldq_code )
  * especially when printing. Here we assign them names in accordance to what is
  * printed in `tcg_dump_ops`.
  */
-static inline void tinycode_temp_create_name(TinyCodeTemp *temp)
+static inline void tinycode_temp_create_name(LibTinyCodeTemp *temp)
 {
     switch (temp->kind) {
     case LIBTCG_TEMP_FIXED:
@@ -106,13 +113,13 @@ static inline bool instruction_has_label_argument(TCGOpcode opc)
             opc == INDEX_op_brcond2_i32);
 }
 
-const char *get_instruction_name(TinyCodeOpcode opcode)
+const char *libtcg_get_instruction_name(LibTinyCodeOpcode opcode)
 {
     TCGOpDef def = tcg_op_defs[(TCGOpcode) opcode];
     return def.name;
 }
 
-TinyCodeCallInfo get_call_info(TinyCodeInstruction *insn)
+LibTinyCodeCallInfo libtcg_get_call_info(LibTinyCodeInstruction *insn)
 {
     /*
      * For a call instruction, the first constant argument holds
@@ -120,45 +127,75 @@ TinyCodeCallInfo get_call_info(TinyCodeInstruction *insn)
      * hash table g_helper_table.
      *
      * NOTE(anjo): This function needs to be kept up to date with
-                   tcg_call_info(op), since we effectively
-                   reimplement it here.
+     *             tcg_call_info(op), since we effectively
+     *             reimplement it here.
      *
      */
     assert(insn->opcode == LIBTCG_op_call);
     uintptr_t ptr_to_helper_info = insn->constant_args[1].constant;
     TCGHelperInfo *info = (void *) ptr_to_helper_info;
-    return (TinyCodeCallInfo) {
+    return (LibTinyCodeCallInfo) {
         .func_name = info->name,
         .func_flags = info->flags,
     };
 }
 
-TinyCodeInstructionList translate(char *buffer, size_t size, uint64_t virtual_address)
+LibTinyCodeContext *libtcg_context_create(LibTinyCodeDesc *desc)
+{
+    assert(desc);
+
+    /* Default initialize desc */
+    if (!desc->mem_alloc) {
+        desc->mem_alloc = malloc;
+    }
+
+    if (!desc->mem_free) {
+        desc->mem_free = free;
+    }
+
+    /* Initialize context */
+    LibTinyCodeContext *context = desc->mem_alloc(sizeof(LibTinyCodeContext));
+    context->desc = *desc;
+
+    qemu_init_cpu_list();
+    module_call_init(MODULE_INIT_QOM);
+    uint32_t elf_flags = 0;
+    const char *cpu_model = cpu_get_model(elf_flags);
+    const char *cpu_type = parse_cpu_option(cpu_model);
+    /* Initializes accel/tcg */
+    {
+        AccelClass *ac = ACCEL_GET_CLASS(current_accel());
+
+        accel_init_interfaces(ac);
+        ac->init_machine(NULL);
+    }
+
+    context->cpu = cpu_create(cpu_type);
+    cpu_reset(context->cpu);
+    tcg_prologue_init(tcg_ctx);
+    struct target_pt_regs regs;
+    memset(&regs, 0, sizeof(struct target_pt_regs));
+
+    target_cpu_copy_regs(context->cpu->env_ptr, &regs);
+
+    return context;
+}
+
+void libtcg_context_destroy(LibTinyCodeContext *context)
+{
+    context->desc.mem_free(context);
+}
+
+LibTinyCodeInstructionList libtcg_translate(LibTinyCodeContext *context,
+                                            char *buffer, size_t size,
+                                            uint64_t virtual_address)
 {
     BytecodeRegion region = {
         .buffer = buffer,
         .size = size,
         .virtual_address = virtual_address,
     };
-
-    qemu_init_cpu_list() ;
-    module_call_init(MODULE_INIT_QOM);
-    uint32_t elf_flags = 0;
-    const char *cpu_model = cpu_get_model(elf_flags);
-    const char *cpu_type = parse_cpu_option(cpu_model);
-    /* Initializes accel/tcg */ { AccelClass *ac = ACCEL_GET_CLASS(current_accel());
-
-        accel_init_interfaces(ac);
-        ac->init_machine(NULL);
-    }
-
-    CPUState *cpu = cpu_create(cpu_type);
-    cpu_reset(cpu);
-    tcg_prologue_init(tcg_ctx);
-    struct target_pt_regs regs1, *regs = &regs1;
-    memset(regs, 0, sizeof(struct target_pt_regs));
-    target_cpu_copy_regs(cpu->env_ptr, regs);
-    cpu->opaque = &region;
+    context->cpu->opaque = &region;
 
     /* Needed to initialize fields in `tcg_ctx` */
     tcg_func_start(tcg_ctx);
@@ -169,14 +206,14 @@ TinyCodeInstructionList translate(char *buffer, size_t size, uint64_t virtual_ad
      * We're using this call to setup `flags` and `cs_base` correctly.
      * We then override `pc`.
      */
-    cpu_get_tb_cpu_state(cpu->env_ptr, &pc, &cs_base, &flags);
+    cpu_get_tb_cpu_state(context->cpu->env_ptr, &pc, &cs_base, &flags);
     pc = virtual_address;
 
-    uint32_t cflags = cpu->cflags_next_tb;
+    uint32_t cflags = context->cpu->cflags_next_tb;
     if (cflags == -1) {
-        cflags = curr_cflags(cpu);
+        cflags = curr_cflags(context->cpu);
     } else {
-        cpu->cflags_next_tb = -1;
+        context->cpu->cflags_next_tb = -1;
     }
 
     /*
@@ -191,14 +228,16 @@ TinyCodeInstructionList translate(char *buffer, size_t size, uint64_t virtual_ad
         .flags = flags,
         .cflags = cflags,
     };
-    gen_intermediate_code(cpu, &tb, max_insns);
+    gen_intermediate_code(context->cpu, &tb, max_insns);
 
-    TinyCodeInstructionList instruction_list = {
-        .list = malloc(sizeof(TinyCodeInstruction) * tcg_ctx->nb_ops),
+    LibTinyCodeInstructionList instruction_list = {
+        .list = context->desc.mem_alloc(sizeof(LibTinyCodeInstruction) * tcg_ctx->nb_ops),
         .instruction_count = tcg_ctx->nb_ops,
-        .temps = malloc(sizeof(TinyCodeTemp) * tcg_ctx->nb_temps),
+
+        .temps = context->desc.mem_alloc(sizeof(LibTinyCodeTemp) * tcg_ctx->nb_temps),
         .temp_count = tcg_ctx->nb_temps,
-        .labels = malloc(sizeof(TinyCodeLabel) * tcg_ctx->nb_labels),
+
+        .labels = context->desc.mem_alloc(sizeof(LibTinyCodeLabel) * tcg_ctx->nb_labels),
         .label_count = tcg_ctx->nb_labels,
     };
 
@@ -211,8 +250,8 @@ TinyCodeInstructionList translate(char *buffer, size_t size, uint64_t virtual_ad
         TCGOpcode opc = op->opc;
         TCGOpDef def = tcg_op_defs[opc];
 
-        TinyCodeInstruction insn = {
-            .opcode = (TinyCodeOpcode) opc,
+        LibTinyCodeInstruction insn = {
+            .opcode = (LibTinyCodeOpcode) opc,
             .flags = def.flags,
             .nb_oargs = def.nb_oargs,
             .nb_iargs = def.nb_iargs,
@@ -244,9 +283,9 @@ TinyCodeInstructionList translate(char *buffer, size_t size, uint64_t virtual_ad
              * This can ofcourse cause problems. I am here assuming that the
              * TCG enums are stable.
              */
-            TinyCodeTemp *temp = &instruction_list.temps[idx];
-            temp->kind = (TinyCodeTempKind) ts->kind;
-            temp->type = (TinyCodeTempType) ts->type;
+            LibTinyCodeTemp *temp = &instruction_list.temps[idx];
+            temp->kind = (LibTinyCodeTempKind) ts->kind;
+            temp->type = (LibTinyCodeTempType) ts->type;
             temp->val = ts->val;
             temp->num = idx - tcg_ctx->nb_globals;
             if (ts->name) {
@@ -255,7 +294,7 @@ TinyCodeInstructionList translate(char *buffer, size_t size, uint64_t virtual_ad
                 tinycode_temp_create_name(temp);
             }
 
-            insn.output_args[i] = (TinyCodeArgument) {
+            insn.output_args[i] = (LibTinyCodeArgument) {
                 .kind = LIBTCG_ARG_TEMP,
                 .temp = temp,
             };
@@ -269,9 +308,9 @@ TinyCodeInstructionList translate(char *buffer, size_t size, uint64_t virtual_ad
              * This can ofcourse cause problems. I am here assuming that the
              * TCG enums are stable.
              */
-            TinyCodeTemp *temp = &instruction_list.temps[idx];
-            temp->kind = (TinyCodeTempKind) ts->kind;
-            temp->type = (TinyCodeTempType) ts->type;
+            LibTinyCodeTemp *temp = &instruction_list.temps[idx];
+            temp->kind = (LibTinyCodeTempKind) ts->kind;
+            temp->type = (LibTinyCodeTempType) ts->type;
             temp->val = ts->val;
             temp->num = idx - tcg_ctx->nb_globals;
             if (ts->name) {
@@ -280,7 +319,7 @@ TinyCodeInstructionList translate(char *buffer, size_t size, uint64_t virtual_ad
                 tinycode_temp_create_name(temp);
             }
 
-            insn.input_args[i] = (TinyCodeArgument) {
+            insn.input_args[i] = (LibTinyCodeArgument) {
                 .kind = LIBTCG_ARG_TEMP,
                 .temp = temp,
             };
@@ -291,10 +330,11 @@ TinyCodeInstructionList translate(char *buffer, size_t size, uint64_t virtual_ad
          */
         for (uint32_t i = 0; i < insn.nb_cargs; ++i) {
             if (i == 0 && instruction_has_label_argument(opc)) {
-                TCGLabel *label = arg_label(op->args[insn.nb_oargs + insn.nb_iargs + i]);
-                TinyCodeLabel *our_label = &instruction_list.labels[label->id];
+                TCGLabel *label =
+                    arg_label(op->args[insn.nb_oargs + insn.nb_iargs + i]);
+                LibTinyCodeLabel *our_label = &instruction_list.labels[label->id];
                 our_label->id = label->id;
-                insn.constant_args[i] = (TinyCodeArgument) {
+                insn.constant_args[i] = (LibTinyCodeArgument) {
                     .kind = LIBTCG_ARG_LABEL,
                     .label = our_label
                 };
@@ -303,7 +343,7 @@ TinyCodeInstructionList translate(char *buffer, size_t size, uint64_t virtual_ad
                  * If we get to here the constant arg was actually a
                  * constant
                  */
-                insn.constant_args[i] = (TinyCodeArgument) {
+                insn.constant_args[i] = (LibTinyCodeArgument) {
                     .kind = LIBTCG_ARG_CONSTANT,
                     .constant = op->args[insn.nb_oargs + insn.nb_iargs + i],
                 };
@@ -315,4 +355,12 @@ TinyCodeInstructionList translate(char *buffer, size_t size, uint64_t virtual_ad
     }
 
     return instruction_list;
+}
+
+void libtcg_instruction_list_destroy(LibTinyCodeContext *context,
+                                     LibTinyCodeInstructionList instruction_list)
+{
+    context->desc.mem_free(instruction_list.list);
+    context->desc.mem_free(instruction_list.temps);
+    context->desc.mem_free(instruction_list.labels);
 }

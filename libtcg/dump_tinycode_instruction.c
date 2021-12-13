@@ -102,10 +102,10 @@ static inline void fmt_append_to_stringbuffer(StringBuffer *buffer,
  *      This functions is quite shit. It has inherited a distinc C-89 vibe
  *      from `tcg_dump_ops`. Refactor.
  */
-void dump_instruction_to_buffer(TinyCodeInstruction *insn, char *buf,
-                                size_t size)
+void libtcg_dump_instruction_to_buffer(LibTinyCodeInstruction *insn, char *buf,
+                                       size_t size)
 {
-    TinyCodeOpcode c = insn->opcode;
+    LibTinyCodeOpcode c = insn->opcode;
 
     StringBuffer buffer = {
         .data = buf,
@@ -113,7 +113,7 @@ void dump_instruction_to_buffer(TinyCodeInstruction *insn, char *buf,
         .size = size,
     };
 
-    const char *insn_name = get_instruction_name(insn->opcode);
+    const char *insn_name = libtcg_get_instruction_name(insn->opcode);
     if (c == LIBTCG_op_insn_start) {
         fmt_append_to_stringbuffer(&buffer, "\n ----");
 
@@ -122,7 +122,7 @@ void dump_instruction_to_buffer(TinyCodeInstruction *insn, char *buf,
                                        insn->constant_args[i].constant);
         }
     } else if (c == LIBTCG_op_call) {
-        TinyCodeCallInfo info = get_call_info(insn);
+        LibTinyCodeCallInfo info = libtcg_get_call_info(insn);
         fmt_append_to_stringbuffer(&buffer, " %s %s", insn_name,
                                    info.func_name);
         fmt_append_to_stringbuffer(&buffer, ",$0x%x,$%d", info.func_flags,
@@ -194,11 +194,12 @@ void dump_instruction_to_buffer(TinyCodeInstruction *insn, char *buf,
              * how QEMU lays out it's data. Make this more explicit in
              * libtcg.h
              */
+            uint64_t constant = insn->constant_args[start_index].constant;
             if (insn->constant_args[start_index].constant < ARRAY_LEN(cond_name)
                 && cond_name[insn->constant_args[start_index].constant]) {
-                fmt_append_to_stringbuffer(&buffer, ",%s", cond_name[insn->constant_args[start_index].constant]);
+                fmt_append_to_stringbuffer(&buffer, ",%s", cond_name[constant]);
             } else {
-                fmt_append_to_stringbuffer(&buffer, ",$0x%lx", insn->constant_args[start_index].constant);
+                fmt_append_to_stringbuffer(&buffer, ",$0x%lx", constant);
             }
             start_index++;
             break;
@@ -213,8 +214,8 @@ void dump_instruction_to_buffer(TinyCodeInstruction *insn, char *buf,
              * how QEMU lays out it's data. Make this more explicit in
              * libtcg.h
              */
-            TinyCodeMemOpIdx oi = insn->constant_args[start_index].constant;
-            TinyCodeMemOp op = tinycode_get_memop(oi);
+            LibTinyCodeMemOpIdx oi = insn->constant_args[start_index].constant;
+            LibTinyCodeMemOp op = tinycode_get_memop(oi);
             unsigned ix = tinycode_get_mmuidx(oi);
 
             if (op & ~(LIBTCG_MO_AMASK | LIBTCG_MO_BSWAP | LIBTCG_MO_SSIZE)) {
@@ -264,7 +265,7 @@ void dump_instruction_to_buffer(TinyCodeInstruction *insn, char *buf,
                 fmt_append_to_stringbuffer(&buffer, ",");
             }
 
-            TinyCodeArgument arg = insn->constant_args[i];
+            LibTinyCodeArgument arg = insn->constant_args[i];
             switch(arg.kind) {
             case LIBTCG_ARG_CONSTANT:
                 fmt_append_to_stringbuffer(&buffer, "$0x%lx", arg.constant);

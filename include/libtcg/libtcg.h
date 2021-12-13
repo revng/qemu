@@ -40,15 +40,15 @@ extern "C" {
 #endif
 
 /* Taken from `tcg/tcg.h` */
-typedef enum TinyCodeOpcode {
+typedef enum LibTinyCodeOpcode {
 #define DEF(name, oargs, iargs, cargs, flags) LIBTCG_op_ ## name,
 #include "tcg/tcg-opc.h"
 #undef DEF
     LIBTCG_NB_OPS,
-} TinyCodeOpcode;
+} LibTinyCodeOpcode;
 
 /* Taken from exec/memop.h */
-typedef enum TinyCodeMemOp {
+typedef enum LibTinyCodeMemOp {
     LIBTCG_MO_8     = 0,
     LIBTCG_MO_16    = 1,
     LIBTCG_MO_32    = 2,
@@ -135,31 +135,31 @@ typedef enum TinyCodeMemOp {
     LIBTCG_MO_TEQ   = LIBTCG_MO_TE | LIBTCG_MO_Q,
 
     LIBTCG_MO_SSIZE = LIBTCG_MO_SIZE | LIBTCG_MO_SIGN,
-} TinyCodeMemOp;
+} LibTinyCodeMemOp;
 
 /* More MemOp stuff taken from `tcg/tcg.h` */
 
-typedef uint32_t TinyCodeMemOpIdx;
+typedef uint32_t LibTinyCodeMemOpIdx;
 
-inline TinyCodeMemOp tinycode_get_memop(TinyCodeMemOpIdx oi)
+inline LibTinyCodeMemOp tinycode_get_memop(LibTinyCodeMemOpIdx oi)
 {
     return oi >> 4;
 }
 
-inline unsigned tinycode_get_mmuidx(TinyCodeMemOpIdx oi)
+inline unsigned tinycode_get_mmuidx(LibTinyCodeMemOpIdx oi)
 {
     return oi & 15;
 }
 
 /* Taken from tcg/tcg.h */
-typedef enum TinyCodeBSwap{
+typedef enum LibTinyCodeBSwap{
     LIBTCG_BSWAP_IZ = 1,
     LIBTCG_BSWAP_OZ = 2,
     LIBTCG_BSWAP_OS = 4,
-} TinyCodeBSwap;
+} LibTinyCodeBSwap;
 
 /* Taken from tcg/tcg-cond.h */
-typedef enum TinyCodeCond {
+typedef enum LibTinyCodeCond {
     /* non-signed */
     LIBTCG_COND_NEVER  = 0 | 0 | 0 | 0,
     LIBTCG_COND_ALWAYS = 0 | 0 | 0 | 1,
@@ -175,10 +175,10 @@ typedef enum TinyCodeCond {
     LIBTCG_COND_GEU    = 0 | 4 | 0 | 1,
     LIBTCG_COND_LEU    = 8 | 4 | 0 | 0,
     LIBTCG_COND_GTU    = 8 | 4 | 0 | 1,
-} TinyCodeCond;
+} LibTinyCodeCond;
 
 /* From `TCGTempKind` in `tcg/tcg.c` */
-typedef enum TinyCodeTempKind {
+typedef enum LibTinyCodeTempKind {
     /* Temp is dead at the end of all basic blocks. */
     LIBTCG_TEMP_NORMAL,
     /* Temp is saved across basic blocks but dead at the end of TBs. */
@@ -189,10 +189,10 @@ typedef enum TinyCodeTempKind {
     LIBTCG_TEMP_FIXED,
     /* Temp is a fixed constant. */
     LIBTCG_TEMP_CONST,
-} TinyCodeTempKind;
+} LibTinyCodeTempKind;
 
 /* From `TCGType` in `tcg/tcg.c` */
-typedef enum TinyCodeTempType {
+typedef enum LibTinyCodeTempType {
     LIBTCG_TYPE_I32,
     LIBTCG_TYPE_I64,
 
@@ -203,35 +203,35 @@ typedef enum TinyCodeTempType {
 
     /* number of different types */
     LIBTCG_TYPE_COUNT,
-} TinyCodeTempType;
+} LibTinyCodeTempType;
 
 /*
  * Now we finally get into our adapted versions of the various
  * TCG structs needed to represent our TCG op data.
  */
 
-typedef struct TinyCodeTemp {
-    TinyCodeTempKind kind;
-    TinyCodeTempType type;
+typedef struct LibTinyCodeTemp {
+    LibTinyCodeTempKind kind;
+    LibTinyCodeTempType type;
     int64_t val;
     uint32_t num;
     char name[LIBTCG_MAX_NAME_LEN];
-} TinyCodeTemp;
+} LibTinyCodeTemp;
 
-typedef struct TinyCodeLabel {
+typedef struct LibTinyCodeLabel {
     /*
      * Currently `id` is the only field of the label used in
      * dumping the tinycode instruction. There are more goodies
      * in `tcg/tcg.h` tho.
      */
     uint32_t id;
-} TinyCodeLabel;
+} LibTinyCodeLabel;
 
-typedef enum TinyCodeArgumentKind {
+typedef enum LibTinyCodeArgumentKind {
     LIBTCG_ARG_CONSTANT,
     LIBTCG_ARG_TEMP,
     LIBTCG_ARG_LABEL,
-} TinyCodeArgumentKind;
+} LibTinyCodeArgumentKind;
 
 /*
  * Note that LIBTCG_ARG_CONSTANT, as in QEMU, can
@@ -243,26 +243,26 @@ typedef enum TinyCodeArgumentKind {
  *             MemOp, Bswap. This will aid a lot in simpliyfing the dump
  *             function for instructions.
  */
-typedef struct TinyCodeArgument {
-    TinyCodeArgumentKind kind;
+typedef struct LibTinyCodeArgument {
+    LibTinyCodeArgumentKind kind;
     union {
         uint64_t constant;
-        TinyCodeTemp *temp;
-        TinyCodeLabel *label;
+        LibTinyCodeTemp *temp;
+        LibTinyCodeLabel *label;
     };
-} TinyCodeArgument;
+} LibTinyCodeArgument;
 
-typedef struct TinyCodeCallInfo {
+typedef struct LibTinyCodeCallInfo {
     const char *func_name;
     /*
      * TODO(anjo): Does the func_flags replace def.flags?
      *             In that case move func_flags -> insn.flags
      */
     uint32_t func_flags;
-} TinyCodeCallInfo;
+} LibTinyCodeCallInfo;
 
-typedef struct TinyCodeInstruction {
-    TinyCodeOpcode opcode;
+typedef struct LibTinyCodeInstruction {
+    LibTinyCodeOpcode opcode;
     uint32_t flags;
     /*
      * Arguments are handled in the same way as in QEMU,
@@ -273,36 +273,51 @@ typedef struct TinyCodeInstruction {
     uint8_t nb_iargs;
     uint8_t nb_cargs;
     uint8_t nb_args;
-    TinyCodeArgument output_args[LIBTCG_INSN_MAX_ARGS];
-    TinyCodeArgument input_args[LIBTCG_INSN_MAX_ARGS];
-    TinyCodeArgument constant_args[LIBTCG_INSN_MAX_ARGS];
-} TinyCodeInstruction;
+    LibTinyCodeArgument output_args[LIBTCG_INSN_MAX_ARGS];
+    LibTinyCodeArgument input_args[LIBTCG_INSN_MAX_ARGS];
+    LibTinyCodeArgument constant_args[LIBTCG_INSN_MAX_ARGS];
+} LibTinyCodeInstruction;
 
-typedef struct TinyCodeInstructionList {
-    TinyCodeInstruction *list;
+typedef struct LibTinyCodeInstructionList {
+    LibTinyCodeInstruction *list;
     size_t instruction_count;
 
     /* Keeps track of all temporaries */
-    TinyCodeTemp *temps;
+    LibTinyCodeTemp *temps;
     size_t temp_count;
 
     /* Keeps track of all labels */
-    TinyCodeLabel *labels;
+    LibTinyCodeLabel *labels;
     size_t label_count;
-} TinyCodeInstructionList;
+} LibTinyCodeInstructionList;
 
 /*
  * Lastly we have the functions we expose.
  */
 
-void dump_instruction_to_buffer(TinyCodeInstruction *insn, char *buf,
-                                size_t size);
+void libtcg_dump_instruction_to_buffer(LibTinyCodeInstruction *insn, char *buf,
+                                       size_t size);
 
-const char *get_instruction_name(TinyCodeOpcode opcode);
-TinyCodeCallInfo get_call_info(TinyCodeInstruction* insn);
+const char *libtcg_get_instruction_name(LibTinyCodeOpcode opcode);
+LibTinyCodeCallInfo libtcg_get_call_info(LibTinyCodeInstruction *insn);
 
-TinyCodeInstructionList translate(char *buffer, size_t size,
-                                  uint64_t virtual_address);
+typedef struct LibTinyCodeDesc {
+    void *(*mem_alloc)(size_t);
+    void (*mem_free)(void *);
+} LibTinyCodeDesc;
+
+struct LibTinyCodeContext;
+typedef struct LibTinyCodeContext LibTinyCodeContext;
+
+LibTinyCodeContext *libtcg_context_create(LibTinyCodeDesc *desc);
+void libtcg_context_destroy(LibTinyCodeContext *context);
+
+LibTinyCodeInstructionList libtcg_translate(LibTinyCodeContext *context,
+                                            char *buffer, size_t size,
+                                            uint64_t virtual_address);
+
+void libtcg_instruction_list_destroy(LibTinyCodeContext *context,
+                                     LibTinyCodeInstructionList instruction_list);
 
 /*
  * TODO(anjo):
