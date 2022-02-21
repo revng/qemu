@@ -301,6 +301,15 @@ void libtcg_dump_instruction_to_buffer(LibTinyCodeInstruction *insn, char *buf,
 const char *libtcg_get_instruction_name(LibTinyCodeOpcode opcode);
 LibTinyCodeCallInfo libtcg_get_call_info(LibTinyCodeInstruction *insn);
 
+/*
+ * Description struct used in the creation of
+ * LibTinyCodeContext. Allows specifying
+ * functions used for allocation/freeing
+ * memory.
+ *
+ * Zero-initialize to use default values
+ * (malloc/free).
+ */
 typedef struct LibTinyCodeDesc {
     void *(*mem_alloc)(size_t);
     void (*mem_free)(void *);
@@ -318,14 +327,6 @@ LibTinyCodeInstructionList libtcg_translate(LibTinyCodeContext *context,
 
 void libtcg_instruction_list_destroy(LibTinyCodeContext *context,
                                      LibTinyCodeInstructionList instruction_list);
-
-/*
- * TODO(anjo):
- *      - Add function to init QEMU stuff separately, instead
- *        of doing it in translate.
- *      - Add function to free TinyCodeInstructionList;
- *      - Add function to set malloc/free.
- */
 
 #ifdef __cplusplus
 }
