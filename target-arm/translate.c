@@ -11362,11 +11362,6 @@ static inline void gen_intermediate_code_internal(ARMCPU *cpu,
             dc->condjmp = 0;
         }
 
-        if (tcg_check_temp_count()) {
-            fprintf(stderr, "TCG temporary leak before "TARGET_FMT_lx"\n",
-                    dc->pc);
-        }
-
         /* Translation stops when a conditional branch is encountered.
          * Otherwise the subsequent code could get translated several times.
          * Also stop translation when a page boundary is reached.  This

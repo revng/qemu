@@ -11050,11 +11050,6 @@ void gen_intermediate_code_internal_a64(ARMCPU *cpu,
 
         disas_a64_insn(env, dc);
 
-        if (tcg_check_temp_count()) {
-            fprintf(stderr, "TCG temporary leak before "TARGET_FMT_lx"\n",
-                    dc->pc);
-        }
-
         /* Translation stops when a conditional branch is encountered.
          * Otherwise the subsequent code could get translated several times.
          * Also stop translation when a page boundary is reached.  This
