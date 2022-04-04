@@ -56,6 +56,10 @@ CPU_MEMORY_ACCESS_FUNC(uint64_t, uint64_t, cpu_ldq_code )
 
 #undef CPU_MEMORY_ACCESS_FUNC
 
+/* TODO(anjo): This could absolutetly be replaces by a call to
+ * `tcg_get_arg_str(...)` which does exactly this, why not use it?
+ * Add `<dummy>` name in case of type `TCG_CALL_DUMMY_ARG`?
+ */
 /*
  * Temporaries in TCG don't usually have names, however it's nice to have,
  * especially when printing. Here we assign them names in accordance to what is
