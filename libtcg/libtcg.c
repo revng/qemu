@@ -280,7 +280,7 @@ LibTinyCodeInstructionList libtcg_translate(LibTinyCodeContext *context,
             int idx = temp_idx(ts);
             /*
              * TODO(anjo): Here we are casting between TCG's enums and ours.
-             * This can ofcourse cause problems. I am here assuming that the
+             * This can of course cause problems. I am here assuming that the
              * TCG enums are stable.
              */
             LibTinyCodeTemp *temp = &instruction_list.temps[idx];
@@ -305,7 +305,7 @@ LibTinyCodeInstructionList libtcg_translate(LibTinyCodeContext *context,
             int idx = temp_idx(ts);
             /*
              * TODO(anjo): Here we are casting between TCG's enums and ours.
-             * This can ofcourse cause problems. I am here assuming that the
+             * This can of course cause problems. I am here assuming that the
              * TCG enums are stable.
              */
             LibTinyCodeTemp *temp = &instruction_list.temps[idx];

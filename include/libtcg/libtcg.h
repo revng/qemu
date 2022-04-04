@@ -12,7 +12,7 @@ extern "C" {
 #define LIBTCG_MAX_NAME_LEN 32
 
 /*
- * We start out with a buch of constants and enums taken from
+ * We start out with a bunch of constants and enums taken from
  * various `tcg/...` files.
  */
 
