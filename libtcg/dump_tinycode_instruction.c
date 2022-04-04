@@ -135,22 +135,14 @@ void libtcg_dump_instruction_to_buffer(LibTinyCodeInstruction *insn, char *buf,
             fmt_append_to_stringbuffer(&buffer, ",%s",
                                        insn->input_args[i].temp->name);
         }
-        //        for (i = 0; i < nb_iargs; i++) {
-        //            TCGArg arg = op->args[nb_oargs + i];
-        //            const char *t = "<dummy>";
-        //            if (arg != TCG_CALL_DUMMY_ARG) {
-        //                t = tcg_get_arg_str(s, buf, sizeof(buf), arg);
-        //            }
-        //            col += qemu_log(",%s", t);
-        //        }
     } else {
         fmt_append_to_stringbuffer(&buffer, " %s ", insn_name);
-        /* TODO(anjo): What does this do? */
-        /*
-        if (insn->flags & TCG_OPF_VECTOR) {
-            // col += qemu_log("v%d,e%d,", 64 << TCGOP_VECL(op),
-        }
-        */
+        /* TODO(anjo): We do not print vector arguments, this is how qemu prints them
+         *
+         *   if (insn->flags & TCG_OPF_VECTOR) {
+         *       // col += qemu_log("v%d,e%d,", 64 << TCGOP_VECL(op),
+         *   }
+         */
 
         for (uint32_t i = 0; i < insn->nb_oargs; ++i) {
             if (i > 0) {
