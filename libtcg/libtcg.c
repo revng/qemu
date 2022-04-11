@@ -252,6 +252,7 @@ LibTinyCodeInstructionList libtcg_translate(LibTinyCodeContext *context,
     TCGOp *op = NULL;
     QTAILQ_FOREACH(op, &tcg_ctx->ops, link) {
         TCGOpcode opc = op->opc;
+        printf("OPCODE: %ld\n", opc);
         TCGOpDef def = tcg_op_defs[opc];
 
         LibTinyCodeInstruction insn = {
@@ -332,26 +333,114 @@ LibTinyCodeInstructionList libtcg_translate(LibTinyCodeContext *context,
         /*
          * Here we handle constant args.
          */
-        for (uint32_t i = 0; i < insn.nb_cargs; ++i) {
-            if (i == 0 && instruction_has_label_argument(opc)) {
+        /*
+         * Constant arguments are weird.
+         *     - 1st arg: {constant, mmu id, cond, bswap flag, label},
+         *     - 2nd arg: {constant, label}
+         *     - nth arg: constant
+         */
+        //printf("%ld - %ld - %ld\n", insn.nb_oargs, insn.nb_iargs, insn.nb_cargs);
+        //for (uint32_t i = 0; i < insn.nb_cargs; ++i) {
+        //    if (false && i == 0 && instruction_has_label_argument(opc)) {
+        //        TCGLabel *label =
+        //            arg_label(op->args[insn.nb_oargs + insn.nb_iargs + i]);
+        //        LibTinyCodeLabel *our_label = &instruction_list.labels[label->id];
+        //        our_label->id = label->id;
+        //        insn.constant_args[i] = (LibTinyCodeArgument) {
+        //            .kind = LIBTCG_ARG_LABEL,
+        //            .label = our_label
+        //        };
+        //    } else {
+        //        /*
+        //         * If we get to here the constant arg was actually a
+        //         * constant
+        //         */
+        //        insn.constant_args[i] = (LibTinyCodeArgument) {
+        //            .kind = LIBTCG_ARG_CONSTANT,
+        //            .constant = op->args[insn.nb_oargs + insn.nb_iargs + i],
+        //        };
+        //    }
+        //}
+
+
+        uint32_t start_index = 0;
+
+        switch (opc) {
+        case INDEX_op_brcond_i32:
+        case INDEX_op_setcond_i32:
+        case INDEX_op_movcond_i32:
+        case INDEX_op_brcond2_i32:
+        case INDEX_op_setcond2_i32:
+        case INDEX_op_brcond_i64:
+        case INDEX_op_setcond_i64:
+        case INDEX_op_movcond_i64:
+        case INDEX_op_cmp_vec:
+        case INDEX_op_cmpsel_vec:
+            insn.constant_args[start_index] = (LibTinyCodeArgument) {
+                .kind = LIBTCG_ARG_COND,
+                .cond = op->args[insn.nb_oargs + insn.nb_iargs + start_index],
+            };
+            start_index++;
+            break;
+        case INDEX_op_qemu_ld_i32:
+        case INDEX_op_qemu_st_i32:
+        case INDEX_op_qemu_st8_i32:
+        case INDEX_op_qemu_ld_i64:
+        case INDEX_op_qemu_st_i64:
+            {
+                TCGMemOpIdx oi = op->args[insn.nb_oargs + insn.nb_iargs + start_index];
+                insn.constant_args[start_index] = (LibTinyCodeArgument) {
+                    .kind = LIBTCG_ARG_MEM_OP_INDEX,
+                    .mem_op_index = {
+                        .op = get_memop(oi),
+                        .mmu_index = get_mmuidx(oi),
+                    },
+                };
+                start_index++;
+            }
+            break;
+        case INDEX_op_bswap16_i32:
+        case INDEX_op_bswap16_i64:
+        case INDEX_op_bswap32_i32:
+        case INDEX_op_bswap32_i64:
+        case INDEX_op_bswap64_i64:
+            {
+                insn.constant_args[start_index] = (LibTinyCodeArgument) {
+                    .kind = LIBTCG_ARG_BSWAP,
+                    .bswap_flag = op->args[insn.nb_oargs + insn.nb_iargs + start_index],
+                };
+                start_index++;
+            }
+            break;
+        default:
+            break;
+        }
+        switch (opc) {
+        case INDEX_op_set_label:
+        case INDEX_op_br:
+        case INDEX_op_brcond_i32:
+        case INDEX_op_brcond_i64:
+        case INDEX_op_brcond2_i32:
+            {
                 TCGLabel *label =
-                    arg_label(op->args[insn.nb_oargs + insn.nb_iargs + i]);
+                    arg_label(op->args[insn.nb_oargs + insn.nb_iargs + start_index]);
                 LibTinyCodeLabel *our_label = &instruction_list.labels[label->id];
                 our_label->id = label->id;
-                insn.constant_args[i] = (LibTinyCodeArgument) {
+                insn.constant_args[start_index] = (LibTinyCodeArgument) {
                     .kind = LIBTCG_ARG_LABEL,
                     .label = our_label
                 };
-            } else {
-                /*
-                 * If we get to here the constant arg was actually a
-                 * constant
-                 */
-                insn.constant_args[i] = (LibTinyCodeArgument) {
-                    .kind = LIBTCG_ARG_CONSTANT,
-                    .constant = op->args[insn.nb_oargs + insn.nb_iargs + i],
-                };
             }
+            start_index++;
+            break;
+        default:
+            break;
+        }
+        for (uint32_t i = start_index; i < insn.nb_cargs; ++i) {
+            insn.constant_args[i] = (LibTinyCodeArgument) {
+                .kind = LIBTCG_ARG_CONSTANT,
+                .constant = op->args[insn.nb_oargs + insn.nb_iargs + i],
+            };
         }
 
         instruction_list.list[index] = insn;

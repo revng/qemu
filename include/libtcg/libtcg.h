@@ -227,8 +227,16 @@ typedef struct LibTinyCodeLabel {
     uint32_t id;
 } LibTinyCodeLabel;
 
+typedef struct LibTinyCodeMemOpIndex {
+    LibTinyCodeMemOp op;
+    unsigned mmu_index;
+} LibTinyCodeMemOpIndex;
+
 typedef enum LibTinyCodeArgumentKind {
     LIBTCG_ARG_CONSTANT,
+    LIBTCG_ARG_MEM_OP_INDEX,
+    LIBTCG_ARG_COND,
+    LIBTCG_ARG_BSWAP,
     LIBTCG_ARG_TEMP,
     LIBTCG_ARG_LABEL,
 } LibTinyCodeArgumentKind;
@@ -247,6 +255,9 @@ typedef struct LibTinyCodeArgument {
     LibTinyCodeArgumentKind kind;
     union {
         uint64_t constant;
+        LibTinyCodeMemOpIndex mem_op_index;
+        LibTinyCodeCond cond;
+        uint32_t bswap_flag;
         LibTinyCodeTemp *temp;
         LibTinyCodeLabel *label;
     };

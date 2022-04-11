@@ -170,90 +170,9 @@ void libtcg_dump_instruction_to_buffer(LibTinyCodeInstruction *insn, char *buf,
          * The first constant argument might need some special treatment
          * depending on the instruction.
          */
-        switch (c) {
-        case LIBTCG_op_brcond_i32:
-        case LIBTCG_op_setcond_i32:
-        case LIBTCG_op_movcond_i32:
-        case LIBTCG_op_brcond2_i32:
-        case LIBTCG_op_setcond2_i32:
-        case LIBTCG_op_brcond_i64:
-        case LIBTCG_op_setcond_i64:
-        case LIBTCG_op_movcond_i64:
-        case LIBTCG_op_cmp_vec:
-        case LIBTCG_op_cmpsel_vec: {
-            /*
-             * TODO(anjo): This here is difficult to know if you dont know
-             * how QEMU lays out it's data. Make this more explicit in
-             * libtcg.h
-             */
-            uint64_t constant = insn->constant_args[start_index].constant;
-            if (insn->constant_args[start_index].constant < ARRAY_LEN(cond_name)
-                && cond_name[insn->constant_args[start_index].constant]) {
-                fmt_append_to_stringbuffer(&buffer, ",%s", cond_name[constant]);
-            } else {
-                fmt_append_to_stringbuffer(&buffer, ",$0x%lx", constant);
-            }
-            start_index++;
-            break;
-        }
-        case LIBTCG_op_qemu_ld_i32:
-        case LIBTCG_op_qemu_st_i32:
-        case LIBTCG_op_qemu_st8_i32:
-        case LIBTCG_op_qemu_ld_i64:
-        case LIBTCG_op_qemu_st_i64: {
-            /*
-             * TODO(anjo): This here is difficult to know if you dont know
-             * how QEMU lays out it's data. Make this more explicit in
-             * libtcg.h
-             */
-            LibTinyCodeMemOpIdx oi = insn->constant_args[start_index].constant;
-            LibTinyCodeMemOp op = tinycode_get_memop(oi);
-            unsigned ix = tinycode_get_mmuidx(oi);
 
-            if (op & ~(LIBTCG_MO_AMASK | LIBTCG_MO_BSWAP | LIBTCG_MO_SSIZE)) {
-                fmt_append_to_stringbuffer(&buffer, ",$0x%x,%u", op, ix);
-            } else {
-                const char *s_al, *s_op;
-                s_al = alignment_name[(op & LIBTCG_MO_AMASK) >> LIBTCG_MO_ASHIFT];
-                s_op = ldst_name[op & (LIBTCG_MO_BSWAP | LIBTCG_MO_SSIZE)];
-                fmt_append_to_stringbuffer(&buffer, ",%s%s,%u", s_al, s_op, ix);
-            }
-            start_index++;
-            break;
-        }
-        case LIBTCG_op_bswap16_i32:
-        case LIBTCG_op_bswap16_i64:
-        case LIBTCG_op_bswap32_i32:
-        case LIBTCG_op_bswap32_i64:
-        case LIBTCG_op_bswap64_i64: {
-            /*
-             * TODO(anjo): This here is difficult to know if you dont know
-             * how QEMU lays out it's data. Make this more explicit in
-             * libtcg.h
-             */
-            uint64_t flags = insn->constant_args[start_index].constant;
-            const char *name = NULL;
-
-            if (flags < ARRAY_LEN(bswap_flag_name)) {
-                name = bswap_flag_name[flags];
-            }
-            if (name) {
-                fmt_append_to_stringbuffer(&buffer, ",%s", name);
-            } else {
-                fmt_append_to_stringbuffer(&buffer, ",$0x%lx", flags);
-            }
-            start_index++;
-            break;
-        }
-        default:
-            break;
-        }
-
-        uint8_t need_comma = (insn->nb_oargs + insn->nb_iargs > 0 ||
-                              start_index > 0);
-
-        for (uint32_t i = start_index; i < insn->nb_cargs; ++i) {
-            if (need_comma || i > 0) {
+        for (uint32_t i = 0; i < insn->nb_cargs; ++i) {
+            if (i > 0) {
                 fmt_append_to_stringbuffer(&buffer, ",");
             }
 
@@ -261,6 +180,48 @@ void libtcg_dump_instruction_to_buffer(LibTinyCodeInstruction *insn, char *buf,
             switch(arg.kind) {
             case LIBTCG_ARG_CONSTANT:
                 fmt_append_to_stringbuffer(&buffer, "$0x%lx", arg.constant);
+                break;
+            case LIBTCG_ARG_MEM_OP_INDEX:
+                {
+                    //LibTinyCodeMemOp op = tinycode_get_memop(oi);
+                    //unsigned ix = tinycode_get_mmuidx(oi);
+                    LibTinyCodeMemOp op = arg.mem_op_index.op;
+                    unsigned ix = arg.mem_op_index.mmu_index;
+                    if (op & ~(LIBTCG_MO_AMASK | LIBTCG_MO_BSWAP | LIBTCG_MO_SSIZE)) {
+                        fmt_append_to_stringbuffer(&buffer, ",$0x%x,%u", op, ix);
+                    } else {
+                        const char *s_al, *s_op;
+                        s_al = alignment_name[(op & LIBTCG_MO_AMASK) >> LIBTCG_MO_ASHIFT];
+                        s_op = ldst_name[op & (LIBTCG_MO_BSWAP | LIBTCG_MO_SSIZE)];
+                        fmt_append_to_stringbuffer(&buffer, ",%s%s,%u", s_al, s_op, ix);
+                    }
+                }
+                break;
+            case LIBTCG_ARG_COND:
+                {
+                    uint64_t constant = arg.cond;
+                    if (constant < ARRAY_LEN(cond_name)
+                        && cond_name[constant]) {
+                        fmt_append_to_stringbuffer(&buffer, ",%s", cond_name[constant]);
+                    } else {
+                        fmt_append_to_stringbuffer(&buffer, ",$0x%lx", constant);
+                    }
+                }
+                break;
+            case LIBTCG_ARG_BSWAP:
+                {
+                    uint64_t flags = arg.bswap_flag;
+                    const char *name = NULL;
+
+                    if (flags < ARRAY_LEN(bswap_flag_name)) {
+                        name = bswap_flag_name[flags];
+                    }
+                    if (name) {
+                        fmt_append_to_stringbuffer(&buffer, ",%s", name);
+                    } else {
+                        fmt_append_to_stringbuffer(&buffer, ",$0x%lx", flags);
+                    }
+                }
                 break;
             case LIBTCG_ARG_TEMP:
                 assert(0);
