@@ -8,6 +8,7 @@
 #include "tcg/tcg-op.h"
 #include "tcg/tcg-internal.h"
 #include "qemu/accel.h"
+#include "elf.h"
 #include "target_elf.h"
 #include "target_syscall.h" /* for struct target_pt_regs */
 #include "cpu_loop-common.h" /* for target_cpu_copy_regs */
