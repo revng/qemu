@@ -164,15 +164,13 @@ void libtcg_dump_instruction_to_buffer(LibTinyCodeInstruction *insn, char *buf,
         (void) ldst_name;
         (void) cond_name;
 
-        uint32_t start_index = 0;
-
         /*
          * The first constant argument might need some special treatment
          * depending on the instruction.
          */
 
         for (uint32_t i = 0; i < insn->nb_cargs; ++i) {
-            if (i > 0) {
+            if (i > 0 || insn->nb_oargs > 0 || insn->nb_iargs > 0) {
                 fmt_append_to_stringbuffer(&buffer, ",");
             }
 
