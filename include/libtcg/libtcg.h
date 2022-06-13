@@ -10,6 +10,9 @@ extern "C" {
 
 #define LIBTCG_INSN_MAX_ARGS 16
 #define LIBTCG_MAX_NAME_LEN 32
+#define LIBTCG_MAX_TEMPS 128
+#define LIBTCG_MAX_LABELS 128
+#define LIBTCG_MAX_INSTRUCTIONS 128
 
 /*
  * We start out with a bunch of constants and enums taken from

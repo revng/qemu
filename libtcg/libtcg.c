@@ -1,12 +1,27 @@
 /* TODO(anjo): Can we cut down on these includes? */
 #include <stdint.h>
 #include <stdbool.h>
+
+#include "qemu/osdep.h"
+#include "qemu/help-texts.h"
+#include "qemu/units.h"
+#include "qemu/accel.h"
+#include "qemu-version.h"
+#include <sys/syscall.h>
+#include <sys/resource.h>
+#include <sys/shm.h>
+#include <linux/binfmts.h>
+
+#include "qapi/error.h"
+
+#include "qemu.h"
 #include "qemu/osdep.h"
 #include "cpu.h"
 #include "disas/disas.h"
 #include "exec/exec-all.h"
 #include "tcg/tcg-op.h"
 #include "tcg/tcg-internal.h"
+#include "tcg/tcg.h"
 #include "qemu/accel.h"
 #include "elf.h"
 #include "target_elf.h"
@@ -56,58 +71,6 @@ CPU_MEMORY_ACCESS_FUNC(uint32_t, uint32_t, cpu_ldl_code )
 CPU_MEMORY_ACCESS_FUNC(uint64_t, uint64_t, cpu_ldq_code )
 
 #undef CPU_MEMORY_ACCESS_FUNC
-
-/* TODO(anjo): This could absolutetly be replaces by a call to
- * `tcg_get_arg_str(...)` which does exactly this, why not use it?
- * Add `<dummy>` name in case of type `TCG_CALL_DUMMY_ARG`?
- */
-/*
- * Temporaries in TCG don't usually have names, however it's nice to have,
- * especially when printing. Here we assign them names in accordance to what is
- * printed in `tcg_dump_ops`.
- */
-static inline void tinycode_temp_create_name(LibTinyCodeTemp *temp)
-{
-    switch (temp->kind) {
-    case LIBTCG_TEMP_FIXED:
-    case LIBTCG_TEMP_GLOBAL: {
-        /* Here's the exception. Globals to have names */
-        /* fallthrough */
-        return;
-    }
-    case LIBTCG_TEMP_LOCAL: {
-        snprintf(temp->name, LIBTCG_MAX_NAME_LEN-1, "loc%d", temp->num);
-        return;
-    }
-    case LIBTCG_TEMP_NORMAL: {
-        snprintf(temp->name, LIBTCG_MAX_NAME_LEN-1, "tmp%d", temp->num);
-        return;
-    }
-    case LIBTCG_TEMP_CONST: {
-        switch (temp->type) {
-        case LIBTCG_TYPE_I32: {
-            snprintf(temp->name, LIBTCG_MAX_NAME_LEN-1, "$0x%x",
-                     (int32_t) temp->val);
-            return;
-        }
-        case LIBTCG_TYPE_I64: {
-            snprintf(temp->name, LIBTCG_MAX_NAME_LEN-1, "$0x%lx", temp->val);
-            return;
-        }
-        case LIBTCG_TYPE_V64:
-        case LIBTCG_TYPE_V128:
-        case LIBTCG_TYPE_V256: {
-            snprintf(temp->name, LIBTCG_MAX_NAME_LEN-1, "v%d$0x%lx",
-                     64 << (temp->type - LIBTCG_TYPE_V64), temp->val);
-            return;
-        }
-        default:
-            assert(0);
-        }
-        break;
-    }
-    }
-}
 
 static inline bool instruction_has_label_argument(TCGOpcode opc)
 {
@@ -178,10 +141,16 @@ LibTinyCodeContext *libtcg_context_create(LibTinyCodeDesc *desc)
     context->cpu = cpu_create(cpu_type);
     cpu_reset(context->cpu);
     tcg_prologue_init(tcg_ctx);
-    struct target_pt_regs regs;
-    memset(&regs, 0, sizeof(struct target_pt_regs));
+    struct target_pt_regs regs = {0};
+
+    struct image_info info = {0};
+    TaskState *ts = malloc(sizeof(TaskState));
+    ts->info = &info;
+    context->cpu->opaque = ts;
 
     target_cpu_copy_regs(context->cpu->env_ptr, &regs);
+
+    free(ts);
 
     return context;
 }
@@ -236,24 +205,22 @@ LibTinyCodeInstructionList libtcg_translate(LibTinyCodeContext *context,
     gen_intermediate_code(context->cpu, &tb, max_insns);
 
     LibTinyCodeInstructionList instruction_list = {
-        .list = context->desc.mem_alloc(sizeof(LibTinyCodeInstruction) * tcg_ctx->nb_ops),
-        .instruction_count = tcg_ctx->nb_ops,
+        .list = context->desc.mem_alloc(sizeof(LibTinyCodeInstruction) * LIBTCG_MAX_INSTRUCTIONS),
+        .instruction_count = 0,
 
-        .temps = context->desc.mem_alloc(sizeof(LibTinyCodeTemp) * tcg_ctx->nb_temps),
-        .temp_count = tcg_ctx->nb_temps,
+        .temps = context->desc.mem_alloc(sizeof(LibTinyCodeTemp) * LIBTCG_MAX_TEMPS),
+        .temp_count = 0,
 
-        .labels = context->desc.mem_alloc(sizeof(LibTinyCodeLabel) * tcg_ctx->nb_labels),
-        .label_count = tcg_ctx->nb_labels,
+        .labels = context->desc.mem_alloc(sizeof(LibTinyCodeLabel) * LIBTCG_MAX_LABELS),
+        .label_count = 0,
     };
 
     /*
      * Loop over each TCG op and translate it to our format that we expose.
      */
-    uint32_t index = 0;
     TCGOp *op = NULL;
     QTAILQ_FOREACH(op, &tcg_ctx->ops, link) {
         TCGOpcode opc = op->opc;
-        printf("OPCODE: %ld\n", opc);
         TCGOpDef def = tcg_op_defs[opc];
 
         LibTinyCodeInstruction insn = {
@@ -289,16 +256,12 @@ LibTinyCodeInstructionList libtcg_translate(LibTinyCodeContext *context,
              * This can of course cause problems. I am here assuming that the
              * TCG enums are stable.
              */
-            LibTinyCodeTemp *temp = &instruction_list.temps[idx];
+            LibTinyCodeTemp *temp = &instruction_list.temps[instruction_list.temp_count++];
             temp->kind = (LibTinyCodeTempKind) ts->kind;
             temp->type = (LibTinyCodeTempType) ts->type;
             temp->val = ts->val;
             temp->num = idx - tcg_ctx->nb_globals;
-            if (ts->name) {
-                strncpy(temp->name, ts->name, LIBTCG_MAX_NAME_LEN-1);
-            } else {
-                tinycode_temp_create_name(temp);
-            }
+            tcg_get_arg_str(tcg_ctx, temp->name, LIBTCG_MAX_NAME_LEN, op->args[i]);
 
             insn.output_args[i] = (LibTinyCodeArgument) {
                 .kind = LIBTCG_ARG_TEMP,
@@ -314,16 +277,12 @@ LibTinyCodeInstructionList libtcg_translate(LibTinyCodeContext *context,
              * This can of course cause problems. I am here assuming that the
              * TCG enums are stable.
              */
-            LibTinyCodeTemp *temp = &instruction_list.temps[idx];
+            LibTinyCodeTemp *temp = &instruction_list.temps[instruction_list.temp_count++];
             temp->kind = (LibTinyCodeTempKind) ts->kind;
             temp->type = (LibTinyCodeTempType) ts->type;
             temp->val = ts->val;
             temp->num = idx - tcg_ctx->nb_globals;
-            if (ts->name) {
-                strncpy(temp->name, ts->name, LIBTCG_MAX_NAME_LEN-1);
-            } else {
-                tinycode_temp_create_name(temp);
-            }
+            tcg_get_arg_str(tcg_ctx, temp->name, LIBTCG_MAX_NAME_LEN, op->args[insn.nb_oargs + i]);
 
             insn.input_args[i] = (LibTinyCodeArgument) {
                 .kind = LIBTCG_ARG_TEMP,
@@ -389,7 +348,7 @@ LibTinyCodeInstructionList libtcg_translate(LibTinyCodeContext *context,
         case INDEX_op_qemu_ld_i64:
         case INDEX_op_qemu_st_i64:
             {
-                TCGMemOpIdx oi = op->args[insn.nb_oargs + insn.nb_iargs + start_index];
+                MemOpIdx oi = op->args[insn.nb_oargs + insn.nb_iargs + start_index];
                 insn.constant_args[start_index] = (LibTinyCodeArgument) {
                     .kind = LIBTCG_ARG_MEM_OP_INDEX,
                     .mem_op_index = {
@@ -416,6 +375,7 @@ LibTinyCodeInstructionList libtcg_translate(LibTinyCodeContext *context,
         default:
             break;
         }
+
         switch (opc) {
         case INDEX_op_set_label:
         case INDEX_op_br:
@@ -437,6 +397,7 @@ LibTinyCodeInstructionList libtcg_translate(LibTinyCodeContext *context,
         default:
             break;
         }
+
         for (uint32_t i = start_index; i < insn.nb_cargs; ++i) {
             insn.constant_args[i] = (LibTinyCodeArgument) {
                 .kind = LIBTCG_ARG_CONSTANT,
@@ -444,8 +405,7 @@ LibTinyCodeInstructionList libtcg_translate(LibTinyCodeContext *context,
             };
         }
 
-        instruction_list.list[index] = insn;
-        index++;
+        instruction_list.list[instruction_list.instruction_count++] = insn;
     }
 
     return instruction_list;
