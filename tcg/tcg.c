@@ -2463,8 +2463,8 @@ static char *tcg_get_arg_str_ptr(TCGContext *s, char *buf, int buf_size,
     return buf;
 }
 
-static char *tcg_get_arg_str(TCGContext *s, char *buf,
-                             int buf_size, TCGArg arg)
+char *tcg_get_arg_str(TCGContext *s, char *buf,
+                      int buf_size, TCGArg arg)
 {
     return tcg_get_arg_str_ptr(s, buf, buf_size, arg_temp(arg));
 }
