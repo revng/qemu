@@ -58,14 +58,14 @@ typedef enum LibTinyCodeMemOp {
     LIBTCG_MO_SIGN  = 4,   /* Sign-extended, otherwise zero-extended.  */
 
     LIBTCG_MO_BSWAP = 8,   /* Host reverse endian.  */
-#ifdef HOST_WORDS_BIGENDIAN
+#ifdef HOST_BIG_ENDIAN
     LIBTCG_MO_LE    = LIBTCG_MO_BSWAP,
     LIBTCG_MO_BE    = 0,
 #else
     LIBTCG_MO_LE    = 0,
     LIBTCG_MO_BE    = LIBTCG_MO_BSWAP,
 #endif
-#ifdef TARGET_WORDS_BIGENDIAN
+#ifdef TARGET_BIG_ENDIAN
     LIBTCG_MO_TE    = LIBTCG_MO_BE,
 #else
     LIBTCG_MO_TE    = LIBTCG_MO_LE,
