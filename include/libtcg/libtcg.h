@@ -311,6 +311,11 @@ typedef struct LibTinyCodeInstructionList {
  * Lastly we have the functions we expose.
  */
 
+/*
+ * TODO(anjo): We might eventually need to export these in LibTcgInterface
+ * as well.
+ */
+
 void libtcg_dump_instruction_to_buffer(LibTinyCodeInstruction *insn, char *buf,
                                        size_t size);
 
@@ -334,15 +339,58 @@ typedef struct LibTinyCodeDesc {
 struct LibTinyCodeContext;
 typedef struct LibTinyCodeContext LibTinyCodeContext;
 
-LibTinyCodeContext *libtcg_context_create(LibTinyCodeDesc *desc);
-void libtcg_context_destroy(LibTinyCodeContext *context);
+/*
+ * Following are a bunch of macros that help in defining a function prototype
+ * along with a typedef of the function type.
+ *
+ * NOTE(anjo): Not really a fan of this, but it does reduce the amount of
+ * function prototypes you need to keep in sync. :/
+ */
 
-LibTinyCodeInstructionList libtcg_translate(LibTinyCodeContext *context,
-                                            char *buffer, size_t size,
-                                            uint64_t virtual_address);
+/* Returns the name of the function's typedef */
+#define LIBTCG_FUNC_TYPE(name) \
+    name ## _func
 
-void libtcg_instruction_list_destroy(LibTinyCodeContext *context,
-                                     LibTinyCodeInstructionList instruction_list);
+/* Declares and typedefs a function */
+#define LIBTCG_EXPORT(ret, name, params)                                 \
+    ret name params;                          /* Function declaration */ \
+    typedef ret LIBTCG_FUNC_TYPE(name) params /* Funciton typedef     */
+
+
+LIBTCG_EXPORT(LibTinyCodeContext *,       libtcg_context_create,           (LibTinyCodeDesc *desc));
+LIBTCG_EXPORT(void,                       libtcg_context_destroy,          (LibTinyCodeContext *context));
+LIBTCG_EXPORT(LibTinyCodeInstructionList, libtcg_translate,                (LibTinyCodeContext *context, char *buffer, size_t size, uint64_t virtual_address));
+LIBTCG_EXPORT(void,                       libtcg_instruction_list_destroy, (LibTinyCodeContext *context, LibTinyCodeInstructionList));
+
+/*
+ * struct to help load functions we expose,
+ * useful when `dlopen`ing.
+ */
+typedef struct LibTcgInterface {
+    // Functions
+    LIBTCG_FUNC_TYPE(libtcg_context_create)           *context_create;
+    LIBTCG_FUNC_TYPE(libtcg_context_destroy)          *context_destroy;
+    LIBTCG_FUNC_TYPE(libtcg_translate)                *translate;
+    LIBTCG_FUNC_TYPE(libtcg_instruction_list_destroy) *instruction_list_destroy;
+
+    // CPUState variables
+    intptr_t exception_index;
+    intptr_t is_thumb;
+    intptr_t pc;
+    intptr_t sp;
+} LibTcgInterface;
+
+/*
+ * Last function we export takes care of creating/populating a LibTcgInterface.
+ * This is the only funciton needing to be manually loaded using `dlsym`.
+ */
+LIBTCG_EXPORT(LibTcgInterface, libtcg_load, (void));
+
+#undef LIBTCG_EXPORT
+/*
+ * NOTE(anjo): LIBTCG_FUNC_TYPE remains defined, so it can be used
+ * to get the typedef'd function.
+ */
 
 #ifdef __cplusplus
 }
