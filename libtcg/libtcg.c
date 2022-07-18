@@ -213,6 +213,8 @@ LibTinyCodeInstructionList libtcg_translate(LibTinyCodeContext *context,
 
         .labels = context->desc.mem_alloc(sizeof(LibTinyCodeLabel) * LIBTCG_MAX_LABELS),
         .label_count = 0,
+
+        .size_in_bytes = tb.size,
     };
 
     /*

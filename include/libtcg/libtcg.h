@@ -303,6 +303,8 @@ typedef struct LibTinyCodeInstructionList {
     /* Keeps track of all labels */
     LibTinyCodeLabel *labels;
     size_t label_count;
+
+    size_t size_in_bytes;
 } LibTinyCodeInstructionList;
 
 /*
