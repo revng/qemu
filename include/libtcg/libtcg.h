@@ -146,7 +146,7 @@ typedef uint32_t LibTinyCodeMemOpIdx;
 
 inline LibTinyCodeMemOp tinycode_get_memop(LibTinyCodeMemOpIdx oi)
 {
-    return oi >> 4;
+    return (LibTinyCodeMemOp) (oi >> 4);
 }
 
 inline unsigned tinycode_get_mmuidx(LibTinyCodeMemOpIdx oi)
