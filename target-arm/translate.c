@@ -810,9 +810,11 @@ void arm_gen_test_cc(int cc, TCGLabel *label)
         tcg_temp_free_i32(tmp);
         break;
     default:
-        fprintf(stderr, "Bad condition code 0x%x\n", cc);
 #ifndef CONFIG_LIBTINYCODE
+        fprintf(stderr, "Bad condition code 0x%x\n", cc);
         abort();
+#else
+        break;
 #endif
     }
 }
