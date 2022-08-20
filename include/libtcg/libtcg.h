@@ -359,8 +359,9 @@ typedef struct LibTinyCodeContext LibTinyCodeContext;
 
 LIBTCG_EXPORT(LibTinyCodeContext *,       libtcg_context_create,           (LibTinyCodeDesc *desc));
 LIBTCG_EXPORT(void,                       libtcg_context_destroy,          (LibTinyCodeContext *context));
-LIBTCG_EXPORT(LibTinyCodeInstructionList, libtcg_translate,                (LibTinyCodeContext *context, char *buffer, size_t size, uint64_t virtual_address));
+LIBTCG_EXPORT(LibTinyCodeInstructionList, libtcg_translate,                (LibTinyCodeContext *context, const unsigned char *buffer, size_t size, uint64_t virtual_address));
 LIBTCG_EXPORT(void,                       libtcg_instruction_list_destroy, (LibTinyCodeContext *context, LibTinyCodeInstructionList));
+LIBTCG_EXPORT(uint8_t *,                  libtcg_env_ptr,                  (LibTinyCodeContext *context));
 
 /*
  * struct to help load functions we expose,
@@ -372,6 +373,7 @@ typedef struct LibTcgInterface {
     LIBTCG_FUNC_TYPE(libtcg_context_destroy)          *context_destroy;
     LIBTCG_FUNC_TYPE(libtcg_translate)                *translate;
     LIBTCG_FUNC_TYPE(libtcg_instruction_list_destroy) *instruction_list_destroy;
+    LIBTCG_FUNC_TYPE(libtcg_env_ptr)                  *env_ptr;
 
     // CPUState variables
     intptr_t exception_index;
@@ -389,7 +391,7 @@ LIBTCG_EXPORT(LibTcgInterface, libtcg_load, (void));
 #undef LIBTCG_EXPORT
 /*
  * NOTE(anjo): LIBTCG_FUNC_TYPE remains defined, so it can be used
- * to get the typedef'd function.
+ * to get the typedef'd function types.
  */
 
 #ifdef __cplusplus

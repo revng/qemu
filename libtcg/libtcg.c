@@ -46,7 +46,7 @@ typedef struct LibTinyCodeContext {
  * to the memory access functions below.
  */
 typedef struct BytecodeRegion {
-    char *buffer;
+    const unsigned char *buffer;
     size_t size;
     uint64_t virtual_address;
 } BytecodeRegion;
@@ -161,7 +161,8 @@ void libtcg_context_destroy(LibTinyCodeContext *context)
 }
 
 LibTinyCodeInstructionList libtcg_translate(LibTinyCodeContext *context,
-                                            char *buffer, size_t size,
+                                            const unsigned char *buffer,
+                                            size_t size,
                                             uint64_t virtual_address)
 {
     BytecodeRegion region = {
@@ -421,6 +422,11 @@ void libtcg_instruction_list_destroy(LibTinyCodeContext *context,
     context->desc.mem_free(instruction_list.labels);
 }
 
+uint8_t *libtcg_env_ptr(LibTinyCodeContext *context)
+{
+    return (uint8_t *) context->cpu->env_ptr;
+}
+
 LibTcgInterface libtcg_load(void) {
     return (LibTcgInterface) {
         // Functions
@@ -428,6 +434,7 @@ LibTcgInterface libtcg_load(void) {
         .context_destroy          = libtcg_context_destroy,
         .translate                = libtcg_translate,
         .instruction_list_destroy = libtcg_instruction_list_destroy,
+        .env_ptr                  = libtcg_env_ptr,
 
         // CPUState variables
         .exception_index = offsetof(ArchCPU, parent_obj)
@@ -435,50 +442,98 @@ LibTcgInterface libtcg_load(void) {
 
         // Target specific CPU state
 #if defined(TARGET_ALPHA)
+        .pc = offsetof(CPUArchState, pc),
+        .sp = 0, /* TODO(anjo) */
 #elif defined(TARGET_ARM)
-#if defined(TARGET_AARCH64)
-#else
-#endif
-#elif defined(TARGET_AVR)
-#elif defined(TARGET_CRIS)
-#elif defined(TARGET_HEXAGON)
-#elif defined(TARGET_HPPA)
-#elif defined(TARGET_I386)
-#if defined(TARGET_X86_64)
-#elif
-#endif
-#elif defined(TARGET_M68K)
-#elif defined(TARGET_MICROBLAZE)
-#elif defined(TARGET_MIPS)
-#if defined(TARGET_MIPS64)
-#elif
-#endif
-#elif defined(TARGET_NIOS2)
-#elif defined(TARGET_OPENRISC)
-#elif defined(TARGET_PPC)
-#if defined(TARGET_PPC64)
-#error "lol"
-#endif
-#elif defined(TARGET_PPC64)
-#elif defined(TARGET_RISCV32)
-#if defined(TARGET_RISCV64)
-#error "lol"
-#endif
-#elif defined(TARGET_RISCV64)
-#elif defined(TARGET_RX)
-#elif defined(TARGET_S390X)
-#elif defined(TARGET_SH4)
-#elif defined(TARGET_SPARC)
-#if defined(TARGET_SPARC64)
-#error "lol"
-#endif
-#elif defined(TARGET_SPARC64)
-#elif defined(TARGET_TRICORE)
-#elif defined(TARGET_XTENSA)
-#endif
-
-#if defined(TARGET_ARM) && !defined(TARGET_AARCH64)
+    #if defined(TARGET_AARCH64)
+        .pc = offsetof(CPUArchState, pc),
+        .sp = offsetof(CPUArchState, xregs[31]), /* NOTE(anjo): UNCHECKED */
+    #else
+        .pc = offsetof(CPUArchState, regs[15]), /* NOTE(anjo): UNCHECKED */
+        .sp = offsetof(CPUArchState, xregs[31]), /* NOTE(anjo): UNCHECKED */
         .is_thumb = offsetof(CPUArchState, thumb),
+    #endif
+#elif defined(TARGET_AVR)
+        .pc = offsetof(CPUArchState, pc_w),
+        .sp = offsetof(CPUArchState, sp),
+#elif defined(TARGET_CRIS)
+        .pc = 0, /* NOTE(anjo): UNCHECKED */
+        .sp = 0, /* NOTE(anjo): UNCHECKED */
+#elif defined(TARGET_HEXAGON)
+        .pc = 0, /* NOTE(anjo): UNCHECKED */
+        .sp = 0, /* NOTE(anjo): UNCHECKED */
+#elif defined(TARGET_HPPA)
+        .pc = 0, /* NOTE(anjo): UNCHECKED */
+        .sp = 0, /* NOTE(anjo): UNCHECKED */
+#elif defined(TARGET_I386)
+    #if defined(TARGET_X86_64)
+        .pc = offsetof(CPUArchState, eip), /* NOTE(anjo): UNCHECKED */
+        .sp = offsetof(CPUArchState, regs[R_ESP]), /* NOTE(anjo): UNCHECKED */
+    #else
+        .pc = offsetof(CPUArchState, eip), /* NOTE(anjo): UNCHECKED */
+        .sp = offsetof(CPUArchState, regs[R_ESP]), /* NOTE(anjo): UNCHECKED */
+    #endif
+#elif defined(TARGET_M68K)
+        .pc = 0, /* NOTE(anjo): UNCHECKED */
+        .sp = 0, /* NOTE(anjo): UNCHECKED */
+#elif defined(TARGET_MICROBLAZE)
+        .pc = 0, /* NOTE(anjo): UNCHECKED */
+        .sp = 0, /* NOTE(anjo): UNCHECKED */
+#elif defined(TARGET_MIPS)
+    #if defined(TARGET_MIPS64)
+        .pc = 0, /* NOTE(anjo): UNCHECKED */
+        .sp = 0, /* NOTE(anjo): UNCHECKED */
+    #else
+        .pc = offsetof(CPUArchState, active_tc.PC), /* NOTE(anjo): UNCHECKED */
+        .sp = offsetof(CPUArchState, active_tc.gpr[29]), /* NOTE(anjo): UNCHECKED */
+    #endif
+#elif defined(TARGET_NIOS2)
+        .pc = 0, /* NOTE(anjo): UNCHECKED */
+        .sp = 0, /* NOTE(anjo): UNCHECKED */
+#elif defined(TARGET_OPENRISC)
+        .pc = 0, /* NOTE(anjo): UNCHECKED */
+        .sp = 0, /* NOTE(anjo): UNCHECKED */
+#elif defined(TARGET_PPC)
+    #if defined(TARGET_PPC64)
+        .pc = 0, /* NOTE(anjo): UNCHECKED */
+        .sp = 0, /* NOTE(anjo): UNCHECKED */
+    #else
+        .pc = 0, /* NOTE(anjo): UNCHECKED */
+        .sp = 0, /* NOTE(anjo): UNCHECKED */
+    #endif
+#elif defined(TARGET_RISCV32)
+        .pc = 0, /* NOTE(anjo): UNCHECKED */
+        .sp = 0, /* NOTE(anjo): UNCHECKED */
+#elif defined(TARGET_RISCV64)
+        /*
+         * NOTE(anjo): TARGET_RISCV64 is the only 64-bit arch not defined
+         *             alongside the 32-bit variant (TARGET_RISCV32).
+         */
+        .pc = 0, /* NOTE(anjo): UNCHECKED */
+        .sp = 0, /* NOTE(anjo): UNCHECKED */
+#elif defined(TARGET_RX)
+        .pc = 0, /* NOTE(anjo): UNCHECKED */
+        .sp = 0, /* NOTE(anjo): UNCHECKED */
+#elif defined(TARGET_S390X)
+        .pc = offsetof(CPUArchState, psw.addr), /* NOTE(anjo): UNCHECKED */
+        .sp = offsetof(CPUArchState, regs[15]), /* NOTE(anjo): UNCHECKED */
+#elif defined(TARGET_SH4)
+        .pc = 0, /* NOTE(anjo): UNCHECKED */
+        .sp = 0, /* NOTE(anjo): UNCHECKED */
+#elif defined(TARGET_SPARC)
+    #if defined(TARGET_SPARC64)
+        .pc = 0, /* NOTE(anjo): UNCHECKED */
+        .sp = 0, /* NOTE(anjo): UNCHECKED */
+    #else
+        .pc = 0, /* NOTE(anjo): UNCHECKED */
+        .sp = 0, /* NOTE(anjo): UNCHECKED */
+    #endif
+#elif defined(TARGET_TRICORE)
+        .pc = 0, /* NOTE(anjo): UNCHECKED */
+        .sp = 0, /* NOTE(anjo): UNCHECKED */
+#elif defined(TARGET_XTENSA)
+        .pc = 0, /* NOTE(anjo): UNCHECKED */
+        .sp = 0, /* NOTE(anjo): UNCHECKED */
 #endif
     };
 }
