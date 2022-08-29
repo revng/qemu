@@ -379,7 +379,14 @@ static TranslationBlock *tb_gen_code2(TCGContext *s, CPUState *cpu,
     for (i = 0; i < MAX_RANGES; i++)
       if (ranges[i].start <= pc && pc < ranges[i].end)
         break;
-    assert(i != MAX_RANGES);
+
+    if (i == MAX_RANGES) {
+      fprintf(stderr,
+              "Can't find address 0x%lx in any previously loaded range\n",
+              pc);
+      return NULL;
+    }
+
     tb->max_pc = ranges[i].end;
 
     // From cpu_gen_code
@@ -442,6 +449,11 @@ size_t ptc_translate(uint64_t virtual_address, PTCCodeType type, PTCInstructionL
 #endif
 
     tb = tb_gen_code2(s, cpu, (target_ulong) virtual_address, cs_base, flags, 0);
+
+    if (tb == NULL) {
+      bzero(instructions, sizeof(*instructions));
+      return 0;
+    }
 
     // tcg_dump_ops(s);
 
