@@ -1805,15 +1805,8 @@ static inline abi_long target_to_host_cmsg(struct msghdr *msgh,
             __get_user(cred->pid, &target_cred->pid);
             __get_user(cred->uid, &target_cred->uid);
             __get_user(cred->gid, &target_cred->gid);
-        } else if (cmsg->cmsg_level == SOL_ALG) {
-            uint32_t *dst = (uint32_t *)data;
-
-            memcpy(dst, target_data, len);
-            /* fix endianness of first 32-bit word */
-            if (len >= sizeof(uint32_t)) {
-                *dst = tswap32(*dst);
-            }
         } else {
+            abort();
             qemu_log_mask(LOG_UNIMP, "Unsupported ancillary data: %d/%d\n",
                           cmsg->cmsg_level, cmsg->cmsg_type);
             memcpy(data, target_data, len);
