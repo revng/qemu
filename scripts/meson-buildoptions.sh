@@ -38,6 +38,8 @@ meson_options_help() {
   printf "%s\n" '  --enable-gcov            Enable coverage tracking.'
   printf "%s\n" '  --enable-libtcg          Build *-user target as a shared library, exposing'
   printf "%s\n" '                           tcg frontend'
+  printf "%s\n" '  --enable-llvm-helpers    Build LLVM bitcode target containing relevant'
+  printf "%s\n" '                           helper functions'
   printf "%s\n" '  --enable-lto             Use link time optimization'
   printf "%s\n" '  --enable-malloc=CHOICE   choose memory allocator to use [system] (choices:'
   printf "%s\n" '                           jemalloc/system/tcmalloc)'
@@ -386,6 +388,8 @@ _meson_option_parse() {
     --disable-linux-io-uring) printf "%s" -Dlinux_io_uring=disabled ;;
     --enable-live-block-migration) printf "%s" -Dlive_block_migration=enabled ;;
     --disable-live-block-migration) printf "%s" -Dlive_block_migration=disabled ;;
+    --enable-llvm-helpers) printf "%s" -Dllvm-helpers=true ;;
+    --disable-llvm-helpers) printf "%s" -Dllvm-helpers=false ;;
     --localedir=*) quote_sh "-Dlocaledir=$2" ;;
     --localstatedir=*) quote_sh "-Dlocalstatedir=$2" ;;
     --enable-lzfse) printf "%s" -Dlzfse=enabled ;;

@@ -87,6 +87,10 @@ option('debug_tcg', type: 'boolean', value: false,
        description: 'TCG debugging')
 option('tcg_interpreter', type: 'boolean', value: false,
        description: 'TCG with bytecode interpreter (slow)')
+option('libtcg', type: 'boolean', value: false,
+       description: 'Build *-user target as a shared library, exposing tcg frontend')
+option('llvm-helpers', type: 'boolean', value: false,
+       description: 'Build LLVM bitcode target containing relevant helper functions')
 option('safe_stack', type: 'boolean', value: false,
        description: 'SafeStack Stack Smash Protection (requires clang/llvm and coroutine backend ucontext)')
 option('sanitizers', type: 'boolean', value: false,
