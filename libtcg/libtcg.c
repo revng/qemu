@@ -190,6 +190,10 @@ LibTinyCodeInstructionList libtcg_translate(LibTinyCodeContext *context,
     } else {
         context->cpu->cflags_next_tb = -1;
     }
+    cflags |= CF_NO_GOTO_TB;
+    cflags |= CF_NO_GOTO_PTR;
+    cflags &= ~CF_USE_ICOUNT;
+    cflags |= CF_NOIRQ;
 
     /*
      * Set `max_insns` to the number of bytes in the buffer
