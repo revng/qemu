@@ -430,11 +430,12 @@ uint8_t *libtcg_env_ptr(LibTinyCodeContext *context)
 LibTcgInterface libtcg_load(void) {
     return (LibTcgInterface) {
         // Functions
-        .context_create           = libtcg_context_create,
-        .context_destroy          = libtcg_context_destroy,
-        .translate                = libtcg_translate,
-        .instruction_list_destroy = libtcg_instruction_list_destroy,
-        .env_ptr                  = libtcg_env_ptr,
+        .context_create             = libtcg_context_create,
+        .context_destroy            = libtcg_context_destroy,
+        .translate                  = libtcg_translate,
+        .instruction_list_destroy   = libtcg_instruction_list_destroy,
+        .env_ptr                    = libtcg_env_ptr,
+        .dump_instruction_to_buffer = libtcg_dump_instruction_to_buffer,
 
         // CPUState variables
         .exception_index = offsetof(ArchCPU, parent_obj)

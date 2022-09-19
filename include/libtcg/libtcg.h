@@ -316,9 +316,6 @@ typedef struct LibTinyCodeInstructionList {
  * as well.
  */
 
-void libtcg_dump_instruction_to_buffer(LibTinyCodeInstruction *insn, char *buf,
-                                       size_t size);
-
 const char *libtcg_get_instruction_name(LibTinyCodeOpcode opcode);
 LibTinyCodeCallInfo libtcg_get_call_info(LibTinyCodeInstruction *insn);
 
@@ -357,11 +354,12 @@ typedef struct LibTinyCodeContext LibTinyCodeContext;
     typedef ret LIBTCG_FUNC_TYPE(name) params /* Funciton typedef     */
 
 
-LIBTCG_EXPORT(LibTinyCodeContext *,       libtcg_context_create,           (LibTinyCodeDesc *desc));
-LIBTCG_EXPORT(void,                       libtcg_context_destroy,          (LibTinyCodeContext *context));
-LIBTCG_EXPORT(LibTinyCodeInstructionList, libtcg_translate,                (LibTinyCodeContext *context, const unsigned char *buffer, size_t size, uint64_t virtual_address));
-LIBTCG_EXPORT(void,                       libtcg_instruction_list_destroy, (LibTinyCodeContext *context, LibTinyCodeInstructionList));
-LIBTCG_EXPORT(uint8_t *,                  libtcg_env_ptr,                  (LibTinyCodeContext *context));
+LIBTCG_EXPORT(LibTinyCodeContext *,       libtcg_context_create,             (LibTinyCodeDesc *desc));
+LIBTCG_EXPORT(void,                       libtcg_context_destroy,            (LibTinyCodeContext *context));
+LIBTCG_EXPORT(LibTinyCodeInstructionList, libtcg_translate,                  (LibTinyCodeContext *context, const unsigned char *buffer, size_t size, uint64_t virtual_address));
+LIBTCG_EXPORT(void,                       libtcg_instruction_list_destroy,   (LibTinyCodeContext *context, LibTinyCodeInstructionList));
+LIBTCG_EXPORT(uint8_t *,                  libtcg_env_ptr,                    (LibTinyCodeContext *context));
+LIBTCG_EXPORT(void,                       libtcg_dump_instruction_to_buffer, (LibTinyCodeInstruction *insn, char *buf, size_t size));
 
 /*
  * struct to help load functions we expose,
@@ -369,11 +367,12 @@ LIBTCG_EXPORT(uint8_t *,                  libtcg_env_ptr,                  (LibT
  */
 typedef struct LibTcgInterface {
     // Functions
-    LIBTCG_FUNC_TYPE(libtcg_context_create)           *context_create;
-    LIBTCG_FUNC_TYPE(libtcg_context_destroy)          *context_destroy;
-    LIBTCG_FUNC_TYPE(libtcg_translate)                *translate;
-    LIBTCG_FUNC_TYPE(libtcg_instruction_list_destroy) *instruction_list_destroy;
-    LIBTCG_FUNC_TYPE(libtcg_env_ptr)                  *env_ptr;
+    LIBTCG_FUNC_TYPE(libtcg_context_create)             *context_create;
+    LIBTCG_FUNC_TYPE(libtcg_context_destroy)            *context_destroy;
+    LIBTCG_FUNC_TYPE(libtcg_translate)                  *translate;
+    LIBTCG_FUNC_TYPE(libtcg_instruction_list_destroy)   *instruction_list_destroy;
+    LIBTCG_FUNC_TYPE(libtcg_env_ptr)                    *env_ptr;
+    LIBTCG_FUNC_TYPE(libtcg_dump_instruction_to_buffer) *dump_instruction_to_buffer;
 
     // CPUState variables
     intptr_t exception_index;
