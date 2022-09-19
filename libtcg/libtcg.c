@@ -123,6 +123,8 @@ LibTinyCodeContext *libtcg_context_create(LibTinyCodeDesc *desc)
 
     /* Initialize context */
     LibTinyCodeContext *context = desc->mem_alloc(sizeof(LibTinyCodeContext));
+    if (context == NULL)
+        return NULL;
     context->desc = *desc;
 
     qemu_init_cpu_list();
@@ -222,6 +224,10 @@ LibTinyCodeInstructionList libtcg_translate(LibTinyCodeContext *context,
         .size_in_bytes = tb.size,
     };
 
+    assert(instruction_list.list   != NULL &&
+           instruction_list.temps  != NULL &&
+           instruction_list.labels != NULL);
+
     /*
      * Loop over each TCG op and translate it to our format that we expose.
      */
@@ -230,6 +236,9 @@ LibTinyCodeInstructionList libtcg_translate(LibTinyCodeContext *context,
         TCGOpcode opc = op->opc;
         TCGOpDef def = tcg_op_defs[opc];
 
+        assert(def.nb_oargs <= LIBTCG_INSN_MAX_ARGS);
+        assert(def.nb_iargs <= LIBTCG_INSN_MAX_ARGS);
+        assert(def.nb_cargs <= LIBTCG_INSN_MAX_ARGS);
         LibTinyCodeInstruction insn = {
             .opcode = (LibTinyCodeOpcode) opc,
             .flags = def.flags,
@@ -263,6 +272,7 @@ LibTinyCodeInstructionList libtcg_translate(LibTinyCodeContext *context,
              * This can of course cause problems. I am here assuming that the
              * TCG enums are stable.
              */
+            assert(instruction_list.temp_count < LIBTCG_MAX_TEMPS);
             LibTinyCodeTemp *temp = &instruction_list.temps[instruction_list.temp_count++];
             temp->kind = (LibTinyCodeTempKind) ts->kind;
             temp->type = (LibTinyCodeTempType) ts->type;
@@ -284,6 +294,7 @@ LibTinyCodeInstructionList libtcg_translate(LibTinyCodeContext *context,
              * This can of course cause problems. I am here assuming that the
              * TCG enums are stable.
              */
+            assert(instruction_list.temp_count < LIBTCG_MAX_TEMPS);
             LibTinyCodeTemp *temp = &instruction_list.temps[instruction_list.temp_count++];
             temp->kind = (LibTinyCodeTempKind) ts->kind;
             temp->type = (LibTinyCodeTempType) ts->type;
@@ -412,6 +423,7 @@ LibTinyCodeInstructionList libtcg_translate(LibTinyCodeContext *context,
             };
         }
 
+        assert(instruction_list.instruction_count < LIBTCG_MAX_INSTRUCTIONS);
         instruction_list.list[instruction_list.instruction_count++] = insn;
     }
 
