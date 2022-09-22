@@ -396,14 +396,17 @@ bool ptc_mmap(uint64_t virtual_address, const void *code, size_t code_size) {
   abi_long mmapd_address;
   unsigned i;
 
-  mmapd_address = target_mmap((abi_ulong) virtual_address,
-                              (abi_ulong) code_size,
+  uint64_t actual_virtual_address = virtual_address & TARGET_PAGE_MASK;
+  uint64_t actual_code_size = code_size + virtual_address % TARGET_PAGE_SIZE;
+
+  mmapd_address = target_mmap((abi_ulong) actual_virtual_address,
+                              (abi_ulong) actual_code_size,
                               PROT_READ | PROT_WRITE | PROT_EXEC,
                               MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED,
                               -1,
                               0);
 
-  if (mmapd_address != (abi_ulong) virtual_address)
+  if (mmapd_address != (abi_ulong) actual_virtual_address)
     return false;
 
   memcpy((void *) g2h(virtual_address), code, code_size);
