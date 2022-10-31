@@ -63,6 +63,8 @@ struct TranslationBlock {
      */
     uint64_t cs_base;
 
+    vaddr max_pc; /* maximum PC for this block */
+
     uint32_t flags; /* flags defining in which context the code was generated */
     uint32_t cflags;    /* compile flags */
 
