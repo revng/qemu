@@ -12,7 +12,7 @@ extern "C" {
 #define LIBTCG_MAX_NAME_LEN 32
 #define LIBTCG_MAX_TEMPS 128
 #define LIBTCG_MAX_LABELS 128
-#define LIBTCG_MAX_INSTRUCTIONS 128
+#define LIBTCG_MAX_INSTRUCTIONS 1024
 
 /*
  * We start out with a bunch of constants and enums taken from
@@ -43,15 +43,15 @@ extern "C" {
 #endif
 
 /* Taken from `tcg/tcg.h` */
-typedef enum LibTinyCodeOpcode {
+typedef enum LibTcgOpcode {
 #define DEF(name, oargs, iargs, cargs, flags) LIBTCG_op_ ## name,
 #include "tcg/tcg-opc.h"
 #undef DEF
     LIBTCG_NB_OPS,
-} LibTinyCodeOpcode;
+} LibTcgOpcode;
 
 /* Taken from exec/memop.h */
-typedef enum LibTinyCodeMemOp {
+typedef enum LibTcgMemOp {
     LIBTCG_MO_8     = 0,
     LIBTCG_MO_16    = 1,
     LIBTCG_MO_32    = 2,
@@ -138,31 +138,31 @@ typedef enum LibTinyCodeMemOp {
     LIBTCG_MO_TEQ   = LIBTCG_MO_TE | LIBTCG_MO_Q,
 
     LIBTCG_MO_SSIZE = LIBTCG_MO_SIZE | LIBTCG_MO_SIGN,
-} LibTinyCodeMemOp;
+} LibTcgMemOp;
 
 /* More MemOp stuff taken from `tcg/tcg.h` */
 
-typedef uint32_t LibTinyCodeMemOpIdx;
+typedef uint32_t LibTcgMemOpIdx;
 
-inline LibTinyCodeMemOp tinycode_get_memop(LibTinyCodeMemOpIdx oi)
+inline LibTcgMemOp libtcg_get_memop(LibTcgMemOpIdx oi)
 {
-    return (LibTinyCodeMemOp) (oi >> 4);
+    return (LibTcgMemOp) (oi >> 4);
 }
 
-inline unsigned tinycode_get_mmuidx(LibTinyCodeMemOpIdx oi)
+inline unsigned libtcg_get_mmuidx(LibTcgMemOpIdx oi)
 {
     return oi & 15;
 }
 
 /* Taken from tcg/tcg.h */
-typedef enum LibTinyCodeBSwap{
+typedef enum LibTcgBSwap{
     LIBTCG_BSWAP_IZ = 1,
     LIBTCG_BSWAP_OZ = 2,
     LIBTCG_BSWAP_OS = 4,
-} LibTinyCodeBSwap;
+} LibTcgBSwap;
 
 /* Taken from tcg/tcg-cond.h */
-typedef enum LibTinyCodeCond {
+typedef enum LibTcgCond {
     /* non-signed */
     LIBTCG_COND_NEVER  = 0 | 0 | 0 | 0,
     LIBTCG_COND_ALWAYS = 0 | 0 | 0 | 1,
@@ -178,10 +178,10 @@ typedef enum LibTinyCodeCond {
     LIBTCG_COND_GEU    = 0 | 4 | 0 | 1,
     LIBTCG_COND_LEU    = 8 | 4 | 0 | 0,
     LIBTCG_COND_GTU    = 8 | 4 | 0 | 1,
-} LibTinyCodeCond;
+} LibTcgCond;
 
 /* From `TCGTempKind` in `tcg/tcg.c` */
-typedef enum LibTinyCodeTempKind {
+typedef enum LibTcgTempKind {
     /* Temp is dead at the end of all basic blocks. */
     LIBTCG_TEMP_NORMAL,
     /* Temp is saved across basic blocks but dead at the end of TBs. */
@@ -192,10 +192,10 @@ typedef enum LibTinyCodeTempKind {
     LIBTCG_TEMP_FIXED,
     /* Temp is a fixed constant. */
     LIBTCG_TEMP_CONST,
-} LibTinyCodeTempKind;
+} LibTcgTempKind;
 
 /* From `TCGType` in `tcg/tcg.c` */
-typedef enum LibTinyCodeTempType {
+typedef enum LibTcgTempType {
     LIBTCG_TYPE_I32,
     LIBTCG_TYPE_I64,
 
@@ -206,43 +206,44 @@ typedef enum LibTinyCodeTempType {
 
     /* number of different types */
     LIBTCG_TYPE_COUNT,
-} LibTinyCodeTempType;
+} LibTcgTempType;
 
 /*
  * Now we finally get into our adapted versions of the various
  * TCG structs needed to represent our TCG op data.
  */
 
-typedef struct LibTinyCodeTemp {
-    LibTinyCodeTempKind kind;
-    LibTinyCodeTempType type;
+typedef struct LibTcgTemp {
+    LibTcgTempKind kind;
+    LibTcgTempType type;
     int64_t val;
-    uint32_t num;
+    uint32_t index;
+    intptr_t mem_offset; /* Only used by globals */
     char name[LIBTCG_MAX_NAME_LEN];
-} LibTinyCodeTemp;
+} LibTcgTemp;
 
-typedef struct LibTinyCodeLabel {
+typedef struct LibTcgLabel {
     /*
      * Currently `id` is the only field of the label used in
      * dumping the tinycode instruction. There are more goodies
      * in `tcg/tcg.h` tho.
      */
     uint32_t id;
-} LibTinyCodeLabel;
+} LibTcgLabel;
 
-typedef struct LibTinyCodeMemOpIndex {
-    LibTinyCodeMemOp op;
+typedef struct LibTcgMemOpIndex {
+    LibTcgMemOp op;
     unsigned mmu_index;
-} LibTinyCodeMemOpIndex;
+} LibTcgMemOpIndex;
 
-typedef enum LibTinyCodeArgumentKind {
+typedef enum LibTcgArgumentKind {
     LIBTCG_ARG_CONSTANT,
     LIBTCG_ARG_MEM_OP_INDEX,
     LIBTCG_ARG_COND,
     LIBTCG_ARG_BSWAP,
     LIBTCG_ARG_TEMP,
     LIBTCG_ARG_LABEL,
-} LibTinyCodeArgumentKind;
+} LibTcgArgumentKind;
 
 /*
  * Note that LIBTCG_ARG_CONSTANT, as in QEMU, can
@@ -254,29 +255,29 @@ typedef enum LibTinyCodeArgumentKind {
  *             MemOp, Bswap. This will aid a lot in simpliyfing the dump
  *             function for instructions.
  */
-typedef struct LibTinyCodeArgument {
-    LibTinyCodeArgumentKind kind;
+typedef struct LibTcgArgument {
+    LibTcgArgumentKind kind;
     union {
         uint64_t constant;
-        LibTinyCodeMemOpIndex mem_op_index;
-        LibTinyCodeCond cond;
+        LibTcgMemOpIndex mem_op_index;
+        LibTcgCond cond;
         uint32_t bswap_flag;
-        LibTinyCodeTemp *temp;
-        LibTinyCodeLabel *label;
+        LibTcgTemp *temp;
+        LibTcgLabel *label;
     };
-} LibTinyCodeArgument;
+} LibTcgArgument;
 
-typedef struct LibTinyCodeCallInfo {
+typedef struct LibTcgCallInfo {
     const char *func_name;
     /*
      * TODO(anjo): Does the func_flags replace def.flags?
      *             In that case move func_flags -> insn.flags
      */
     uint32_t func_flags;
-} LibTinyCodeCallInfo;
+} LibTcgCallInfo;
 
-typedef struct LibTinyCodeInstruction {
-    LibTinyCodeOpcode opcode;
+typedef struct LibTcgInstruction {
+    LibTcgOpcode opcode;
     uint32_t flags;
     /*
      * Arguments are handled in the same way as in QEMU,
@@ -287,25 +288,25 @@ typedef struct LibTinyCodeInstruction {
     uint8_t nb_iargs;
     uint8_t nb_cargs;
     uint8_t nb_args;
-    LibTinyCodeArgument output_args[LIBTCG_INSN_MAX_ARGS];
-    LibTinyCodeArgument input_args[LIBTCG_INSN_MAX_ARGS];
-    LibTinyCodeArgument constant_args[LIBTCG_INSN_MAX_ARGS];
-} LibTinyCodeInstruction;
+    LibTcgArgument output_args[LIBTCG_INSN_MAX_ARGS];
+    LibTcgArgument input_args[LIBTCG_INSN_MAX_ARGS];
+    LibTcgArgument constant_args[LIBTCG_INSN_MAX_ARGS];
+} LibTcgInstruction;
 
-typedef struct LibTinyCodeInstructionList {
-    LibTinyCodeInstruction *list;
+typedef struct LibTcgInstructionList {
+    LibTcgInstruction *list;
     size_t instruction_count;
 
     /* Keeps track of all temporaries */
-    LibTinyCodeTemp *temps;
+    LibTcgTemp *temps;
     size_t temp_count;
 
     /* Keeps track of all labels */
-    LibTinyCodeLabel *labels;
+    LibTcgLabel *labels;
     size_t label_count;
 
     size_t size_in_bytes;
-} LibTinyCodeInstructionList;
+} LibTcgInstructionList;
 
 /*
  * Lastly we have the functions we expose.
@@ -316,25 +317,25 @@ typedef struct LibTinyCodeInstructionList {
  * as well.
  */
 
-const char *libtcg_get_instruction_name(LibTinyCodeOpcode opcode);
-LibTinyCodeCallInfo libtcg_get_call_info(LibTinyCodeInstruction *insn);
+const char *libtcg_get_instruction_name(LibTcgOpcode opcode);
+LibTcgCallInfo libtcg_get_call_info(LibTcgInstruction *insn);
 
 /*
  * Description struct used in the creation of
- * LibTinyCodeContext. Allows specifying
+ * LibTcgContext. Allows specifying
  * functions used for allocation/freeing
  * memory.
  *
  * Zero-initialize to use default values
  * (malloc/free).
  */
-typedef struct LibTinyCodeDesc {
+typedef struct LibTcgDesc {
     void *(*mem_alloc)(size_t);
     void (*mem_free)(void *);
-} LibTinyCodeDesc;
+} LibTcgDesc;
 
-struct LibTinyCodeContext;
-typedef struct LibTinyCodeContext LibTinyCodeContext;
+struct LibTcgContext;
+typedef struct LibTcgContext LibTcgContext;
 
 /*
  * Following are a bunch of macros that help in defining a function prototype
@@ -354,12 +355,12 @@ typedef struct LibTinyCodeContext LibTinyCodeContext;
     typedef ret LIBTCG_FUNC_TYPE(name) params /* Funciton typedef     */
 
 
-LIBTCG_EXPORT(LibTinyCodeContext *,       libtcg_context_create,             (LibTinyCodeDesc *desc));
-LIBTCG_EXPORT(void,                       libtcg_context_destroy,            (LibTinyCodeContext *context));
-LIBTCG_EXPORT(LibTinyCodeInstructionList, libtcg_translate,                  (LibTinyCodeContext *context, const unsigned char *buffer, size_t size, uint64_t virtual_address));
-LIBTCG_EXPORT(void,                       libtcg_instruction_list_destroy,   (LibTinyCodeContext *context, LibTinyCodeInstructionList));
-LIBTCG_EXPORT(uint8_t *,                  libtcg_env_ptr,                    (LibTinyCodeContext *context));
-LIBTCG_EXPORT(void,                       libtcg_dump_instruction_to_buffer, (LibTinyCodeInstruction *insn, char *buf, size_t size));
+LIBTCG_EXPORT(LibTcgContext *,       libtcg_context_create,             (LibTcgDesc *desc));
+LIBTCG_EXPORT(void,                  libtcg_context_destroy,            (LibTcgContext *context));
+LIBTCG_EXPORT(LibTcgInstructionList, libtcg_translate,                  (LibTcgContext *context, const unsigned char *buffer, size_t size, uint64_t virtual_address));
+LIBTCG_EXPORT(void,                  libtcg_instruction_list_destroy,   (LibTcgContext *context, LibTcgInstructionList));
+LIBTCG_EXPORT(uint8_t *,             libtcg_env_ptr,                    (LibTcgContext *context));
+LIBTCG_EXPORT(void,                  libtcg_dump_instruction_to_buffer, (LibTcgInstruction *insn, char *buf, size_t size));
 
 /*
  * struct to help load functions we expose,

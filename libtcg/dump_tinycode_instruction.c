@@ -102,10 +102,10 @@ static inline void fmt_append_to_stringbuffer(StringBuffer *buffer,
  *      This functions is quite shit. It has inherited a distinc C-89 vibe
  *      from `tcg_dump_ops`. Refactor.
  */
-void libtcg_dump_instruction_to_buffer(LibTinyCodeInstruction *insn, char *buf,
+void libtcg_dump_instruction_to_buffer(LibTcgInstruction *insn, char *buf,
                                        size_t size)
 {
-    LibTinyCodeOpcode c = insn->opcode;
+    LibTcgOpcode c = insn->opcode;
 
     StringBuffer buffer = {
         .data = buf,
@@ -122,7 +122,7 @@ void libtcg_dump_instruction_to_buffer(LibTinyCodeInstruction *insn, char *buf,
                                        insn->constant_args[i].constant);
         }
     } else if (c == LIBTCG_op_call) {
-        LibTinyCodeCallInfo info = libtcg_get_call_info(insn);
+        LibTcgCallInfo info = libtcg_get_call_info(insn);
         fmt_append_to_stringbuffer(&buffer, " %s %s", insn_name,
                                    info.func_name);
         fmt_append_to_stringbuffer(&buffer, ",$0x%x,$%d", info.func_flags,
@@ -174,16 +174,16 @@ void libtcg_dump_instruction_to_buffer(LibTinyCodeInstruction *insn, char *buf,
                 fmt_append_to_stringbuffer(&buffer, ",");
             }
 
-            LibTinyCodeArgument arg = insn->constant_args[i];
+            LibTcgArgument arg = insn->constant_args[i];
             switch(arg.kind) {
             case LIBTCG_ARG_CONSTANT:
                 fmt_append_to_stringbuffer(&buffer, "$0x%lx", arg.constant);
                 break;
             case LIBTCG_ARG_MEM_OP_INDEX:
                 {
-                    //LibTinyCodeMemOp op = tinycode_get_memop(oi);
+                    //LibTcgMemOp op = tinycode_get_memop(oi);
                     //unsigned ix = tinycode_get_mmuidx(oi);
-                    LibTinyCodeMemOp op = arg.mem_op_index.op;
+                    LibTcgMemOp op = arg.mem_op_index.op;
                     unsigned ix = arg.mem_op_index.mmu_index;
                     if (op & ~(LIBTCG_MO_AMASK | LIBTCG_MO_BSWAP | LIBTCG_MO_SSIZE)) {
                         fmt_append_to_stringbuffer(&buffer, ",$0x%x,%u", op, ix);
