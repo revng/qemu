@@ -184,6 +184,8 @@ typedef enum LibTcgCond {
 typedef enum LibTcgTempKind {
     /* Temp is dead at the end of all basic blocks. */
     LIBTCG_TEMP_NORMAL,
+    /* Temp is live across conditional branch, but dead otherwise. */
+    LIBTCG_TEMP_EBB,
     /* Temp is saved across basic blocks but dead at the end of TBs. */
     LIBTCG_TEMP_LOCAL,
     /* Temp is saved across both basic blocks and translation blocks. */
