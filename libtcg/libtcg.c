@@ -61,10 +61,6 @@ typedef struct BytecodeRegion {
         CPUState *cpu = env_cpu(env);                                   \
         BytecodeRegion *region = cpu->opaque;                           \
         uint64_t offset = (uintptr_t)ptr - region->virtual_address;     \
-            printf("    ptr: %lu\n", ptr); \
-            printf("    offset: %lu\n", offset); \
-            printf("    region->size: %lu\n", region->size);\
-            printf("    region->virtual_address: %lu\n", region->virtual_address);\
         assert(offset + sizeof(read_type) <= region->size);             \
         return *(read_type *) ((uintptr_t) region->buffer + offset);    \
     }
@@ -167,9 +163,10 @@ void libtcg_context_destroy(LibTcgContext *context)
 }
 
 LibTcgInstructionList libtcg_translate(LibTcgContext *context,
-                                            const unsigned char *buffer,
-                                            size_t size,
-                                            uint64_t virtual_address)
+                                       const unsigned char *buffer,
+                                       size_t size,
+                                       uint64_t virtual_address,
+                                       uint32_t translate_flags)
 {
     BytecodeRegion region = {
         .buffer = buffer,
@@ -190,6 +187,17 @@ LibTcgInstructionList libtcg_translate(LibTcgContext *context,
     cpu_get_tb_cpu_state(context->cpu->env_ptr, &pc, &cs_base, &flags);
     pc = virtual_address;
 
+    /* Set flags */
+#ifdef TARGET_ARM
+    if (translate_flags & LIBTCG_TRANSLATE_ARM_THUMB) {
+        CPUARMTBFlags arm_flags = {};
+        //flags |= THUMB;
+        DP_TBFLAG_AM32(arm_flags, THUMB, 1);
+        flags = arm_flags.flags;
+    }
+#endif
+
+    /* Set cflags */
     uint32_t cflags = context->cpu->cflags_next_tb;
     if (cflags == -1) {
         cflags = curr_cflags(context->cpu);

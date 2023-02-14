@@ -310,6 +310,10 @@ typedef struct LibTcgInstructionList {
     size_t size_in_bytes;
 } LibTcgInstructionList;
 
+typedef enum LibTcgTranslateFlags {
+    LIBTCG_TRANSLATE_ARM_THUMB = 1,
+} LibTcgTranslateFlags;
+
 /*
  * Lastly we have the functions we expose.
  */
@@ -352,7 +356,7 @@ LIBTCG_EXPORT(const char *,          libtcg_get_instruction_name,       (LibTcgO
 LIBTCG_EXPORT(LibTcgHelperInfo,      libtcg_get_helper_info,            (LibTcgInstruction *insn));
 LIBTCG_EXPORT(LibTcgContext *,       libtcg_context_create,             (LibTcgDesc *desc));
 LIBTCG_EXPORT(void,                  libtcg_context_destroy,            (LibTcgContext *context));
-LIBTCG_EXPORT(LibTcgInstructionList, libtcg_translate,                  (LibTcgContext *context, const unsigned char *buffer, size_t size, uint64_t virtual_address));
+LIBTCG_EXPORT(LibTcgInstructionList, libtcg_translate,                  (LibTcgContext *context, const unsigned char *buffer, size_t size, uint64_t virtual_address, uint32_t translate_flags));
 LIBTCG_EXPORT(void,                  libtcg_instruction_list_destroy,   (LibTcgContext *context, LibTcgInstructionList));
 LIBTCG_EXPORT(uint8_t *,             libtcg_env_ptr,                    (LibTcgContext *context));
 LIBTCG_EXPORT(void,                  libtcg_dump_instruction_to_buffer, (LibTcgInstruction *insn, char *buf, size_t size));
