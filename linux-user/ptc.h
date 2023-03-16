@@ -271,6 +271,8 @@ typedef struct {
   intptr_t sp;
   intptr_t is_thumb;
   intptr_t exception_index;
+  intptr_t env_offset;
+  const char *cpu_struct_name;
   uint8_t *initialized_env;
 
 } PTCInterface;

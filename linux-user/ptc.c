@@ -112,6 +112,7 @@ int ptc_load(void *handle, PTCInterface *output) {
 #if defined(TARGET_X86_64) || defined(TARGET_I386)
   result.pc = offsetof(CPUX86State, eip);
   result.sp = offsetof(CPUX86State, regs[R_ESP]);
+  result.cpu_struct_name = "X86CPU";
 #elif defined(TARGET_ARM)
 #if defined(TARGET_AARCH64)
   result.pc = offsetof(CPUARMState, pc);
@@ -121,13 +122,18 @@ int ptc_load(void *handle, PTCInterface *output) {
   result.sp = offsetof(CPUARMState, regs[13]);
   result.is_thumb = offsetof(CPUARMState, thumb);
 #endif
+  result.cpu_struct_name = "ARMCPU";
 #elif defined(TARGET_MIPS)
   result.pc = offsetof(CPUMIPSState, active_tc.PC);
   result.sp = offsetof(CPUMIPSState, active_tc.gpr[29]);
+  result.cpu_struct_name = "MIPSCPU";
 #elif defined(TARGET_S390X)
   result.pc = offsetof(CPUS390XState, psw.addr);
   result.sp = offsetof(CPUS390XState, regs[15]);
+  result.cpu_struct_name = "S390CPU";
 #endif
+
+  result.env_offset = offsetof(CPU_STRUCT, env);
 
   result.exception_index = (offsetof(CPU_STRUCT, parent_obj)
                             + offsetof(CPUState, exception_index));
