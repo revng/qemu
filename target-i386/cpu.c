@@ -2607,6 +2607,7 @@ static void x86_cpu_reset(CPUState *s)
     env->old_exception = -1;
 
     /* init to reset state */
+    env->df = 1;
 
 #ifdef CONFIG_SOFTMMU
     env->hflags |= HF_SOFTMMU_MASK;
