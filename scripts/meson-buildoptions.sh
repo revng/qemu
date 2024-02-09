@@ -36,6 +36,8 @@ meson_options_help() {
   printf "%s\n" '                           (choices: auto/disabled/enabled/internal/system)'
   printf "%s\n" '  --enable-fuzzing         build fuzzing targets'
   printf "%s\n" '  --enable-gcov            Enable coverage tracking.'
+  printf "%s\n" '  --enable-libtcg          Build *-user target as a shared library, exposing'
+  printf "%s\n" '                           tcg frontend'
   printf "%s\n" '  --enable-lto             Use link time optimization'
   printf "%s\n" '  --enable-malloc=CHOICE   choose memory allocator to use [system] (choices:'
   printf "%s\n" '                           jemalloc/system/tcmalloc)'
@@ -370,6 +372,8 @@ _meson_option_parse() {
     --disable-libpmem) printf "%s" -Dlibpmem=disabled ;;
     --enable-libssh) printf "%s" -Dlibssh=enabled ;;
     --disable-libssh) printf "%s" -Dlibssh=disabled ;;
+    --enable-libtcg) printf "%s" -Dlibtcg=true ;;
+    --disable-libtcg) printf "%s" -Dlibtcg=false ;;
     --enable-libudev) printf "%s" -Dlibudev=enabled ;;
     --disable-libudev) printf "%s" -Dlibudev=disabled ;;
     --enable-libusb) printf "%s" -Dlibusb=enabled ;;
