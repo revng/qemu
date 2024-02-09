@@ -19,9 +19,11 @@
 #include "cpu.h"
 #include "disas/disas.h"
 #include "exec/exec-all.h"
+#include "exec/translator.h"
 #include "tcg/tcg-op.h"
 #include "tcg/tcg-internal.h"
 #include "tcg/tcg.h"
+#include "tcg/startup.h"
 #include "qemu/accel.h"
 #include "elf.h"
 #include "target_elf.h"
@@ -72,14 +74,14 @@ CPU_MEMORY_ACCESS_FUNC(uint64_t, uint64_t, cpu_ldq_code )
 
 #undef CPU_MEMORY_ACCESS_FUNC
 
-static inline bool instruction_has_label_argument(TCGOpcode opc)
-{
-    return (opc == INDEX_op_set_label  ||
-            opc == INDEX_op_br         ||
-            opc == INDEX_op_brcond_i32 ||
-            opc == INDEX_op_brcond_i64 ||
-            opc == INDEX_op_brcond2_i32);
-}
+//static inline bool instruction_has_label_argument(TCGOpcode opc)
+//{
+//    return (opc == INDEX_op_set_label  ||
+//            opc == INDEX_op_br         ||
+//            opc == INDEX_op_brcond_i32 ||
+//            opc == INDEX_op_brcond_i64 ||
+//            opc == INDEX_op_brcond2_i32);
+//}
 
 const char *libtcg_get_instruction_name(LibTcgOpcode opcode)
 {
@@ -142,7 +144,7 @@ LibTcgContext *libtcg_context_create(LibTcgDesc *desc)
 
     context->cpu = cpu_create(cpu_type);
     cpu_reset(context->cpu);
-    tcg_prologue_init(tcg_ctx);
+    tcg_prologue_init();
     struct target_pt_regs regs = {0};
 
     struct image_info info = {0};
@@ -150,7 +152,7 @@ LibTcgContext *libtcg_context_create(LibTcgDesc *desc)
     ts->info = &info;
     context->cpu->opaque = ts;
 
-    target_cpu_copy_regs(context->cpu->env_ptr, &regs);
+    target_cpu_copy_regs(cpu_env(context->cpu), &regs);
 
     free(ts);
 
@@ -178,13 +180,14 @@ LibTcgInstructionList libtcg_translate(LibTcgContext *context,
     /* Needed to initialize fields in `tcg_ctx` */
     tcg_func_start(tcg_ctx);
 
-    target_ulong cs_base, pc;
+    vaddr pc;
+    uint64_t cs_base;
     uint32_t flags;
     /*
      * We're using this call to setup `flags` and `cs_base` correctly.
      * We then override `pc`.
      */
-    cpu_get_tb_cpu_state(context->cpu->env_ptr, &pc, &cs_base, &flags);
+    cpu_get_tb_cpu_state(cpu_env(context->cpu), &pc, &cs_base, &flags);
     pc = virtual_address;
 
     /* Set flags */
@@ -222,7 +225,8 @@ LibTcgInstructionList libtcg_translate(LibTcgContext *context,
         .flags = flags,
         .cflags = cflags,
     };
-    gen_intermediate_code(context->cpu, &tb, max_insns);
+    void *host_pc = NULL;
+    gen_intermediate_code(context->cpu, &tb, &max_insns, pc, host_pc);
 
     LibTcgInstructionList instruction_list = {
         .list = context->desc.mem_alloc(sizeof(LibTcgInstruction) * tcg_ctx->nb_ops),
@@ -377,18 +381,27 @@ LibTcgInstructionList libtcg_translate(LibTcgContext *context,
             };
             start_index++;
             break;
-        case INDEX_op_qemu_ld_i32:
-        case INDEX_op_qemu_st_i32:
-        case INDEX_op_qemu_st8_i32:
-        case INDEX_op_qemu_ld_i64:
-        case INDEX_op_qemu_st_i64:
+       case INDEX_op_qemu_ld_a32_i32:
+       case INDEX_op_qemu_ld_a64_i32:
+       case INDEX_op_qemu_st_a32_i32:
+       case INDEX_op_qemu_st_a64_i32:
+       case INDEX_op_qemu_st8_a32_i32:
+       case INDEX_op_qemu_st8_a64_i32:
+       case INDEX_op_qemu_ld_a32_i64:
+       case INDEX_op_qemu_ld_a64_i64:
+       case INDEX_op_qemu_st_a32_i64:
+       case INDEX_op_qemu_st_a64_i64:
+       case INDEX_op_qemu_ld_a32_i128:
+       case INDEX_op_qemu_ld_a64_i128:
+       case INDEX_op_qemu_st_a32_i128:
+       case INDEX_op_qemu_st_a64_i128:
             {
                 MemOpIdx oi = op->args[insn.nb_oargs + insn.nb_iargs + start_index];
                 insn.constant_args[start_index] = (LibTcgArgument) {
                     .kind = LIBTCG_ARG_MEM_OP_INDEX,
                     .mem_op_index = {
-                        .op = get_memop(oi),
-                        .mmu_index = get_mmuidx(oi),
+                        .op = libtcg_get_memop(oi),
+                        .mmu_index = libtcg_get_mmuidx(oi),
                     },
                 };
                 start_index++;
@@ -456,7 +469,7 @@ void libtcg_instruction_list_destroy(LibTcgContext *context,
 
 uint8_t *libtcg_env_ptr(LibTcgContext *context)
 {
-    return (uint8_t *) context->cpu->env_ptr;
+    return (uint8_t *) cpu_env(context->cpu);
 }
 
 LibTcgInterface libtcg_load(void) {
