@@ -377,6 +377,8 @@ typedef struct LibTcgInterface {
     LIBTCG_FUNC_TYPE(libtcg_dump_instruction_to_buffer) *dump_instruction_to_buffer;
 
     // CPUState variables
+    const char *arch_cpu_name;
+    intptr_t env_offset;
     intptr_t exception_index;
     intptr_t is_thumb;
     intptr_t pc;

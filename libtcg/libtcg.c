@@ -191,7 +191,7 @@ LibTcgInstructionList libtcg_translate(LibTcgContext *context,
 #ifdef TARGET_ARM
     if (translate_flags & LIBTCG_TRANSLATE_ARM_THUMB) {
         CPUARMTBFlags arm_flags = {};
-        //flags |= THUMB;
+        /* flags |= THUMB; */
         DP_TBFLAG_AM32(arm_flags, THUMB, 1);
         flags = arm_flags.flags;
     }
@@ -461,7 +461,7 @@ uint8_t *libtcg_env_ptr(LibTcgContext *context)
 
 LibTcgInterface libtcg_load(void) {
     return (LibTcgInterface) {
-        // Functions
+        /* Functions */
         .get_instruction_name       = libtcg_get_instruction_name,
         .get_helper_info            = libtcg_get_helper_info,
         .context_create             = libtcg_context_create,
@@ -471,14 +471,17 @@ LibTcgInterface libtcg_load(void) {
         .env_ptr                    = libtcg_env_ptr,
         .dump_instruction_to_buffer = libtcg_dump_instruction_to_buffer,
 
-        // CPUState variables
+        /* CPUState variables */
         .exception_index = offsetof(ArchCPU, parent_obj)
                            + offsetof(CPUState, exception_index),
 
-        // Target specific CPU state
+        .env_offset = offsetof(ArchCPU, env),
+
+        /* Target specific CPU state */
 #if defined(TARGET_ALPHA)
         .pc = offsetof(CPUArchState, pc),
         .sp = 0, /* TODO(anjo) */
+        .arch_cpu_name = "AlphaCPU",
 #elif defined(TARGET_ARM)
     #if defined(TARGET_AARCH64)
         .pc = offsetof(CPUArchState, pc),
@@ -488,18 +491,23 @@ LibTcgInterface libtcg_load(void) {
         .sp = offsetof(CPUArchState, xregs[31]), /* NOTE(anjo): UNCHECKED */
         .is_thumb = offsetof(CPUArchState, thumb),
     #endif
+        .arch_cpu_name = "ARMCPU",
 #elif defined(TARGET_AVR)
         .pc = offsetof(CPUArchState, pc_w),
         .sp = offsetof(CPUArchState, sp),
+        .arch_cpu_name = "AVRCPU",
 #elif defined(TARGET_CRIS)
         .pc = 0, /* NOTE(anjo): UNCHECKED */
         .sp = 0, /* NOTE(anjo): UNCHECKED */
+        .arch_cpu_name = "CRISCPU",
 #elif defined(TARGET_HEXAGON)
         .pc = 0, /* NOTE(anjo): UNCHECKED */
         .sp = 0, /* NOTE(anjo): UNCHECKED */
+        .arch_cpu_name = "HexagonCPU",
 #elif defined(TARGET_HPPA)
         .pc = 0, /* NOTE(anjo): UNCHECKED */
         .sp = 0, /* NOTE(anjo): UNCHECKED */
+        .arch_cpu_name = "HPPACPU",
 #elif defined(TARGET_I386)
     #if defined(TARGET_X86_64)
         .pc = offsetof(CPUArchState, eip), /* NOTE(anjo): UNCHECKED */
@@ -508,12 +516,15 @@ LibTcgInterface libtcg_load(void) {
         .pc = offsetof(CPUArchState, eip), /* NOTE(anjo): UNCHECKED */
         .sp = offsetof(CPUArchState, regs[R_ESP]), /* NOTE(anjo): UNCHECKED */
     #endif
+        .arch_cpu_name = "X86CPU",
 #elif defined(TARGET_M68K)
         .pc = 0, /* NOTE(anjo): UNCHECKED */
         .sp = 0, /* NOTE(anjo): UNCHECKED */
+        .arch_cpu_name = "M68kCPU",
 #elif defined(TARGET_MICROBLAZE)
         .pc = 0, /* NOTE(anjo): UNCHECKED */
         .sp = 0, /* NOTE(anjo): UNCHECKED */
+        .arch_cpu_name = "MicroBlazeCPU",
 #elif defined(TARGET_MIPS)
     #if defined(TARGET_MIPS64)
         .pc = 0, /* NOTE(anjo): UNCHECKED */
@@ -522,12 +533,15 @@ LibTcgInterface libtcg_load(void) {
         .pc = offsetof(CPUArchState, active_tc.PC), /* NOTE(anjo): UNCHECKED */
         .sp = offsetof(CPUArchState, active_tc.gpr[29]), /* NOTE(anjo): UNCHECKED */
     #endif
+        .arch_cpu_name = "MIPSCPU",
 #elif defined(TARGET_NIOS2)
         .pc = 0, /* NOTE(anjo): UNCHECKED */
         .sp = 0, /* NOTE(anjo): UNCHECKED */
+        .arch_cpu_name = "Nios2CPU",
 #elif defined(TARGET_OPENRISC)
         .pc = 0, /* NOTE(anjo): UNCHECKED */
         .sp = 0, /* NOTE(anjo): UNCHECKED */
+        .arch_cpu_name = "OpenRISCCPU",
 #elif defined(TARGET_PPC)
     #if defined(TARGET_PPC64)
         .pc = 0, /* NOTE(anjo): UNCHECKED */
@@ -536,9 +550,11 @@ LibTcgInterface libtcg_load(void) {
         .pc = 0, /* NOTE(anjo): UNCHECKED */
         .sp = 0, /* NOTE(anjo): UNCHECKED */
     #endif
+        .arch_cpu_name = "PowerPCCPU",
 #elif defined(TARGET_RISCV32)
         .pc = 0, /* NOTE(anjo): UNCHECKED */
         .sp = 0, /* NOTE(anjo): UNCHECKED */
+        .arch_cpu_name = "RISCVCPU",
 #elif defined(TARGET_RISCV64)
         /*
          * NOTE(anjo): TARGET_RISCV64 is the only 64-bit arch not defined
@@ -546,15 +562,19 @@ LibTcgInterface libtcg_load(void) {
          */
         .pc = 0, /* NOTE(anjo): UNCHECKED */
         .sp = 0, /* NOTE(anjo): UNCHECKED */
+        .arch_cpu_name = "RISCVCPU",
 #elif defined(TARGET_RX)
         .pc = 0, /* NOTE(anjo): UNCHECKED */
         .sp = 0, /* NOTE(anjo): UNCHECKED */
+        .arch_cpu_name = "RXCPU",
 #elif defined(TARGET_S390X)
         .pc = offsetof(CPUArchState, psw.addr), /* NOTE(anjo): UNCHECKED */
         .sp = offsetof(CPUArchState, regs[15]), /* NOTE(anjo): UNCHECKED */
+        .arch_cpu_name = "S390CPU",
 #elif defined(TARGET_SH4)
         .pc = 0, /* NOTE(anjo): UNCHECKED */
         .sp = 0, /* NOTE(anjo): UNCHECKED */
+        .arch_cpu_name = "SuperHCPU",
 #elif defined(TARGET_SPARC)
     #if defined(TARGET_SPARC64)
         .pc = 0, /* NOTE(anjo): UNCHECKED */
@@ -563,12 +583,15 @@ LibTcgInterface libtcg_load(void) {
         .pc = 0, /* NOTE(anjo): UNCHECKED */
         .sp = 0, /* NOTE(anjo): UNCHECKED */
     #endif
+        .arch_cpu_name = "SPARCCPU",
 #elif defined(TARGET_TRICORE)
         .pc = 0, /* NOTE(anjo): UNCHECKED */
         .sp = 0, /* NOTE(anjo): UNCHECKED */
+        .arch_cpu_name = "TriCoreCPU",
 #elif defined(TARGET_XTENSA)
         .pc = 0, /* NOTE(anjo): UNCHECKED */
         .sp = 0, /* NOTE(anjo): UNCHECKED */
+        .arch_cpu_name = "XtensaCPU",
 #endif
     };
 }
