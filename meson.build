@@ -1,4 +1,4 @@
-project('qemu', ['c'], meson_version: '>=0.63.0',
+project('qemu', ['c', 'cpp'], meson_version: '>=0.63.0',
         default_options: ['warning_level=1', 'c_std=gnu11', 'cpp_std=gnu++11', 'b_colorout=auto',
                           'b_staticpic=false', 'stdsplit=false', 'optimization=2', 'b_pie=true'],
         version: files('VERSION'))
@@ -3908,7 +3908,6 @@ foreach target : target_dirs
                               dependencies: arch_deps + deps,
                               c_args: c_args,
                               link_depends: [block_syms, qemu_syms],
-                              link_language: link_language,
                               link_args: link_args)
 
     execs = []
@@ -4050,16 +4049,16 @@ if have_tools
   endif
 endif
 
-subdir('scripts')
-subdir('tools')
 if not have_libtcg
+  subdir('scripts')
+  subdir('tools')
   subdir('pc-bios')
+  subdir('tests')
+  if gtk.found()
+    subdir('po')
+  endif
 endif
 subdir('docs')
-subdir('tests')
-if gtk.found()
-  subdir('po')
-endif
 
 if host_machine.system() == 'windows'
   nsis_cmd = [
