@@ -17,6 +17,8 @@
 #include "qemu.h"
 #include "qemu/osdep.h"
 #include "cpu.h"
+#include "cpu-param.h"
+#include "tcg/insn-start-words.h"
 #include "disas/disas.h"
 #include "exec/exec-all.h"
 #include "exec/translator.h"
@@ -177,9 +179,6 @@ LibTcgInstructionList libtcg_translate(LibTcgContext *context,
     };
     context->cpu->opaque = &region;
 
-    /* Needed to initialize fields in `tcg_ctx` */
-    tcg_func_start(tcg_ctx);
-
     vaddr pc;
     uint64_t cs_base;
     uint32_t flags;
@@ -212,21 +211,30 @@ LibTcgInstructionList libtcg_translate(LibTcgContext *context,
     cflags &= ~CF_USE_ICOUNT;
     cflags |= CF_NOIRQ;
 
+    /* 
+     * Initialize backend fields to avoid 
+     * triggering asserts in tcg_func_start
+     * */
+    tcg_ctx->addr_type = TARGET_LONG_BITS == 32 ? TCG_TYPE_I32 : TCG_TYPE_I64;
+    tcg_ctx->insn_start_words = TARGET_INSN_START_WORDS;
+    /* Needed to initialize fields in `tcg_ctx` */
+    tcg_func_start(tcg_ctx);
+
     /*
      * Set `max_insns` to the number of bytes in the buffer
      * so we don't have to worry about it being too small.
      */
     int max_insns = size;
 
-    TranslationBlock tb = {
-        .pc = pc,
-        .cs_base = cs_base,
-        .max_pc = virtual_address + size,
-        .flags = flags,
-        .cflags = cflags,
-    };
+    TranslationBlock *tb = tcg_tb_alloc(tcg_ctx);
+    tb->pc = pc;
+    tb->cs_base = cs_base;
+    tb->max_pc = virtual_address + size;
+    tb->flags = flags;
+    tb->cflags = cflags;
+
     void *host_pc = NULL;
-    gen_intermediate_code(context->cpu, &tb, &max_insns, pc, host_pc);
+    gen_intermediate_code(context->cpu, tb, &max_insns, pc, host_pc);
 
     LibTcgInstructionList instruction_list = {
         .list = context->desc.mem_alloc(sizeof(LibTcgInstruction) * tcg_ctx->nb_ops),
@@ -239,7 +247,7 @@ LibTcgInstructionList libtcg_translate(LibTcgContext *context,
         .labels = context->desc.mem_alloc(sizeof(LibTcgLabel) * (tcg_ctx->nb_labels)),
         .label_count = 0,
 
-        .size_in_bytes = tb.size,
+        .size_in_bytes = tb->size,
     };
 
     assert(instruction_list.list   != NULL &&
