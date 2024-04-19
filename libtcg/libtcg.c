@@ -61,18 +61,19 @@ typedef struct BytecodeRegion {
  * accel/tcg/user-exec.c. We override them to read bytecode from the
  * BytecodeRegion struct passed by via CPUState->opaque instead.
  */
-static inline void *vaddr_to_buf_ptr(CPUArchState *env, abi_ptr ptr)
+static inline void *vaddr_to_buf_ptr(CPUArchState *env, abi_ptr ptr, size_t type_size)
 {
     CPUState *cpu = env_cpu(env);
     BytecodeRegion *region = cpu->opaque;
     uint64_t offset = (uintptr_t)ptr - region->virtual_address;
+    assert(offset + type_size <= region->size);
     return (void *) ((uintptr_t) region->buffer + offset);
 }
 
-uint32_t cpu_ldub_code(CPUArchState *env, abi_ptr ptr) { return ldub_p(vaddr_to_buf_ptr(env, ptr)); }
-uint32_t cpu_lduw_code(CPUArchState *env, abi_ptr ptr) { return lduw_p(vaddr_to_buf_ptr(env, ptr)); }
-uint32_t cpu_ldl_code(CPUArchState *env, abi_ptr ptr)  { return ldl_p(vaddr_to_buf_ptr(env, ptr)); }
-uint64_t cpu_ldq_code(CPUArchState *env, abi_ptr ptr)  { return ldq_p(vaddr_to_buf_ptr(env, ptr)); }
+uint32_t cpu_ldub_code(CPUArchState *env, abi_ptr ptr) { return ldub_p(vaddr_to_buf_ptr(env, ptr, 1)); }
+uint32_t cpu_lduw_code(CPUArchState *env, abi_ptr ptr) { return lduw_p(vaddr_to_buf_ptr(env, ptr, 2)); }
+uint32_t cpu_ldl_code(CPUArchState *env, abi_ptr ptr)  { return ldl_p(vaddr_to_buf_ptr(env, ptr,  4)); }
+uint64_t cpu_ldq_code(CPUArchState *env, abi_ptr ptr)  { return ldq_p(vaddr_to_buf_ptr(env, ptr,  8)); }
 
 //static inline bool instruction_has_label_argument(TCGOpcode opc)
 //{
