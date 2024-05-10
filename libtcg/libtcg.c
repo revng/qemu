@@ -66,6 +66,7 @@ static inline void *vaddr_to_buf_ptr(CPUArchState *env, abi_ptr ptr, size_t type
     CPUState *cpu = env_cpu(env);
     BytecodeRegion *region = cpu->opaque;
     uint64_t offset = (uintptr_t)ptr - region->virtual_address;
+
     assert(offset + type_size <= region->size);
     return (void *) ((uintptr_t) region->buffer + offset);
 }
@@ -171,7 +172,6 @@ void libtcg_context_destroy(LibTcgContext *context)
 
 LibTcgInstructionList libtcg_translate(LibTcgContext *context,
                                        const unsigned char *buffer,
-                                       uint64_t start_address,
                                        size_t size,
                                        uint64_t virtual_address,
                                        uint32_t translate_flags)
@@ -179,7 +179,7 @@ LibTcgInstructionList libtcg_translate(LibTcgContext *context,
     BytecodeRegion region = {
         .buffer = buffer,
         .size = size,
-        .virtual_address = start_address,
+        .virtual_address = virtual_address,
     };
     context->cpu->opaque = &region;
 
@@ -196,10 +196,11 @@ LibTcgInstructionList libtcg_translate(LibTcgContext *context,
     /* Set flags */
 #ifdef TARGET_ARM
     if (translate_flags & LIBTCG_TRANSLATE_ARM_THUMB) {
-        CPUARMTBFlags arm_flags = {};
+        CPUARMTBFlags arm_flags = {flags, cs_base};
         /* flags |= THUMB; */
         DP_TBFLAG_AM32(arm_flags, THUMB, 1);
         flags = arm_flags.flags;
+        cs_base = arm_flags.flags2;
     }
 #endif
 
