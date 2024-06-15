@@ -884,8 +884,8 @@ Object *object_dynamic_cast(Object *obj, const char *typename)
 Object *object_dynamic_cast_assert(Object *obj, const char *typename,
                                    const char *file, int line, const char *func)
 {
-    trace_object_dynamic_cast_assert(obj ? obj->class->type->name : "(null)",
-                                     typename, file, line, func);
+    //trace_object_dynamic_cast_assert(obj ? obj->class->type->name : "(null)",
+    //                                 typename, file, line, func);
 
 #ifdef CONFIG_QOM_CAST_DEBUG
     int i;
