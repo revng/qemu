@@ -382,11 +382,13 @@ LibTcgInstructionList libtcg_translate(LibTcgContext *context,
         switch (opc) {
         case INDEX_op_brcond_i32:
         case INDEX_op_setcond_i32:
+        case INDEX_op_negsetcond_i32:
         case INDEX_op_movcond_i32:
         case INDEX_op_brcond2_i32:
         case INDEX_op_setcond2_i32:
         case INDEX_op_brcond_i64:
         case INDEX_op_setcond_i64:
+        case INDEX_op_negsetcond_i64:
         case INDEX_op_movcond_i64:
         case INDEX_op_cmp_vec:
         case INDEX_op_cmpsel_vec:
