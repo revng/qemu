@@ -285,7 +285,8 @@ typedef struct LibTcgMemOpIndex {
 
 typedef enum LibTcgArgumentKind {
     LIBTCG_ARG_CONSTANT,
-    LIBTCG_ARG_MEM_OP_INDEX, LIBTCG_ARG_COND,
+    LIBTCG_ARG_MEM_OP_INDEX,
+    LIBTCG_ARG_COND,
     LIBTCG_ARG_BSWAP,
     LIBTCG_ARG_TEMP,
     LIBTCG_ARG_LABEL,
