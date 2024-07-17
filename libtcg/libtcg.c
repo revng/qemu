@@ -3,6 +3,7 @@
 #include <stdbool.h>
 
 #include "qemu/osdep.h"
+#include "qemu/bswap.h"
 #include "qemu/help-texts.h"
 #include "qemu/units.h"
 #include "qemu/accel.h"
@@ -60,21 +61,18 @@ typedef struct BytecodeRegion {
  * accel/tcg/user-exec.c. We override them to read bytecode from the
  * BytecodeRegion struct passed by via CPUState->opaque instead.
  */
-#define CPU_MEMORY_ACCESS_FUNC(return_type, read_type, name)            \
-    return_type name(CPUArchState *env, abi_ptr ptr) {                  \
-        CPUState *cpu = env_cpu(env);                                   \
-        BytecodeRegion *region = cpu->opaque;                           \
-        uint64_t offset = (uintptr_t)ptr - region->virtual_address;     \
-        assert(offset + sizeof(read_type) <= region->size);             \
-        return *(read_type *) ((uintptr_t) region->buffer + offset);    \
-    }
+static inline void *vaddr_to_buf_ptr(CPUArchState *env, abi_ptr ptr)
+{
+    CPUState *cpu = env_cpu(env);
+    BytecodeRegion *region = cpu->opaque;
+    uint64_t offset = (uintptr_t)ptr - region->virtual_address;
+    return (void *) ((uintptr_t) region->buffer + offset);
+}
 
-CPU_MEMORY_ACCESS_FUNC(uint32_t, uint8_t,  cpu_ldub_code)
-CPU_MEMORY_ACCESS_FUNC(uint32_t, uint16_t, cpu_lduw_code)
-CPU_MEMORY_ACCESS_FUNC(uint32_t, uint32_t, cpu_ldl_code )
-CPU_MEMORY_ACCESS_FUNC(uint64_t, uint64_t, cpu_ldq_code )
-
-#undef CPU_MEMORY_ACCESS_FUNC
+uint32_t cpu_ldub_code(CPUArchState *env, abi_ptr ptr) { return ldub_p(vaddr_to_buf_ptr(env, ptr)); }
+uint32_t cpu_lduw_code(CPUArchState *env, abi_ptr ptr) { return lduw_p(vaddr_to_buf_ptr(env, ptr)); }
+uint32_t cpu_ldl_code(CPUArchState *env, abi_ptr ptr)  { return ldl_p(vaddr_to_buf_ptr(env, ptr)); }
+uint64_t cpu_ldq_code(CPUArchState *env, abi_ptr ptr)  { return ldq_p(vaddr_to_buf_ptr(env, ptr)); }
 
 //static inline bool instruction_has_label_argument(TCGOpcode opc)
 //{
