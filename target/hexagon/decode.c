@@ -933,7 +933,9 @@ int decode_packet(int max_words, const uint32_t *words, Packet *pkt,
         encoding32 = words[words_read];
         end_of_packet = is_packet_end(encoding32);
         new_insns = decode_insns(&pkt->insn[num_insns], encoding32);
-        g_assert(new_insns > 0);
+        if (new_insns == 0) {
+            siglongjmp(tcg_ctx->jmp_trans, -3);
+        }
         /*
          * If we saw an extender, mark next word extended so immediate
          * decode works
