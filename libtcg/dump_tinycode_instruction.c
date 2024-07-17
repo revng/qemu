@@ -95,6 +95,103 @@ static inline void fmt_append_to_stringbuffer(StringBuffer *buffer,
     }
 }
 
+void libtcg_dump_constant_arg_to_buffer(LibTcgArgument *arg,
+                                        char *buf,
+                                        size_t size)
+{
+    StringBuffer buffer = {
+        .data = buf,
+        .at   = 0,
+        .size = size,
+    };
+
+    (void) bswap_flag_name;
+    (void) alignment_name;
+    (void) ldst_name;
+    (void) cond_name;
+
+    switch(arg->kind) {
+        case LIBTCG_ARG_CONSTANT:
+            fmt_append_to_stringbuffer(&buffer, "$0x%lx", arg->constant);
+            break;
+        case LIBTCG_ARG_MEM_OP_INDEX:
+            {
+                LibTcgMemOp op = arg->mem_op_index.op;
+                unsigned ix = arg->mem_op_index.mmu_index;
+                if (op & ~(LIBTCG_MO_AMASK | LIBTCG_MO_BSWAP | LIBTCG_MO_SSIZE)) {
+                    fmt_append_to_stringbuffer(&buffer, "$0x%x,%u", op, ix);
+                } else {
+                    const char *s_al, *s_op;
+                    s_al = alignment_name[(op & LIBTCG_MO_AMASK) >> LIBTCG_MO_ASHIFT];
+                    s_op = ldst_name[op & (LIBTCG_MO_BSWAP | LIBTCG_MO_SSIZE)];
+                    fmt_append_to_stringbuffer(&buffer, "%s%s,%u", s_al, s_op, ix);
+                }
+            }
+            break;
+        case LIBTCG_ARG_COND:
+            {
+                uint64_t constant = arg->cond;
+                if (constant < ARRAY_LEN(cond_name)
+                    && cond_name[constant]) {
+                    fmt_append_to_stringbuffer(&buffer, "%s", cond_name[constant]);
+                } else {
+                    fmt_append_to_stringbuffer(&buffer, "$0x%lx", constant);
+                }
+            }
+            break;
+        case LIBTCG_ARG_BSWAP:
+            {
+                uint64_t flags = arg->bswap_flag;
+                const char *name = NULL;
+
+                if (flags < ARRAY_LEN(bswap_flag_name)) {
+                    name = bswap_flag_name[flags];
+                }
+                if (name) {
+                    fmt_append_to_stringbuffer(&buffer, "%s", name);
+                } else {
+                    fmt_append_to_stringbuffer(&buffer, "$0x%lx", flags);
+                }
+            }
+            break;
+        case LIBTCG_ARG_TEMP:
+            assert(0);
+            break;
+        case LIBTCG_ARG_LABEL:
+            fmt_append_to_stringbuffer(&buffer, "$L%d", arg->label->id);
+            break;
+        default:
+            assert(0);
+            break;
+    };
+}
+
+void libtcg_dump_instruction_name_to_buffer(LibTcgInstruction *insn, char *buf,
+                                            size_t size)
+{
+    LibTcgOpcode c = insn->opcode;
+
+    StringBuffer buffer = {
+        .data = buf,
+        .at   = 0,
+        .size = size,
+    };
+
+    const char *insn_name = libtcg_get_instruction_name(insn->opcode);
+    if (c == LIBTCG_op_insn_start) {
+        fmt_append_to_stringbuffer(&buffer, " ----");
+
+        for (uint32_t i = 0; i < insn->nb_cargs; ++i) {
+            fmt_append_to_stringbuffer(&buffer, " %016x",
+                                       insn->constant_args[i].constant);
+        }
+    } else {
+        fmt_append_to_stringbuffer(&buffer, "%s", insn_name);
+    }
+
+    fmt_append_to_stringbuffer(&buffer, "\0");
+}
+
 /*
  * TODO(anjo): Adapted from `tcg_dump_ops` in `tcg/tcg.c`.
  *      This print function doesnt handle:
