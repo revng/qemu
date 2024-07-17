@@ -323,6 +323,17 @@ typedef struct LibTcgHelperInfo {
     uint32_t func_flags;
 } LibTcgHelperInfo;
 
+typedef struct LibTcgArchInfo {
+    uint16_t num_globals;
+    const char *arch_cpu_name;
+    intptr_t env_offset;
+    intptr_t exception_index;
+    intptr_t is_thumb;
+    intptr_t pc;
+    intptr_t sp;
+    intptr_t bp;
+} LibTcgArchInfo;
+
 typedef struct LibTcgInstruction {
     LibTcgOpcode opcode;
     uint32_t flags;
@@ -416,21 +427,13 @@ LIBTCG_EXPORT(void,                   libtcg_dump_constant_arg_to_buffer, (LibTc
 typedef struct LibTcgInterface {
     LIBTCG_FUNC_TYPE(libtcg_get_instruction_name)       *get_instruction_name;
     LIBTCG_FUNC_TYPE(libtcg_get_helper_info)            *get_helper_info;
+    LIBTCG_FUNC_TYPE(libtcg_get_arch_info)              *get_arch_info;
     LIBTCG_FUNC_TYPE(libtcg_context_create)             *context_create;
     LIBTCG_FUNC_TYPE(libtcg_context_destroy)            *context_destroy;
     LIBTCG_FUNC_TYPE(libtcg_translate_block)            *translate_block;
     LIBTCG_FUNC_TYPE(libtcg_translation_block_destroy)  *translation_block_destroy;
     LIBTCG_FUNC_TYPE(libtcg_env_ptr)                    *env_ptr;
     LIBTCG_FUNC_TYPE(libtcg_dump_instruction_to_buffer) *dump_instruction_to_buffer;
-
-    // CPUState variables
-    const char *arch_cpu_name;
-    intptr_t env_offset;
-    intptr_t exception_index;
-    intptr_t is_thumb;
-    intptr_t pc;
-    intptr_t sp;
-    intptr_t bp;
 } LibTcgInterface;
 
 /*
