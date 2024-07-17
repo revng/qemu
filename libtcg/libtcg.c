@@ -400,7 +400,7 @@ LibTcgTranslationBlock libtcg_translate_block(LibTcgContext *context,
      * Set `max_insns` to the number of bytes in the buffer
      * so we don't have to worry about it being too small.
      */
-    int max_insns = size;
+    int max_insns = TCG_MAX_INSNS;
 
     TranslationBlock *tb = tcg_tb_alloc(tcg_ctx);
     tb->pc = pc;
@@ -410,6 +410,26 @@ LibTcgTranslationBlock libtcg_translate_block(LibTcgContext *context,
     tb->cflags = cflags;
 
     tcg_ctx->gen_tb = tb;
+
+    int ret;
+restart_translation:
+    ret = sigsetjmp(tcg_ctx->jmp_trans, 0);
+    if (ret != 0) {
+        switch (ret) {
+        case -2:
+            assert(max_insns > 1);
+            max_insns /= 2;
+            goto restart_translation;
+            break;
+        case -3:
+            return (LibTcgTranslationBlock) {
+                .size_in_bytes = sizeof(target_ulong),
+            };
+        }
+    }
+
+    /* Needed to initialize fields in `tcg_ctx` */
+    tcg_func_start(tcg_ctx);
 
     void *host_pc = NULL;
     gen_intermediate_code(context->cpu, tb, &max_insns, pc, host_pc);
