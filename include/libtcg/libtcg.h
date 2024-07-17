@@ -340,7 +340,7 @@ typedef struct LibTcgInstruction {
     LibTcgArgument constant_args[LIBTCG_INSN_MAX_ARGS];
 } LibTcgInstruction;
 
-typedef struct LibTcgInstructionList {
+typedef struct LibTcgTranslationBlock {
     LibTcgInstruction *list;
     size_t instruction_count;
 
@@ -353,7 +353,7 @@ typedef struct LibTcgInstructionList {
     size_t label_count;
 
     size_t size_in_bytes;
-} LibTcgInstructionList;
+} LibTcgTranslationBlock;
 
 typedef enum LibTcgTranslateFlags {
     LIBTCG_TRANSLATE_ARM_THUMB = 1,
@@ -397,27 +397,29 @@ typedef struct LibTcgContext LibTcgContext;
     ret name params;                          /* Function declaration */ \
     typedef ret LIBTCG_FUNC_TYPE(name) params /* Funciton typedef     */
 
-LIBTCG_EXPORT(const char *,          libtcg_get_instruction_name,       (LibTcgOpcode opcode));
-LIBTCG_EXPORT(LibTcgHelperInfo,      libtcg_get_helper_info,            (LibTcgInstruction *insn));
-LIBTCG_EXPORT(LibTcgContext *,       libtcg_context_create,             (LibTcgDesc *desc));
-LIBTCG_EXPORT(void,                  libtcg_context_destroy,            (LibTcgContext *context));
-LIBTCG_EXPORT(LibTcgInstructionList, libtcg_translate,                  (LibTcgContext *context, const unsigned char *buffer, size_t size, uint64_t virtual_address, uint32_t translate_flags));
-LIBTCG_EXPORT(void,                  libtcg_instruction_list_destroy,   (LibTcgContext *context, LibTcgInstructionList));
-LIBTCG_EXPORT(uint8_t *,             libtcg_env_ptr,                    (LibTcgContext *context));
-LIBTCG_EXPORT(void,                  libtcg_dump_instruction_to_buffer, (LibTcgInstruction *insn, char *buf, size_t size));
+LIBTCG_EXPORT(const char *,           libtcg_get_instruction_name,       (LibTcgOpcode opcode));
+LIBTCG_EXPORT(LibTcgHelperInfo,       libtcg_get_helper_info,            (LibTcgInstruction *insn));
+LIBTCG_EXPORT(LibTcgArchInfo,         libtcg_get_arch_info,              (void));
+LIBTCG_EXPORT(LibTcgContext *,        libtcg_context_create,             (LibTcgDesc *desc));
+LIBTCG_EXPORT(void,                   libtcg_context_destroy,            (LibTcgContext *context));
+LIBTCG_EXPORT(LibTcgTranslationBlock, libtcg_translate_block,            (LibTcgContext *context, const unsigned char *buffer, size_t size, uint64_t virtual_address, uint32_t translate_flags));
+LIBTCG_EXPORT(void,                   libtcg_translation_block_destroy,  (LibTcgContext *context, LibTcgTranslationBlock));
+LIBTCG_EXPORT(uint8_t *,              libtcg_env_ptr,                    (LibTcgContext *context));
+LIBTCG_EXPORT(void,                   libtcg_dump_instruction_to_buffer, (LibTcgInstruction *insn, char *buf, size_t size));
+LIBTCG_EXPORT(void,                   libtcg_dump_instruction_name_to_buffer, (LibTcgInstruction *insn, char *buf, size_t size));
+LIBTCG_EXPORT(void,                   libtcg_dump_constant_arg_to_buffer, (LibTcgArgument *arg, char *buf, size_t size));
 
 /*
  * struct to help load functions we expose,
  * useful when `dlopen`ing.
  */
 typedef struct LibTcgInterface {
-    // Functions
     LIBTCG_FUNC_TYPE(libtcg_get_instruction_name)       *get_instruction_name;
     LIBTCG_FUNC_TYPE(libtcg_get_helper_info)            *get_helper_info;
     LIBTCG_FUNC_TYPE(libtcg_context_create)             *context_create;
     LIBTCG_FUNC_TYPE(libtcg_context_destroy)            *context_destroy;
-    LIBTCG_FUNC_TYPE(libtcg_translate)                  *translate;
-    LIBTCG_FUNC_TYPE(libtcg_instruction_list_destroy)   *instruction_list_destroy;
+    LIBTCG_FUNC_TYPE(libtcg_translate_block)            *translate_block;
+    LIBTCG_FUNC_TYPE(libtcg_translation_block_destroy)  *translation_block_destroy;
     LIBTCG_FUNC_TYPE(libtcg_env_ptr)                    *env_ptr;
     LIBTCG_FUNC_TYPE(libtcg_dump_instruction_to_buffer) *dump_instruction_to_buffer;
 

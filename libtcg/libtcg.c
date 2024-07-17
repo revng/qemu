@@ -170,11 +170,11 @@ void libtcg_context_destroy(LibTcgContext *context)
     context->desc.mem_free(context);
 }
 
-LibTcgInstructionList libtcg_translate(LibTcgContext *context,
-                                       const unsigned char *buffer,
-                                       size_t size,
-                                       uint64_t virtual_address,
-                                       uint32_t translate_flags)
+LibTcgTranslationBlock libtcg_translate_block(LibTcgContext *context,
+                                              const unsigned char *buffer,
+                                              size_t size,
+                                              uint64_t virtual_address,
+                                              uint32_t translate_flags)
 {
     BytecodeRegion region = {
         .buffer = buffer,
@@ -243,7 +243,7 @@ LibTcgInstructionList libtcg_translate(LibTcgContext *context,
     void *host_pc = NULL;
     gen_intermediate_code(context->cpu, tb, &max_insns, pc, host_pc);
 
-    LibTcgInstructionList instruction_list = {
+    LibTcgTranslationBlock instruction_list = {
         .list = context->desc.mem_alloc(sizeof(LibTcgInstruction) * tcg_ctx->nb_ops),
         .instruction_count = 0,
 
@@ -354,28 +354,6 @@ LibTcgInstructionList libtcg_translate(LibTcgContext *context,
          *     - 2nd arg: {constant, label}
          *     - nth arg: constant
          */
-        //printf("%ld - %ld - %ld\n", insn.nb_oargs, insn.nb_iargs, insn.nb_cargs);
-        //for (uint32_t i = 0; i < insn.nb_cargs; ++i) {
-        //    if (false && i == 0 && instruction_has_label_argument(opc)) {
-        //        TCGLabel *label =
-        //            arg_label(op->args[insn.nb_oargs + insn.nb_iargs + i]);
-        //        LibTcgLabel *our_label = &instruction_list.labels[label->id];
-        //        our_label->id = label->id;
-        //        insn.constant_args[i] = (LibTcgArgument) {
-        //            .kind = LIBTCG_ARG_LABEL,
-        //            .label = our_label
-        //        };
-        //    } else {
-        //        /*
-        //         * If we get to here the constant arg was actually a
-        //         * constant
-        //         */
-        //        insn.constant_args[i] = (LibTcgArgument) {
-        //            .kind = LIBTCG_ARG_CONSTANT,
-        //            .constant = op->args[insn.nb_oargs + insn.nb_iargs + i],
-        //        };
-        //    }
-        //}
 
         uint32_t start_index = 0;
 
@@ -476,12 +454,14 @@ LibTcgInstructionList libtcg_translate(LibTcgContext *context,
     return instruction_list;
 }
 
-void libtcg_instruction_list_destroy(LibTcgContext *context,
-                                     LibTcgInstructionList instruction_list)
+void libtcg_translation_block_destroy(LibTcgContext *context,
+                                     LibTcgTranslationBlock tb)
 {
-    context->desc.mem_free(instruction_list.list);
-    context->desc.mem_free(instruction_list.temps);
-    context->desc.mem_free(instruction_list.labels);
+    if (context->desc.mem_free != NULL) {
+        context->desc.mem_free(tb.list);
+        context->desc.mem_free(tb.temps);
+        context->desc.mem_free(tb.labels);
+    }
 }
 
 uint8_t *libtcg_env_ptr(LibTcgContext *context)
