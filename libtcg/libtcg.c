@@ -277,19 +277,22 @@ LibTcgContext *libtcg_context_create(LibTcgDesc *desc)
 {
     assert(desc);
 
-    /* Default initialize desc */
-    if (!desc->mem_alloc) {
+    /*
+     * Default to using malloc/free for memory allocation
+     * if both mem_alloc and mem_free are NULL. Users might
+     * want to specify only allocation when using stack
+     * allocators or similar.
+     */
+    if (desc->mem_alloc == NULL && desc->mem_free == NULL) {
         desc->mem_alloc = malloc;
-    }
-
-    if (!desc->mem_free) {
         desc->mem_free = free;
     }
 
     /* Initialize context */
     LibTcgContext *context = desc->mem_alloc(sizeof(LibTcgContext));
-    if (context == NULL)
+    if (context == NULL) {
         return NULL;
+    }
     context->desc = *desc;
 
     qemu_init_cpu_list();
@@ -315,20 +318,19 @@ LibTcgContext *libtcg_context_create(LibTcgDesc *desc)
     struct target_pt_regs regs = {0};
 
     struct image_info info = {0};
-    TaskState *ts = malloc(sizeof(TaskState));
-    ts->info = &info;
-    context->cpu->opaque = ts;
-
+    TaskState ts = {0};
+    ts.info = &info;
+    context->cpu->opaque = &ts;
     target_cpu_copy_regs(cpu_env(context->cpu), &regs);
-
-    free(ts);
 
     return context;
 }
 
 void libtcg_context_destroy(LibTcgContext *context)
 {
-    context->desc.mem_free(context);
+    if (context->desc.mem_free != NULL) {
+        context->desc.mem_free(context);
+    }
 }
 
 LibTcgTranslationBlock libtcg_translate_block(LibTcgContext *context,
