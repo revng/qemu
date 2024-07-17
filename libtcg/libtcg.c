@@ -632,14 +632,13 @@ uint8_t *libtcg_env_ptr(LibTcgContext *context)
 
 LibTcgInterface libtcg_load(void) {
     return (LibTcgInterface) {
-        /* Functions */
         .get_instruction_name       = libtcg_get_instruction_name,
         .get_helper_info            = libtcg_get_helper_info,
         .get_arch_info              = libtcg_get_arch_info,
         .context_create             = libtcg_context_create,
         .context_destroy            = libtcg_context_destroy,
-        .translate                  = libtcg_translate,
-        .instruction_list_destroy   = libtcg_instruction_list_destroy,
+        .translate_block            = libtcg_translate_block,
+        .translation_block_destroy  = libtcg_translation_block_destroy,
         .env_ptr                    = libtcg_env_ptr,
         .dump_instruction_to_buffer = libtcg_dump_instruction_to_buffer,
     };
