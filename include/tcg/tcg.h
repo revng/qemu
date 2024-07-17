@@ -882,6 +882,10 @@ TCGOp *tcg_op_insert_after(TCGContext *s, TCGOp *op,
 void tcg_remove_ops_after(TCGOp *op);
 
 void tcg_optimize(TCGContext *s);
+void reachable_code_pass(TCGContext *s);
+void liveness_pass_0(TCGContext *s);
+void liveness_pass_1(TCGContext *s);
+bool liveness_pass_2(TCGContext *s);
 
 TCGLabel *gen_new_label(void);
 

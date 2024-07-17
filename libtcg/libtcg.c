@@ -358,7 +358,7 @@ LibTcgTranslationBlock libtcg_translate_block(LibTcgContext *context,
 
     /* Set flags */
 #ifdef TARGET_ARM
-    if (translate_flags & LIBTCG_TRANSLATE_ARM_THUMB) {
+    if ((translate_flags & LIBTCG_TRANSLATE_ARM_THUMB) != 0) {
         CPUARMTBFlags arm_flags = {flags, cs_base};
         /* flags |= THUMB; */
         DP_TBFLAG_AM32(arm_flags, THUMB, 1);
@@ -388,6 +388,14 @@ LibTcgTranslationBlock libtcg_translate_block(LibTcgContext *context,
     /* Needed to initialize fields in `tcg_ctx` */
     tcg_func_start(tcg_ctx);
 
+#ifdef CONFIG_LLVM_TO_TCG
+# ifdef TARGET_DISPATCHER
+    if ((translate_flags & LIBTCG_TRANSLATE_HELPER_TO_TCG) != 0) {
+        tcg_ctx->dispatcher = TARGET_DISPATCHER;
+    }
+# endif
+#endif
+
     /*
      * Set `max_insns` to the number of bytes in the buffer
      * so we don't have to worry about it being too small.
@@ -405,6 +413,20 @@ LibTcgTranslationBlock libtcg_translate_block(LibTcgContext *context,
 
     void *host_pc = NULL;
     gen_intermediate_code(context->cpu, tb, &max_insns, pc, host_pc);
+
+    if ((translate_flags & LIBTCG_TRANSLATE_OPTIMIZE_TCG) != 0) {
+        tcg_optimize(tcg_ctx);
+        reachable_code_pass(tcg_ctx);
+        liveness_pass_0(tcg_ctx);
+        liveness_pass_1(tcg_ctx);
+        if (tcg_ctx->nb_indirects > 0) {
+            /* Replace indirect temps with direct temps.  */
+            if (liveness_pass_2(tcg_ctx)) {
+                /* If changes were made, re-run liveness.  */
+                liveness_pass_1(tcg_ctx);
+            }
+        }
+    }
 
     LibTcgTranslationBlock instruction_list = {
         .list = context->desc.mem_alloc(sizeof(LibTcgInstruction) * tcg_ctx->nb_ops),

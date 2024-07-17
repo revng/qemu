@@ -368,6 +368,8 @@ typedef struct LibTcgTranslationBlock {
 
 typedef enum LibTcgTranslateFlags {
     LIBTCG_TRANSLATE_ARM_THUMB = 1,
+    LIBTCG_TRANSLATE_OPTIMIZE_TCG = 2,
+    LIBTCG_TRANSLATE_HELPER_TO_TCG = 4,
 } LibTcgTranslateFlags;
 
 /*

@@ -3258,7 +3258,7 @@ static void move_label_uses(TCGLabel *to, TCGLabel *from)
 }
 
 /* Reachable analysis : remove unreachable code.  */
-static void __attribute__((noinline))
+void __attribute__((noinline))
 reachable_code_pass(TCGContext *s)
 {
     TCGOp *op, *op_next, *op_prev;
@@ -3497,7 +3497,7 @@ static void la_cross_call(TCGContext *s, int nt)
  * Liveness analysis: Verify the lifetime of TEMP_TB, and reduce
  * to TEMP_EBB, if possible.
  */
-static void __attribute__((noinline))
+void __attribute__((noinline))
 liveness_pass_0(TCGContext *s)
 {
     void * const multiple_ebb = (void *)(uintptr_t)-1;
@@ -3565,7 +3565,7 @@ liveness_pass_0(TCGContext *s)
 /* Liveness analysis : update the opc_arg_life array to tell if a
    given input arguments is dead. Instructions updating dead
    temporaries are removed. */
-static void __attribute__((noinline))
+void __attribute__((noinline))
 liveness_pass_1(TCGContext *s)
 {
     int nb_globals = s->nb_globals;
@@ -3906,7 +3906,7 @@ liveness_pass_1(TCGContext *s)
 }
 
 /* Liveness analysis: Convert indirect regs to direct temporaries.  */
-static bool __attribute__((noinline))
+bool __attribute__((noinline))
 liveness_pass_2(TCGContext *s)
 {
     int nb_globals = s->nb_globals;
