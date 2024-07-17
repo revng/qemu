@@ -428,6 +428,7 @@ typedef struct LibTcgInterface {
     intptr_t is_thumb;
     intptr_t pc;
     intptr_t sp;
+    intptr_t bp;
 } LibTcgInterface;
 
 /*

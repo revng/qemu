@@ -511,79 +511,97 @@ LibTcgInterface libtcg_load(void) {
 #if defined(TARGET_ALPHA)
         .pc = offsetof(CPUArchState, pc),
         .sp = 0, /* TODO(anjo) */
+        .bp = 0, /* TODO(anjo) */
         .arch_cpu_name = "AlphaCPU",
 #elif defined(TARGET_ARM)
     #if defined(TARGET_AARCH64)
         .pc = offsetof(CPUArchState, pc),
         .sp = offsetof(CPUArchState, xregs[31]), /* NOTE(anjo): UNCHECKED */
+        .bp = 0, /* TODO(anjo) */
     #else
         .pc = offsetof(CPUArchState, regs[15]), /* NOTE(anjo): UNCHECKED */
         .sp = offsetof(CPUArchState, xregs[31]), /* NOTE(anjo): UNCHECKED */
+        .bp = 0, /* TODO(anjo) */
         .is_thumb = offsetof(CPUArchState, thumb),
     #endif
         .arch_cpu_name = "ARMCPU",
 #elif defined(TARGET_AVR)
         .pc = offsetof(CPUArchState, pc_w),
         .sp = offsetof(CPUArchState, sp),
+        .bp = 0, /* TODO(anjo) */
         .arch_cpu_name = "AVRCPU",
 #elif defined(TARGET_CRIS)
         .pc = 0, /* NOTE(anjo): UNCHECKED */
         .sp = 0, /* NOTE(anjo): UNCHECKED */
+        .bp = 0, /* TODO(anjo) */
         .arch_cpu_name = "CRISCPU",
 #elif defined(TARGET_HEXAGON)
         .pc = offsetof(CPUArchState, gpr[41]), /* NOTE(anjo): UNCHECKED */
         .sp = offsetof(CPUArchState, gpr[29]), /* NOTE(anjo): UNCHECKED */
+        .bp = 0, /* TODO(anjo) */
         .arch_cpu_name = "HexagonCPU",
 #elif defined(TARGET_HPPA)
         .pc = 0, /* NOTE(anjo): UNCHECKED */
         .sp = 0, /* NOTE(anjo): UNCHECKED */
+        .bp = 0, /* TODO(anjo) */
         .arch_cpu_name = "HPPACPU",
 #elif defined(TARGET_I386)
     #if defined(TARGET_X86_64)
         .pc = offsetof(CPUArchState, eip), /* NOTE(anjo): UNCHECKED */
         .sp = offsetof(CPUArchState, regs[R_ESP]), /* NOTE(anjo): UNCHECKED */
+        .bp = offsetof(CPUArchState, regs[R_EBP]), /* NOTE(anjo): UNCHECKED */
     #else
         .pc = offsetof(CPUArchState, eip), /* NOTE(anjo): UNCHECKED */
         .sp = offsetof(CPUArchState, regs[R_ESP]), /* NOTE(anjo): UNCHECKED */
+        .bp = offsetof(CPUArchState, regs[R_EBP]), /* NOTE(anjo): UNCHECKED */
     #endif
         .arch_cpu_name = "X86CPU",
 #elif defined(TARGET_M68K)
         .pc = 0, /* NOTE(anjo): UNCHECKED */
         .sp = 0, /* NOTE(anjo): UNCHECKED */
+        .bp = 0, /* TODO(anjo) */
         .arch_cpu_name = "M68kCPU",
 #elif defined(TARGET_MICROBLAZE)
         .pc = 0, /* NOTE(anjo): UNCHECKED */
         .sp = 0, /* NOTE(anjo): UNCHECKED */
+        .bp = 0, /* TODO(anjo) */
         .arch_cpu_name = "MicroBlazeCPU",
 #elif defined(TARGET_MIPS)
     #if defined(TARGET_MIPS64)
         .pc = 0, /* NOTE(anjo): UNCHECKED */
         .sp = 0, /* NOTE(anjo): UNCHECKED */
+        .bp = 0, /* TODO(anjo) */
     #else
         .pc = offsetof(CPUArchState, active_tc.PC), /* NOTE(anjo): UNCHECKED */
         .sp = offsetof(CPUArchState, active_tc.gpr[29]), /* NOTE(anjo): UNCHECKED */
+        .bp = 0, /* TODO(anjo) */
     #endif
         .arch_cpu_name = "MIPSCPU",
 #elif defined(TARGET_NIOS2)
         .pc = 0, /* NOTE(anjo): UNCHECKED */
         .sp = 0, /* NOTE(anjo): UNCHECKED */
+        .bp = 0, /* TODO(anjo) */
         .arch_cpu_name = "Nios2CPU",
 #elif defined(TARGET_OPENRISC)
         .pc = 0, /* NOTE(anjo): UNCHECKED */
         .sp = 0, /* NOTE(anjo): UNCHECKED */
+        .bp = 0, /* TODO(anjo) */
         .arch_cpu_name = "OpenRISCCPU",
 #elif defined(TARGET_PPC)
     #if defined(TARGET_PPC64)
         .pc = 0, /* NOTE(anjo): UNCHECKED */
         .sp = 0, /* NOTE(anjo): UNCHECKED */
+        .bp = 0, /* TODO(anjo) */
     #else
         .pc = 0, /* NOTE(anjo): UNCHECKED */
         .sp = 0, /* NOTE(anjo): UNCHECKED */
+        .bp = 0, /* TODO(anjo) */
     #endif
         .arch_cpu_name = "PowerPCCPU",
 #elif defined(TARGET_RISCV32)
         .pc = 0, /* NOTE(anjo): UNCHECKED */
         .sp = 0, /* NOTE(anjo): UNCHECKED */
+        .bp = 0, /* TODO(anjo) */
         .arch_cpu_name = "RISCVCPU",
 #elif defined(TARGET_RISCV64)
         /*
@@ -592,39 +610,48 @@ LibTcgInterface libtcg_load(void) {
          */
         .pc = 0, /* NOTE(anjo): UNCHECKED */
         .sp = 0, /* NOTE(anjo): UNCHECKED */
+        .bp = 0, /* TODO(anjo) */
         .arch_cpu_name = "RISCVCPU",
 #elif defined(TARGET_RX)
         .pc = 0, /* NOTE(anjo): UNCHECKED */
         .sp = 0, /* NOTE(anjo): UNCHECKED */
+        .bp = 0, /* TODO(anjo) */
         .arch_cpu_name = "RXCPU",
 #elif defined(TARGET_S390X)
         .pc = offsetof(CPUArchState, psw.addr), /* NOTE(anjo): UNCHECKED */
         .sp = offsetof(CPUArchState, regs[15]), /* NOTE(anjo): UNCHECKED */
+        .bp = 0, /* TODO(anjo) */
         .arch_cpu_name = "S390CPU",
 #elif defined(TARGET_SH4)
         .pc = 0, /* NOTE(anjo): UNCHECKED */
         .sp = 0, /* NOTE(anjo): UNCHECKED */
+        .bp = 0, /* TODO(anjo) */
         .arch_cpu_name = "SuperHCPU",
 #elif defined(TARGET_SPARC)
     #if defined(TARGET_SPARC64)
         .pc = 0, /* NOTE(anjo): UNCHECKED */
         .sp = 0, /* NOTE(anjo): UNCHECKED */
+        .bp = 0, /* TODO(anjo) */
     #else
         .pc = 0, /* NOTE(anjo): UNCHECKED */
         .sp = 0, /* NOTE(anjo): UNCHECKED */
+        .bp = 0, /* TODO(anjo) */
     #endif
         .arch_cpu_name = "SPARCCPU",
 #elif defined(TARGET_TRICORE)
         .pc = 0, /* NOTE(anjo): UNCHECKED */
         .sp = 0, /* NOTE(anjo): UNCHECKED */
+        .bp = 0, /* TODO(anjo) */
         .arch_cpu_name = "TriCoreCPU",
 #elif defined(TARGET_XTENSA)
         .pc = 0, /* NOTE(anjo): UNCHECKED */
         .sp = 0, /* NOTE(anjo): UNCHECKED */
+        .bp = 0, /* TODO(anjo) */
         .arch_cpu_name = "XtensaCPU",
 #elif defined(TARGET_LOONGARCH64)
         .pc = 0, /* NOTE(anjo): UNCHECKED */
         .sp = 0, /* NOTE(anjo): UNCHECKED */
+        .bp = 0, /* TODO(anjo) */
         .arch_cpu_name = "",
 #else
     #error Unhandled target
