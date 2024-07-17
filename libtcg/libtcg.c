@@ -685,5 +685,7 @@ LibTcgInterface libtcg_load(void) {
         .translation_block_destroy  = libtcg_translation_block_destroy,
         .env_ptr                    = libtcg_env_ptr,
         .dump_instruction_to_buffer = libtcg_dump_instruction_to_buffer,
+        .dump_instruction_name_to_buffer = libtcg_dump_instruction_name_to_buffer,
+        .dump_constant_arg_to_buffer = libtcg_dump_constant_arg_to_buffer,
     };
 }

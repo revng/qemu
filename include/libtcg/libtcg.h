@@ -436,6 +436,8 @@ typedef struct LibTcgInterface {
     LIBTCG_FUNC_TYPE(libtcg_translation_block_destroy)  *translation_block_destroy;
     LIBTCG_FUNC_TYPE(libtcg_env_ptr)                    *env_ptr;
     LIBTCG_FUNC_TYPE(libtcg_dump_instruction_to_buffer) *dump_instruction_to_buffer;
+    LIBTCG_FUNC_TYPE(libtcg_dump_instruction_name_to_buffer) *dump_instruction_name_to_buffer;
+    LIBTCG_FUNC_TYPE(libtcg_dump_constant_arg_to_buffer) *dump_constant_arg_to_buffer;
 } LibTcgInterface;
 
 /*
