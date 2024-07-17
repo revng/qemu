@@ -50,7 +50,7 @@
 #endif
 
 #define D(x)
-#define BUG() (gen_BUG(dc, __FILE__, __LINE__))
+#define BUG() (siglongjmp(tcg_ctx->jmp_trans, -3))
 #define BUG_ON(x) ({if (x) BUG();})
 
 /*
