@@ -154,7 +154,7 @@ static void gen_end_tb(DisasContext *ctx)
 {
     Packet *pkt = ctx->pkt;
 
-    gen_exec_counters(ctx);
+    //gen_exec_counters(ctx);
 
     if (ctx->branch_cond != TCG_COND_NEVER) {
         if (ctx->branch_cond != TCG_COND_ALWAYS) {
