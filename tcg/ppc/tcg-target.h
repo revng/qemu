@@ -148,8 +148,8 @@ typedef enum {
  * instruction and substituting two 32-bit stores makes the generated
  * code quite large.
  */
-#define TCG_TARGET_HAS_v64              have_vsx
-#define TCG_TARGET_HAS_v128             have_altivec
+#define TCG_TARGET_HAS_v64              0
+#define TCG_TARGET_HAS_v128             0
 #define TCG_TARGET_HAS_v256             0
 
 #define TCG_TARGET_HAS_andc_vec         1
