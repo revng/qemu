@@ -2388,6 +2388,20 @@ void tcg_optimize(TCGContext *s)
         ctx.z_mask = -1;
         ctx.s_mask = 0;
 
+        if (def->nb_oargs > 0) {
+            bool skip = false;
+            for (int i = 0; i < def->nb_oargs; ++i) {
+                TCGTempKind kind = arg_temp(op->args[i])->kind;
+                if (kind == TEMP_GLOBAL || kind == TEMP_FIXED) {
+                    skip = true;
+                    break;
+                }
+            }
+            if (skip) {
+                continue;
+            }
+        }
+
         /*
          * Process each opcode.
          * Sorted alphabetically by opcode as much as possible.

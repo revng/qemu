@@ -217,7 +217,7 @@ void init_task_state(TaskState *ts)
 
     ticks_per_sec = sysconf(_SC_CLK_TCK);
 
-    if ((ticks_per_sec > 0) && !clock_gettime(CLOCK_BOOTTIME, &bt)) {
+    if ((ticks_per_sec > 0) && !clock_gettime(CLOCK_MONOTONIC, &bt)) {
         /* start_boottime is expressed in clock ticks */
         ts->start_boottime = bt.tv_sec * (uint64_t) ticks_per_sec;
         ts->start_boottime += bt.tv_nsec * (uint64_t) ticks_per_sec /

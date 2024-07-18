@@ -850,12 +850,12 @@ static abi_long host_to_target_data_vlan_list_nlattr(struct nlattr *nlattr,
 
     switch (nlattr->nla_type) {
     /* struct ifla_vf_vlan_info */
-    case IFLA_VF_VLAN_INFO:
-        vlan_info = NLA_DATA(nlattr);
-        vlan_info->vf = tswap32(vlan_info->vf);
-        vlan_info->vlan = tswap32(vlan_info->vlan);
-        vlan_info->qos = tswap32(vlan_info->qos);
-        break;
+    //case IFLA_VF_VLAN_INFO:
+    //    vlan_info = NLA_DATA(nlattr);
+    //    vlan_info->vf = tswap32(vlan_info->vf);
+    //    vlan_info->vlan = tswap32(vlan_info->vlan);
+    //    vlan_info->qos = tswap32(vlan_info->qos);
+    //    break;
     default:
         qemu_log_mask(LOG_UNIMP, "Unknown host VLAN LIST type: %d\n",
                       nlattr->nla_type);
@@ -921,12 +921,12 @@ static abi_long host_to_target_data_vfinfo_nlattr(struct nlattr *nlattr,
         vlan->qos = tswap32(vlan->qos);
         break;
     /* struct ifla_vf_vlan_info */
-    case QEMU_IFLA_VF_TX_RATE:
-        vlan_info = NLA_DATA(nlattr);
-        vlan_info->vf = tswap32(vlan_info->vf);
-        vlan_info->vlan = tswap32(vlan_info->vlan);
-        vlan_info->qos = tswap32(vlan_info->qos);
-        break;
+    //case QEMU_IFLA_VF_TX_RATE:
+    //    vlan_info = NLA_DATA(nlattr);
+    //    vlan_info->vf = tswap32(vlan_info->vf);
+    //    vlan_info->vlan = tswap32(vlan_info->vlan);
+    //    vlan_info->qos = tswap32(vlan_info->qos);
+    //    break;
     /* struct ifla_vf_spoofchk */
     case QEMU_IFLA_VF_SPOOFCHK:
         spoofchk = NLA_DATA(nlattr);
@@ -960,11 +960,11 @@ static abi_long host_to_target_data_vfinfo_nlattr(struct nlattr *nlattr,
         break;
     /* struct ifla_vf_guid  */
     case QEMU_IFLA_VF_IB_NODE_GUID:
-    case QEMU_IFLA_VF_IB_PORT_GUID:
-        guid = NLA_DATA(nlattr);
-        guid->vf = tswap32(guid->vf);
-        guid->guid = tswap32(guid->guid);
-        break;
+    //case QEMU_IFLA_VF_IB_PORT_GUID:
+    //    guid = NLA_DATA(nlattr);
+    //    guid->vf = tswap32(guid->vf);
+    //    guid->guid = tswap32(guid->guid);
+    //    break;
     /* nested */
     case QEMU_IFLA_VF_VLAN_LIST:
         return host_to_target_for_each_nlattr(RTA_DATA(nlattr), nlattr->nla_len,

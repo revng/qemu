@@ -2122,6 +2122,9 @@ void free_instruction(Context *c)
     for (unsigned i = 0; i < c->inst.strings->len; i++) {
         g_string_free(g_array_index(c->inst.strings, GString*, i), TRUE);
     }
+    if (c->inst.init_list != NULL) {
+        g_array_free(c->inst.init_list, TRUE);
+    }
     g_array_free(c->inst.strings, TRUE);
     /* Free INAME token value */
     g_string_free(c->inst.name, TRUE);

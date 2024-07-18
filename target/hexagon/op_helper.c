@@ -44,7 +44,8 @@ void do_raise_exception_err(CPUHexagonState *env,
     CPUState *cs = env_cpu(env);
     qemu_log_mask(CPU_LOG_INT, "%s: %d\n", __func__, exception);
     cs->exception_index = exception;
-    cpu_loop_exit_restore(cs, pc);
+    // TODO(anjo): fix
+    cpu_loop_exit(cs);
 }
 
 G_NORETURN void HELPER(raise_exception)(CPUHexagonState *env, uint32_t excp)

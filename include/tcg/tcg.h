@@ -793,6 +793,8 @@ void tb_target_set_jmp_target(const TranslationBlock *, int,
 
 void tcg_set_frame(TCGContext *s, TCGReg reg, intptr_t start, intptr_t size);
 
+char *tcg_get_arg_str(TCGContext *s, char *buf, int buf_size, TCGArg arg);
+
 #define TCG_CT_CONST  1 /* any constant of register size */
 
 typedef struct TCGArgConstraint {
@@ -880,6 +882,10 @@ TCGOp *tcg_op_insert_after(TCGContext *s, TCGOp *op,
 void tcg_remove_ops_after(TCGOp *op);
 
 void tcg_optimize(TCGContext *s);
+void reachable_code_pass(TCGContext *s);
+void liveness_pass_0(TCGContext *s);
+void liveness_pass_1(TCGContext *s);
+bool liveness_pass_2(TCGContext *s);
 
 TCGLabel *gen_new_label(void);
 
