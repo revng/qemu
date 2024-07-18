@@ -26,16 +26,18 @@ static const char * const cond_name[] = {
 static const char * const ldst_name[] = {
     [LIBTCG_MO_UB]   = "ub",
     [LIBTCG_MO_SB]   = "sb",
-    [LIBTCG_MO_LEUW] = "leuw",
-    [LIBTCG_MO_LESW] = "lesw",
-    [LIBTCG_MO_LEUL] = "leul",
-    [LIBTCG_MO_LESL] = "lesl",
-    [LIBTCG_MO_LEQ]  = "leq",
-    [LIBTCG_MO_BEUW] = "beuw",
-    [LIBTCG_MO_BESW] = "besw",
-    [LIBTCG_MO_BEUL] = "beul",
-    [LIBTCG_MO_BESL] = "besl",
-    [LIBTCG_MO_BEQ]  = "beq",
+    //[LIBTCG_MO_LEUW] = "leuw",
+    //[LIBTCG_MO_LESW] = "lesw",
+    //[LIBTCG_MO_LEUL] = "leul",
+    //[LIBTCG_MO_LESL] = "lesl",
+    //[LIBTCG_MO_LEUQ] = "leq",
+    //[LIBTCG_MO_BEUW] = "beuw",
+    //[LIBTCG_MO_BESW] = "besw",
+    //[LIBTCG_MO_BEUL] = "beul",
+    //[LIBTCG_MO_BESL] = "besl",
+    //[LIBTCG_MO_BEUQ] = "beq",
+    //[LIBTCG_MO_128 + LIBTCG_MO_BE] = "beo",
+    //[LIBTCG_MO_128 + LIBTCG_MO_LE] = "leo",
 };
 
 /* Taken from `tcg/tcg.c` */
