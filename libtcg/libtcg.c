@@ -172,6 +172,7 @@ void libtcg_context_destroy(LibTcgContext *context)
 
 LibTcgInstructionList libtcg_translate(LibTcgContext *context,
                                        const unsigned char *buffer,
+                                       uint64_t start_address,
                                        size_t size,
                                        uint64_t virtual_address,
                                        uint32_t translate_flags)
@@ -179,7 +180,7 @@ LibTcgInstructionList libtcg_translate(LibTcgContext *context,
     BytecodeRegion region = {
         .buffer = buffer,
         .size = size,
-        .virtual_address = virtual_address,
+        .virtual_address = start_address,
     };
     context->cpu->opaque = &region;
 
