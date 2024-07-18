@@ -133,7 +133,11 @@ LibTcgContext *libtcg_context_create(LibTcgDesc *desc)
 
     qemu_init_cpu_list();
     module_call_init(MODULE_INIT_QOM);
+#if defined(TARGET_HEXAGON)
+    uint32_t elf_flags = 0x73;
+#else
     uint32_t elf_flags = 0;
+#endif
     const char *cpu_model = cpu_get_model(elf_flags);
     const char *cpu_type = parse_cpu_option(cpu_model);
     /* Initializes accel/tcg */
