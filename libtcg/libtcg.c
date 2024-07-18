@@ -529,8 +529,8 @@ LibTcgInterface libtcg_load(void) {
         .sp = 0, /* NOTE(anjo): UNCHECKED */
         .arch_cpu_name = "CRISCPU",
 #elif defined(TARGET_HEXAGON)
-        .pc = 0, /* NOTE(anjo): UNCHECKED */
-        .sp = 0, /* NOTE(anjo): UNCHECKED */
+        .pc = offsetof(CPUArchState, gpr[41]), /* NOTE(anjo): UNCHECKED */
+        .sp = offsetof(CPUArchState, gpr[29]), /* NOTE(anjo): UNCHECKED */
         .arch_cpu_name = "HexagonCPU",
 #elif defined(TARGET_HPPA)
         .pc = 0, /* NOTE(anjo): UNCHECKED */
@@ -620,6 +620,12 @@ LibTcgInterface libtcg_load(void) {
         .pc = 0, /* NOTE(anjo): UNCHECKED */
         .sp = 0, /* NOTE(anjo): UNCHECKED */
         .arch_cpu_name = "XtensaCPU",
+#elif defined(TARGET_LOONGARCH64)
+        .pc = 0, /* NOTE(anjo): UNCHECKED */
+        .sp = 0, /* NOTE(anjo): UNCHECKED */
+        .arch_cpu_name = "",
+#else
+    #error Unhandled target
 #endif
     };
 }
