@@ -91,7 +91,7 @@ const char *libtcg_get_instruction_name(LibTcgOpcode opcode)
     return def.name;
 }
 
-LibTcgCallInfo libtcg_get_call_info(LibTcgInstruction *insn)
+LibTcgHelperInfo libtcg_get_helper_info(LibTcgInstruction *insn)
 {
     /*
      * For a call instruction, the first constant argument holds
@@ -106,7 +106,7 @@ LibTcgCallInfo libtcg_get_call_info(LibTcgInstruction *insn)
     assert(insn->opcode == LIBTCG_op_call);
     uintptr_t ptr_to_helper_info = insn->constant_args[1].constant;
     TCGHelperInfo *info = (void *) ptr_to_helper_info;
-    return (LibTcgCallInfo) {
+    return (LibTcgHelperInfo) {
         .func_name = info->name,
         .func_flags = info->flags,
     };
@@ -454,6 +454,8 @@ uint8_t *libtcg_env_ptr(LibTcgContext *context)
 LibTcgInterface libtcg_load(void) {
     return (LibTcgInterface) {
         // Functions
+        .get_instruction_name       = libtcg_get_instruction_name,
+        .get_helper_info            = libtcg_get_helper_info,
         .context_create             = libtcg_context_create,
         .context_destroy            = libtcg_context_destroy,
         .translate                  = libtcg_translate,

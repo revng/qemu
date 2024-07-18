@@ -267,14 +267,14 @@ typedef struct LibTcgArgument {
     };
 } LibTcgArgument;
 
-typedef struct LibTcgCallInfo {
+typedef struct LibTcgHelperInfo {
     const char *func_name;
     /*
      * TODO(anjo): Does the func_flags replace def.flags?
      *             In that case move func_flags -> insn.flags
      */
     uint32_t func_flags;
-} LibTcgCallInfo;
+} LibTcgHelperInfo;
 
 typedef struct LibTcgInstruction {
     LibTcgOpcode opcode;
@@ -313,14 +313,6 @@ typedef struct LibTcgInstructionList {
  */
 
 /*
- * TODO(anjo): We might eventually need to export these in LibTcgInterface
- * as well.
- */
-
-const char *libtcg_get_instruction_name(LibTcgOpcode opcode);
-LibTcgCallInfo libtcg_get_call_info(LibTcgInstruction *insn);
-
-/*
  * Description struct used in the creation of
  * LibTcgContext. Allows specifying
  * functions used for allocation/freeing
@@ -354,7 +346,8 @@ typedef struct LibTcgContext LibTcgContext;
     ret name params;                          /* Function declaration */ \
     typedef ret LIBTCG_FUNC_TYPE(name) params /* Funciton typedef     */
 
-
+LIBTCG_EXPORT(const char *,          libtcg_get_instruction_name,       (LibTcgOpcode opcode));
+LIBTCG_EXPORT(LibTcgHelperInfo,      libtcg_get_helper_info,            (LibTcgInstruction *insn));
 LIBTCG_EXPORT(LibTcgContext *,       libtcg_context_create,             (LibTcgDesc *desc));
 LIBTCG_EXPORT(void,                  libtcg_context_destroy,            (LibTcgContext *context));
 LIBTCG_EXPORT(LibTcgInstructionList, libtcg_translate,                  (LibTcgContext *context, const unsigned char *buffer, size_t size, uint64_t virtual_address));
@@ -368,6 +361,8 @@ LIBTCG_EXPORT(void,                  libtcg_dump_instruction_to_buffer, (LibTcgI
  */
 typedef struct LibTcgInterface {
     // Functions
+    LIBTCG_FUNC_TYPE(libtcg_get_instruction_name)       *get_instruction_name;
+    LIBTCG_FUNC_TYPE(libtcg_get_helper_info)            *get_helper_info;
     LIBTCG_FUNC_TYPE(libtcg_context_create)             *context_create;
     LIBTCG_FUNC_TYPE(libtcg_context_destroy)            *context_destroy;
     LIBTCG_FUNC_TYPE(libtcg_translate)                  *translate;

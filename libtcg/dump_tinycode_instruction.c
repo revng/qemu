@@ -122,7 +122,7 @@ void libtcg_dump_instruction_to_buffer(LibTcgInstruction *insn, char *buf,
                                        insn->constant_args[i].constant);
         }
     } else if (c == LIBTCG_op_call) {
-        LibTcgCallInfo info = libtcg_get_call_info(insn);
+        LibTcgHelperInfo info = libtcg_get_helper_info(insn);
         fmt_append_to_stringbuffer(&buffer, " %s %s", insn_name,
                                    info.func_name);
         fmt_append_to_stringbuffer(&buffer, ",$0x%x,$%d", info.func_flags,
