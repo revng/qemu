@@ -238,6 +238,8 @@ LibTcgInstructionList libtcg_translate(LibTcgContext *context,
     tb->flags = flags;
     tb->cflags = cflags;
 
+    tcg_ctx->gen_tb = tb;
+
     void *host_pc = NULL;
     gen_intermediate_code(context->cpu, tb, &max_insns, pc, host_pc);
 
