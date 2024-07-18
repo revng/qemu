@@ -10,8 +10,8 @@ extern "C" {
 
 #define LIBTCG_INSN_MAX_ARGS 16
 #define LIBTCG_MAX_NAME_LEN 32
-#define LIBTCG_MAX_TEMPS 128
-#define LIBTCG_MAX_LABELS 128
+#define LIBTCG_MAX_TEMPS 512
+#define LIBTCG_MAX_LABELS 512
 #define LIBTCG_MAX_INSTRUCTIONS 1024
 
 /*
@@ -56,86 +56,114 @@ typedef enum LibTcgMemOp {
     LIBTCG_MO_16    = 1,
     LIBTCG_MO_32    = 2,
     LIBTCG_MO_64    = 3,
-    LIBTCG_MO_SIZE  = 3,   /* Mask for the above.  */
+    LIBTCG_MO_128   = 4,
+    LIBTCG_MO_256   = 5,
+    LIBTCG_MO_512   = 6,
+    LIBTCG_MO_1024  = 7,
+    LIBTCG_MO_SIZE  = 0x07,   /* Mask for the above.  */
 
-    LIBTCG_MO_SIGN  = 4,   /* Sign-extended, otherwise zero-extended.  */
+    LIBTCG_MO_SIGN  = 0x08,   /* Sign-extended, otherwise zero-extended.  */
 
-    LIBTCG_MO_BSWAP = 8,   /* Host reverse endian.  */
-#ifdef HOST_BIG_ENDIAN
-    LIBTCG_MO_LE    = LIBTCG_MO_BSWAP,
-    LIBTCG_MO_BE    = 0,
-#else
-    LIBTCG_MO_LE    = 0,
-    LIBTCG_MO_BE    = LIBTCG_MO_BSWAP,
-#endif
-#ifdef TARGET_BIG_ENDIAN
-    LIBTCG_MO_TE    = LIBTCG_MO_BE,
-#else
-    LIBTCG_MO_TE    = LIBTCG_MO_LE,
-#endif
+    LIBTCG_MO_BSWAP = 0x10,   /* Host reverse endian.  */
+//#if HOST_BIG_ENDIAN
+//    LIBTCG_MO_LE    = LIBTCG_MO_BSWAP,
+//    LIBTCG_MO_BE    = 0,
+//#else
+//    LIBTCG_MO_LE    = 0,
+//    LIBTCG_MO_BE    = LIBTCG_MO_BSWAP,
+//#endif
 
     /*
-     * LIBTCG_MO_UNALN accesses are never checked for alignment.
-     * LIBTCG_MO_ALIGN accesses will result in a call to the CPU's
+     * MO_UNALN accesses are never checked for alignment.
+     * MO_ALIGN accesses will result in a call to the CPU's
      * do_unaligned_access hook if the guest address is not aligned.
-     * The default depends on whether the target CPU defines
-     * TARGET_ALIGNED_ONLY.
      *
      * Some architectures (e.g. ARMv8) need the address which is aligned
      * to a size more than the size of the memory access.
      * Some architectures (e.g. SPARCv9) need an address which is aligned,
      * but less strictly than the natural alignment.
      *
-     * LIBTCG_MO_ALIGN supposes the alignment size is the size of a memory access.
+     * MO_ALIGN supposes the alignment size is the size of a memory access.
      *
      * There are three options:
-     * - unaligned access permitted (LIBTCG_MO_UNALN).
-     * - an alignment to the size of an access (LIBTCG_MO_ALIGN);
+     * - unaligned access permitted (MO_UNALN).
+     * - an alignment to the size of an access (MO_ALIGN);
      * - an alignment to a specified size, which may be more or less than
-     *   the access size (LIBTCG_MO_ALIGN_x where 'x' is a size in bytes);
+     *   the access size (MO_ALIGN_x where 'x' is a size in bytes);
      */
-    LIBTCG_MO_ASHIFT = 4,
-    LIBTCG_MO_AMASK = 7 << LIBTCG_MO_ASHIFT,
-#ifdef TARGET_ALIGNED_ONLY
-    LIBTCG_MO_ALIGN = 0,
-    LIBTCG_MO_UNALN = LIBTCG_MO_AMASK,
-#else
-    LIBTCG_MO_ALIGN = LIBTCG_MO_AMASK,
-    LIBTCG_MO_UNALN = 0,
-#endif
+    LIBTCG_MO_ASHIFT = 5,
+    LIBTCG_MO_AMASK = 0x7 << LIBTCG_MO_ASHIFT,
+    LIBTCG_MO_UNALN    = 0,
     LIBTCG_MO_ALIGN_2  = 1 << LIBTCG_MO_ASHIFT,
     LIBTCG_MO_ALIGN_4  = 2 << LIBTCG_MO_ASHIFT,
     LIBTCG_MO_ALIGN_8  = 3 << LIBTCG_MO_ASHIFT,
     LIBTCG_MO_ALIGN_16 = 4 << LIBTCG_MO_ASHIFT,
     LIBTCG_MO_ALIGN_32 = 5 << LIBTCG_MO_ASHIFT,
     LIBTCG_MO_ALIGN_64 = 6 << LIBTCG_MO_ASHIFT,
+    LIBTCG_MO_ALIGN    = LIBTCG_MO_AMASK,
+
+    /*
+     * MO_ATOM_* describes the atomicity requirements of the operation:
+     * MO_ATOM_IFALIGN: the operation must be single-copy atomic if it
+     *    is aligned; if unaligned there is no atomicity.
+     * MO_ATOM_IFALIGN_PAIR: the entire operation may be considered to
+     *    be a pair of half-sized operations which are packed together
+     *    for convenience, with single-copy atomicity on each half if
+     *    the half is aligned.
+     *    This is the atomicity e.g. of Arm pre-FEAT_LSE2 LDP.
+     * MO_ATOM_WITHIN16: the operation is single-copy atomic, even if it
+     *    is unaligned, so long as it does not cross a 16-byte boundary;
+     *    if it crosses a 16-byte boundary there is no atomicity.
+     *    This is the atomicity e.g. of Arm FEAT_LSE2 LDR.
+     * MO_ATOM_WITHIN16_PAIR: the entire operation is single-copy atomic,
+     *    if it happens to be within a 16-byte boundary, otherwise it
+     *    devolves to a pair of half-sized MO_ATOM_WITHIN16 operations.
+     *    Depending on alignment, one or both will be single-copy atomic.
+     *    This is the atomicity e.g. of Arm FEAT_LSE2 LDP.
+     * MO_ATOM_SUBALIGN: the operation is single-copy atomic by parts
+     *    by the alignment.  E.g. if the address is 0 mod 4, then each
+     *    4-byte subobject is single-copy atomic.
+     *    This is the atomicity e.g. of IBM Power.
+     * MO_ATOM_NONE: the operation has no atomicity requirements.
+     *
+     * Note the default (i.e. 0) value is single-copy atomic to the
+     * size of the operation, if aligned.  This retains the behaviour
+     * from before this field was introduced.
+     */
+    LIBTCG_MO_ATOM_SHIFT         = 8,
+    LIBTCG_MO_ATOM_IFALIGN       = 0 << LIBTCG_MO_ATOM_SHIFT,
+    LIBTCG_MO_ATOM_IFALIGN_PAIR  = 1 << LIBTCG_MO_ATOM_SHIFT,
+    LIBTCG_MO_ATOM_WITHIN16      = 2 << LIBTCG_MO_ATOM_SHIFT,
+    LIBTCG_MO_ATOM_WITHIN16_PAIR = 3 << LIBTCG_MO_ATOM_SHIFT,
+    LIBTCG_MO_ATOM_SUBALIGN      = 4 << LIBTCG_MO_ATOM_SHIFT,
+    LIBTCG_MO_ATOM_NONE          = 5 << LIBTCG_MO_ATOM_SHIFT,
+    LIBTCG_MO_ATOM_MASK          = 7 << LIBTCG_MO_ATOM_SHIFT,
 
     /* Combinations of the above, for ease of use.  */
     LIBTCG_MO_UB    = LIBTCG_MO_8,
     LIBTCG_MO_UW    = LIBTCG_MO_16,
     LIBTCG_MO_UL    = LIBTCG_MO_32,
+    LIBTCG_MO_UQ    = LIBTCG_MO_64,
+    LIBTCG_MO_UO    = LIBTCG_MO_128,
     LIBTCG_MO_SB    = LIBTCG_MO_SIGN | LIBTCG_MO_8,
     LIBTCG_MO_SW    = LIBTCG_MO_SIGN | LIBTCG_MO_16,
     LIBTCG_MO_SL    = LIBTCG_MO_SIGN | LIBTCG_MO_32,
-    LIBTCG_MO_Q     = LIBTCG_MO_64,
+    LIBTCG_MO_SQ    = LIBTCG_MO_SIGN | LIBTCG_MO_64,
+    LIBTCG_MO_SO    = LIBTCG_MO_SIGN | LIBTCG_MO_128,
 
-    LIBTCG_MO_LEUW  = LIBTCG_MO_LE | LIBTCG_MO_UW,
-    LIBTCG_MO_LEUL  = LIBTCG_MO_LE | LIBTCG_MO_UL,
-    LIBTCG_MO_LESW  = LIBTCG_MO_LE | LIBTCG_MO_SW,
-    LIBTCG_MO_LESL  = LIBTCG_MO_LE | LIBTCG_MO_SL,
-    LIBTCG_MO_LEQ   = LIBTCG_MO_LE | LIBTCG_MO_Q,
-
-    LIBTCG_MO_BEUW  = LIBTCG_MO_BE | LIBTCG_MO_UW,
-    LIBTCG_MO_BEUL  = LIBTCG_MO_BE | LIBTCG_MO_UL,
-    LIBTCG_MO_BESW  = LIBTCG_MO_BE | LIBTCG_MO_SW,
-    LIBTCG_MO_BESL  = LIBTCG_MO_BE | LIBTCG_MO_SL,
-    LIBTCG_MO_BEQ   = LIBTCG_MO_BE | LIBTCG_MO_Q,
-
-    LIBTCG_MO_TEUW  = LIBTCG_MO_TE | LIBTCG_MO_UW,
-    LIBTCG_MO_TEUL  = LIBTCG_MO_TE | LIBTCG_MO_UL,
-    LIBTCG_MO_TESW  = LIBTCG_MO_TE | LIBTCG_MO_SW,
-    LIBTCG_MO_TESL  = LIBTCG_MO_TE | LIBTCG_MO_SL,
-    LIBTCG_MO_TEQ   = LIBTCG_MO_TE | LIBTCG_MO_Q,
+//    LIBTCG_MO_LEUW  = LIBTCG_MO_LE | LIBTCG_MO_UW,
+//    LIBTCG_MO_LEUL  = LIBTCG_MO_LE | LIBTCG_MO_UL,
+//    LIBTCG_MO_LEUQ  = LIBTCG_MO_LE | LIBTCG_MO_UQ,
+//    LIBTCG_MO_LESW  = LIBTCG_MO_LE | LIBTCG_MO_SW,
+//    LIBTCG_MO_LESL  = LIBTCG_MO_LE | LIBTCG_MO_SL,
+//    LIBTCG_MO_LESQ  = LIBTCG_MO_LE | LIBTCG_MO_SQ,
+//
+//    LIBTCG_MO_BEUW  = LIBTCG_MO_BE | LIBTCG_MO_UW,
+//    LIBTCG_MO_BEUL  = LIBTCG_MO_BE | LIBTCG_MO_UL,
+//    LIBTCG_MO_BEUQ  = LIBTCG_MO_BE | LIBTCG_MO_UQ,
+//    LIBTCG_MO_BESW  = LIBTCG_MO_BE | LIBTCG_MO_SW,
+//    LIBTCG_MO_BESL  = LIBTCG_MO_BE | LIBTCG_MO_SL,
+//    LIBTCG_MO_BESQ  = LIBTCG_MO_BE | LIBTCG_MO_SQ,
 
     LIBTCG_MO_SSIZE = LIBTCG_MO_SIZE | LIBTCG_MO_SIGN,
 } LibTcgMemOp;
@@ -182,15 +210,17 @@ typedef enum LibTcgCond {
 
 /* From `TCGTempKind` in `tcg/tcg.c` */
 typedef enum LibTcgTempKind {
-    /* Temp is dead at the end of all basic blocks. */
-    LIBTCG_TEMP_NORMAL,
-    /* Temp is live across conditional branch, but dead otherwise. */
+    /*
+     * Temp is dead at the end of the extended basic block (EBB),
+     * the single-entry multiple-exit region that falls through
+     * conditional branches.
+     */
     LIBTCG_TEMP_EBB,
-    /* Temp is saved across basic blocks but dead at the end of TBs. */
-    LIBTCG_TEMP_LOCAL,
-    /* Temp is saved across both basic blocks and translation blocks. */
+    /* Temp is live across the entire translation block, but dead at end. */
+    LIBTCG_TEMP_TB,
+    /* Temp is live across the entire translation block, and between them. */
     LIBTCG_TEMP_GLOBAL,
-      /* Temp is in a fixed register. */
+    /* Temp is in a fixed register. */
     LIBTCG_TEMP_FIXED,
     /* Temp is a fixed constant. */
     LIBTCG_TEMP_CONST,
@@ -200,6 +230,7 @@ typedef enum LibTcgTempKind {
 typedef enum LibTcgTempType {
     LIBTCG_TYPE_I32,
     LIBTCG_TYPE_I64,
+    LIBTCG_TYPE_I128,
 
     /* TODO(anjo): Remove vector types? */
     LIBTCG_TYPE_V64,
@@ -209,6 +240,20 @@ typedef enum LibTcgTempType {
     /* number of different types */
     LIBTCG_TYPE_COUNT,
 } LibTcgTempType;
+
+/* From tcg/tcg.h */
+/* call flags */
+/* Helper does not read globals (either directly or through an exception). It
+   implies LIBTCG_TCG_CALL_NO_WRITE_GLOBALS. */
+#define LIBTCG_CALL_NO_READ_GLOBALS    0x0001
+/* Helper does not write globals */
+#define LIBTCG_CALL_NO_WRITE_GLOBALS   0x0002
+/* Helper can be safely suppressed if the return value is not used. */
+#define LIBTCG_CALL_NO_SIDE_EFFECTS    0x0004
+/* Helper is G_NORETURN.  */
+#define LIBTCG_CALL_NO_RETURN          0x0008
+/* Helper is part of Plugins.  */
+#define LIBTCG_CALL_PLUGIN             0x0010
 
 /*
  * Now we finally get into our adapted versions of the various
@@ -240,8 +285,7 @@ typedef struct LibTcgMemOpIndex {
 
 typedef enum LibTcgArgumentKind {
     LIBTCG_ARG_CONSTANT,
-    LIBTCG_ARG_MEM_OP_INDEX,
-    LIBTCG_ARG_COND,
+    LIBTCG_ARG_MEM_OP_INDEX, LIBTCG_ARG_COND,
     LIBTCG_ARG_BSWAP,
     LIBTCG_ARG_TEMP,
     LIBTCG_ARG_LABEL,
@@ -356,7 +400,7 @@ LIBTCG_EXPORT(const char *,          libtcg_get_instruction_name,       (LibTcgO
 LIBTCG_EXPORT(LibTcgHelperInfo,      libtcg_get_helper_info,            (LibTcgInstruction *insn));
 LIBTCG_EXPORT(LibTcgContext *,       libtcg_context_create,             (LibTcgDesc *desc));
 LIBTCG_EXPORT(void,                  libtcg_context_destroy,            (LibTcgContext *context));
-LIBTCG_EXPORT(LibTcgInstructionList, libtcg_translate,                  (LibTcgContext *context, const unsigned char *buffer, size_t size, uint64_t virtual_address, uint32_t translate_flags));
+LIBTCG_EXPORT(LibTcgInstructionList, libtcg_translate,                  (LibTcgContext *context, const unsigned char *buffer, uint64_t start_address, size_t size, uint64_t virtual_address, uint32_t translate_flags));
 LIBTCG_EXPORT(void,                  libtcg_instruction_list_destroy,   (LibTcgContext *context, LibTcgInstructionList));
 LIBTCG_EXPORT(uint8_t *,             libtcg_env_ptr,                    (LibTcgContext *context));
 LIBTCG_EXPORT(void,                  libtcg_dump_instruction_to_buffer, (LibTcgInstruction *insn, char *buf, size_t size));
