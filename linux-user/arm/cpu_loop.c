@@ -319,13 +319,21 @@ static bool emulate_arm_fpa11(CPUARMState *env, uint32_t opcode)
 void cpu_loop(CPUARMState *env)
 {
     CPUState *cs = env_cpu(env);
-    int trapnr, si_signo, si_code;
-    unsigned int n, insn;
-    abi_ulong ret;
+    int trapnr;
 
     for(;;) {
         cpu_exec_start(cs);
         trapnr = cpu_exec(cs);
+        handle_exception(env, trapnr);
+    }
+}
+
+void handle_exception(CPUARMState *env, int trapnr) {
+    CPUState *cs = env_cpu(env);
+    int si_signo, si_code;
+    unsigned int n, insn;
+    abi_ulong ret;
+    if (true) {
         cpu_exec_end(cs);
         process_queued_cpu_work(cs);
 

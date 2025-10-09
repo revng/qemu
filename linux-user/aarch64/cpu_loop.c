@@ -79,12 +79,21 @@
 void cpu_loop(CPUARMState *env)
 {
     CPUState *cs = env_cpu(env);
-    int trapnr, ec, fsc, si_code, si_signo;
-    abi_long ret;
+    int trapnr;
 
     for (;;) {
         cpu_exec_start(cs);
         trapnr = cpu_exec(cs);
+        handle_exception(env, trapnr);
+    }
+}
+
+void handle_exception(CPUARMState *env, int trapnr) {
+    CPUState *cs = env_cpu(env);
+    int ec, fsc, si_code, si_signo;
+    abi_long ret;
+
+    if (true) {
         cpu_exec_end(cs);
         process_queued_cpu_work(cs);
 

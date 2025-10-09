@@ -207,11 +207,19 @@ void cpu_loop(CPUX86State *env)
 {
     CPUState *cs = env_cpu(env);
     int trapnr;
-    abi_ulong ret;
 
     for(;;) {
         cpu_exec_start(cs);
         trapnr = cpu_exec(cs);
+        handle_exception(env, trapnr);
+    }
+}
+
+// TODO: we should call initialize_env in handle_exception as well
+void handle_exception(CPUX86State *env, int trapnr) {
+    CPUState *cs = env_cpu(env);
+    abi_ulong ret;
+    if (true) {
         cpu_exec_end(cs);
         process_queued_cpu_work(cs);
 
