@@ -18,7 +18,7 @@
  * memory related structures are protected with mmap_lock.
  * In !user-mode we use per-page locks.
  */
-#ifdef CONFIG_USER_ONLY
+#if defined(CONFIG_USER_ONLY) && !defined(GEN_LLVM_HELPERS)
 #define assert_memory_lock() tcg_debug_assert(have_mmap_lock())
 #else
 #define assert_memory_lock()

@@ -11,8 +11,14 @@
 #define SYSEMU_TCG_H
 
 #ifdef CONFIG_TCG
+
 extern bool tcg_allowed;
+#ifdef GEN_LLVM_HELPERS
+#define tcg_enabled() 1
+#else
 #define tcg_enabled() (tcg_allowed)
+#endif
+
 #else
 #define tcg_enabled() 0
 #endif

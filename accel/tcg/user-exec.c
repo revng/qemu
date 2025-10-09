@@ -22,7 +22,9 @@
 #include "exec/exec-all.h"
 #include "tcg/tcg.h"
 #include "qemu/bitops.h"
+#ifndef GEN_LLVM_HELPERS
 #include "qemu/rcu.h"
+#endif
 #include "exec/cpu_ldst.h"
 #include "exec/translate-all.h"
 #include "exec/helper-proto.h"
@@ -138,7 +140,9 @@ bool handle_sigsegv_accerr_write(CPUState *cpu, sigset_t *old_set,
 }
 
 typedef struct PageFlagsNode {
+#ifndef GEN_LLVM_HELPERS
     struct rcu_head rcu;
+#endif
     IntervalTreeNode itree;
     int flags;
 } PageFlagsNode;
@@ -208,6 +212,9 @@ void page_dump(FILE *f)
 
 int page_get_flags(target_ulong address)
 {
+#ifdef GEN_LLVM_HELPERS
+    return -1;
+#else
     PageFlagsNode *p = pageflags_find(address, address);
 
     /*
@@ -226,6 +233,7 @@ int page_get_flags(target_ulong address)
     p = pageflags_find(address, address);
     mmap_unlock();
     return p ? p->flags : 0;
+#endif
 }
 
 /* A subroutine of page_set_flags: insert a new node for [start,last]. */
@@ -269,7 +277,9 @@ static bool pageflags_unset(target_ulong start, target_ulong last)
             }
         } else if (p_last <= last) {
             /* Range completely covers node -- remove it. */
+#ifndef GEN_LLVM_HELPERS
             g_free_rcu(p, rcu);
+#endif
         } else {
             /* Truncate the node from the start. */
             p->itree.start = last + 1;
@@ -314,7 +324,9 @@ static void pageflags_create_merge(target_ulong start, target_ulong last,
     if (prev) {
         if (next) {
             prev->itree.last = next->itree.last;
+#ifndef GEN_LLVM_HELPERS
             g_free_rcu(next, rcu);
+#endif
         } else {
             prev->itree.last = last;
         }
@@ -379,7 +391,9 @@ static bool pageflags_set_clear(target_ulong start, target_ulong last,
             p->flags = merge_flags;
         } else {
             interval_tree_remove(&p->itree, &pageflags_root);
+#ifndef GEN_LLVM_HELPERS
             g_free_rcu(p, rcu);
+#endif
         }
         goto done;
     }
@@ -424,7 +438,9 @@ static bool pageflags_set_clear(target_ulong start, target_ulong last,
                     p->flags = merge_flags;
                 } else {
                     interval_tree_remove(&p->itree, &pageflags_root);
+#ifndef GEN_LLVM_HELPERS
                     g_free_rcu(p, rcu);
+#endif
                 }
                 if (p_last < last) {
                     start = p_last + 1;
@@ -465,7 +481,9 @@ static bool pageflags_set_clear(target_ulong start, target_ulong last,
         p->itree.start = last + 1;
         interval_tree_insert(&p->itree, &pageflags_root);
     } else {
+#ifndef GEN_LLVM_HELPERS
         g_free_rcu(p, rcu);
+#endif
         goto restart;
     }
     if (set_flags) {
@@ -517,12 +535,17 @@ void page_set_flags(target_ulong start, target_ulong last, int flags)
                                         ~(reset ? 0 : PAGE_STICKY));
     }
     if (inval_tb) {
+#ifndef GEN_LLVM_HELPERS
         tb_invalidate_phys_range(start, last);
+#endif
     }
 }
 
 bool page_check_range(target_ulong start, target_ulong len, int flags)
 {
+#ifdef GEN_LLVM_HELPERS
+    return true;
+#else
     target_ulong last;
     int locked;  /* tri-state: =0: unlocked, +1: global, -1: local */
     bool ret;
@@ -597,6 +620,7 @@ bool page_check_range(target_ulong start, target_ulong len, int flags)
         mmap_unlock();
     }
     return ret;
+#endif
 }
 
 bool page_check_range_empty(target_ulong start, target_ulong last)
@@ -719,10 +743,12 @@ int page_unprotect(target_ulong address, uintptr_t pc)
          * set the page to PAGE_WRITE and did the TB invalidate for us.
          */
 #ifdef TARGET_HAS_PRECISE_SMC
+#ifndef GEN_LLVM_HELPERS
         TranslationBlock *current_tb = tcg_tb_lookup(pc);
         if (current_tb) {
             current_tb_invalidated = tb_cflags(current_tb) & CF_INVALID;
         }
+#endif
 #endif
     } else {
         target_ulong start, len, i;
@@ -733,7 +759,9 @@ int page_unprotect(target_ulong address, uintptr_t pc)
             len = TARGET_PAGE_SIZE;
             prot = p->flags | PAGE_WRITE;
             pageflags_set_clear(start, start + len - 1, PAGE_WRITE, 0);
+#ifndef GEN_LLVM_HELPERS
             current_tb_invalidated = tb_invalidate_phys_page_unwind(start, pc);
+#endif
         } else {
             start = address & qemu_host_page_mask;
             len = qemu_host_page_size;
@@ -751,12 +779,14 @@ int page_unprotect(target_ulong address, uintptr_t pc)
                                             PAGE_WRITE, 0);
                     }
                 }
+#ifndef GEN_LLVM_HELPERS
                 /*
                  * Since the content will be modified, we must invalidate
                  * the corresponding translated code.
                  */
                 current_tb_invalidated |=
                     tb_invalidate_phys_page_unwind(addr, pc);
+#endif
             }
         }
         if (prot & PAGE_EXEC) {
@@ -860,7 +890,9 @@ tb_page_addr_t get_page_addr_code_hostp(CPUArchState *env, vaddr addr,
 #define TBD_MASK   (TARGET_PAGE_MASK * TPD_PAGES)
 
 typedef struct TargetPageDataNode {
+#ifndef GEN_LLVM_HELPERS
     struct rcu_head rcu;
+#endif
     IntervalTreeNode itree;
     char data[TPD_PAGES][TARGET_PAGE_DATA_SIZE] __attribute__((aligned));
 } TargetPageDataNode;
@@ -886,7 +918,9 @@ void page_reset_target_data(target_ulong start, target_ulong last)
 
         if (n->start >= start && n->last <= last) {
             interval_tree_remove(n, &targetdata_root);
+#ifndef GEN_LLVM_HELPERS
             g_free_rcu(t, rcu);
+#endif
             continue;
         }
 

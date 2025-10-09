@@ -641,9 +641,12 @@ const void *HELPER(access_check_cp_reg)(CPUARMState *env, uint32_t key,
         goto fail;
     }
 
+    // Indirect calls spoil our analyses
+#ifndef GEN_LLVM_HELPERS
     if (ri->accessfn) {
         res = ri->accessfn(env, ri, isread);
     }
+#endif
 
     /*
      * If the access function indicates a trap from EL0 to EL1 then
