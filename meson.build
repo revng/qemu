@@ -63,13 +63,16 @@ cpu = host_machine.cpu_family()
 target_dirs = config_host['TARGET_DIRS'].split()
 have_linux_user = false
 have_bsd_user = false
+have_libtcg = false
 have_system = false
 foreach target : target_dirs
   have_linux_user = have_linux_user or target.endswith('linux-user')
   have_bsd_user = have_bsd_user or target.endswith('bsd-user')
+  have_libtcg = have_libtcg or target.endswith('-libtcg')
   have_system = have_system or target.endswith('-softmmu')
 endforeach
-have_user = have_linux_user or have_bsd_user
+have_linux_user = have_linux_user or have_libtcg
+have_user = have_linux_user or have_bsd_user or have_libtcg
 have_tools = get_option('tools') \
   .disable_auto_if(not have_system) \
   .allowed()
@@ -2909,12 +2912,17 @@ actual_target_dirs = []
 fdt_required = []
 foreach target : target_dirs
   config_target = { 'TARGET_NAME': target.split('-')[0] }
-  if target.endswith('linux-user')
+  if target.endswith('linux-user') or target.endswith('-libtcg') or target.endswith('-llvm-helpers')
     if targetos != 'linux'
       if default_targets
         continue
       endif
       error('Target @0@ is only available on a Linux host'.format(target))
+    endif
+    if target.endswith('-libtcg')
+      config_target += { 'CONFIG_LIBTCG': 'y' }
+      # libtcg is not compatible with plugins as of now
+      assert(not get_option('plugins'))
     endif
     config_target += { 'CONFIG_LINUX_USER': 'y' }
   elif target.endswith('bsd-user')
@@ -2929,7 +2937,7 @@ foreach target : target_dirs
     config_target += { 'CONFIG_SYSTEM_ONLY': 'y' }
     config_target += { 'CONFIG_SOFTMMU': 'y' }
   endif
-  if target.endswith('-user')
+  if target.endswith('-user') or target.endswith('-libtcg')
     config_target += {
       'CONFIG_USER_ONLY': 'y',
       'CONFIG_QEMU_INTERP_PREFIX':
@@ -3506,6 +3514,7 @@ subdir('fpu')
 subdir('accel')
 subdir('plugins')
 subdir('ebpf')
+subdir('libtcg')
 
 common_user_inc = []
 
@@ -3837,6 +3846,10 @@ foreach target : target_dirs
   arch_srcs += target_specific.sources()
   arch_deps += target_specific.dependencies()
 
+  if target.endswith('-libtcg')
+    arch_srcs += libtcg_sources
+  endif
+
   lib = static_library('qemu-' + target,
                  sources: arch_srcs + genh,
                  dependencies: arch_deps,
@@ -3870,6 +3883,17 @@ foreach target : target_dirs
         'dependencies': specific_fuzz.dependencies(),
       }]
     endif
+  elif target.endswith('-libtcg')
+    shared_library('tcg-' + target_name,
+                   include_directories: target_inc,
+                   install: true,
+                   objects: lib.extract_all_objects(recursive: true),
+                   dependencies: arch_deps + deps,
+                   c_args: c_args,
+                   link_depends: [block_syms, qemu_syms],
+                   link_args: link_args)
+
+    execs = []
   else
     execs = [{
       'name': 'qemu-' + target_name,
@@ -3946,6 +3970,11 @@ foreach target : target_dirs
 endforeach
 
 # Other build targets
+
+if have_libtcg
+  install_headers('include/libtcg/libtcg.h', subdir: 'qemu/libtcg')
+  install_headers('include/tcg/tcg-opc.h', subdir: 'qemu/libtcg/tcg')
+endif
 
 if get_option('plugins')
   install_headers('include/qemu/qemu-plugin.h')
