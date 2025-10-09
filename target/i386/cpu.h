@@ -2038,6 +2038,19 @@ struct ArchCPU {
     bool xen_vapic;
 };
 
+#ifdef TARGET_X86_64
+_Static_assert(offsetof(ArchCPU, env) + offsetof(CPUX86State, xmm_regs[0]) == 0x2b10, "");
+_Static_assert(offsetof(ArchCPU, env) + offsetof(CPUX86State, xmm_regs[1]) == 0x2b50, "");
+_Static_assert(offsetof(ArchCPU, env) + offsetof(CPUX86State, xmm_regs[2]) == 0x2b90, "");
+_Static_assert(offsetof(ArchCPU, env) + offsetof(CPUX86State, xmm_regs[3]) == 0x2bd0, "");
+_Static_assert(offsetof(ArchCPU, env) + offsetof(CPUX86State, xmm_regs[4]) == 0x2c10, "");
+_Static_assert(offsetof(ArchCPU, env) + offsetof(CPUX86State, xmm_regs[5]) == 0x2c50, "");
+_Static_assert(offsetof(ArchCPU, env) + offsetof(CPUX86State, xmm_regs[6]) == 0x2c90, "");
+_Static_assert(offsetof(ArchCPU, env) + offsetof(CPUX86State, xmm_regs[7]) == 0x2cd0, "");
+#else
+_Static_assert(offsetof(ArchCPU, env) + offsetof(CPUX86State, fpregs[0]) == 0x2960, "");
+#endif
+
 typedef struct X86CPUModel X86CPUModel;
 
 /**
