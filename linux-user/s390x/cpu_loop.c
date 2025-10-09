@@ -56,13 +56,22 @@ static int get_pgm_data_si_code(int dxc_code)
 void cpu_loop(CPUS390XState *env)
 {
     CPUState *cs = env_cpu(env);
-    int trapnr, n, sig;
-    target_ulong addr;
-    abi_long ret;
+    int trapnr;
 
     while (1) {
         cpu_exec_start(cs);
         trapnr = cpu_exec(cs);
+        handle_exception(env, trapnr);
+    }
+}
+
+void handle_exception(CPUS390XState *env, int trapnr) {
+    CPUState *cs = env_cpu(env);
+    int n, sig;
+    target_ulong addr;
+    abi_long ret;
+
+    if (true) {
         cpu_exec_end(cs);
         process_queued_cpu_work(cs);
 
