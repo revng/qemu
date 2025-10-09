@@ -63,16 +63,25 @@ static void do_tr_or_bp(CPUMIPSState *env, unsigned int code, bool trap)
 void cpu_loop(CPUMIPSState *env)
 {
     CPUState *cs = env_cpu(env);
-    int trapnr, si_code;
+    int trapnr;
+
+    for(;;) {
+        cpu_exec_start(cs);
+        trapnr = cpu_exec(cs);
+        handle_exception(env, trapnr);
+    }
+}
+
+void handle_exception(CPUMIPSState *env, int trapnr) {
+    CPUState *cs = env_cpu(env);
+    int si_code;
     unsigned int code;
     abi_long ret;
 # ifdef TARGET_ABI_MIPSO32
     unsigned int syscall_num;
 # endif
 
-    for(;;) {
-        cpu_exec_start(cs);
-        trapnr = cpu_exec(cs);
+    if (true) {
         cpu_exec_end(cs);
         process_queued_cpu_work(cs);
 
