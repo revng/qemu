@@ -212,9 +212,11 @@ void target_cpu_copy_regs(CPUArchState *env, struct target_pt_regs *regs)
     arm_rebuild_hflags(env);
 #endif
 
+#ifndef CONFIG_LIBTCG
     if (cpu_isar_feature(aa64_pauth, cpu)) {
         qemu_guest_getrandom_nofail(&env->keys, sizeof(env->keys));
     }
+#endif
 
     ts->stack_base = info->start_stack;
     ts->heap_base = info->brk;
