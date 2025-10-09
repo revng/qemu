@@ -65,6 +65,17 @@
 #define AT_FLAGS_PRESERVE_ARGV0 (1 << AT_FLAGS_PRESERVE_ARGV0_BIT)
 #endif
 
+#ifdef GEN_LLVM_HELPERS
+/*
+ * Global variable whose only role is to easily find the ArchCPU type from LLVM
+ * IR.
+ */
+ArchCPU arch_cpu_type_beacon;
+
+/* Provide definition for qemu_mutex_lock_func, since we don't link util/qsp.c */
+QemuMutexLockFunc qemu_mutex_lock_func __attribute__((weak)) = qemu_mutex_lock_impl;
+#endif
+
 char *exec_path;
 char real_exec_path[PATH_MAX];
 
@@ -789,8 +800,10 @@ int main(int argc, char **argv, char **envp)
         AccelClass *ac = ACCEL_GET_CLASS(accel);
 
         accel_init_interfaces(ac);
+#ifndef GEN_LLVM_HELPERS
         object_property_set_bool(OBJECT(accel), "one-insn-per-tb",
                                  opt_one_insn_per_tb, &error_abort);
+#endif
         ac->init_machine(NULL);
     }
     cpu = cpu_create(cpu_type);
@@ -1015,3 +1028,9 @@ int main(int argc, char **argv, char **envp)
     /* never exits */
     return 0;
 }
+
+#ifdef GEN_LLVM_HELPERS
+void invoke_handle_exception(CPUState *cpu) {
+  handle_exception(cpu_env(cpu), cpu->exception_index);
+}
+#endif

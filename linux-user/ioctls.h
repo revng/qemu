@@ -275,6 +275,7 @@
 #endif
 
 #ifdef CONFIG_USBFS
+#ifndef GEN_LLVM_HELPERS
   /* USB ioctls */
   IOCTL(USBDEVFS_CONTROL, IOC_RW,
         MK_PTR(MK_STRUCT(STRUCT_usbdevfs_ctrltransfer)))
@@ -317,6 +318,7 @@
 #endif
 #ifdef USBDEVFS_GET_SPEED
   IOCTL(USBDEVFS_GET_SPEED, 0, TYPE_NULL)
+#endif
 #endif
 #endif /* CONFIG_USBFS */
 

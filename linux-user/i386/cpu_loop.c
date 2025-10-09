@@ -258,6 +258,7 @@ void cpu_loop(CPUX86State *env)
             emulate_vsyscall(env);
             break;
 #endif
+#ifndef GEN_LLVM_HELPERS
         case EXCP0B_NOSEG:
         case EXCP0C_STACK:
             force_sig(TARGET_SIGBUS);
@@ -312,6 +313,7 @@ void cpu_loop(CPUX86State *env)
         case EXCP_ATOMIC:
             cpu_exec_step_atomic(cs);
             break;
+#endif
         default:
             EXCP_DUMP(env, "qemu: unhandled CPU exception 0x%x - aborting\n",
                       trapnr);

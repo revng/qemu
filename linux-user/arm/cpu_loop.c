@@ -453,10 +453,12 @@ void cpu_loop(CPUARMState *env)
                 }
             }
             break;
+#ifndef GEN_LLVM_HELPERS
         case EXCP_SEMIHOST:
             do_common_semihosting(cs);
             env->regs[15] += env->thumb ? 2 : 4;
             break;
+#endif
         case EXCP_INTERRUPT:
             /* just indicate that signals should be handled asap */
             break;

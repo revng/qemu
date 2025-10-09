@@ -19,6 +19,7 @@
 #endif
 #define HAVE_al8_fast      (ATOMIC_REG_SIZE >= 8)
 
+#ifndef GEN_LLVM_HELPERS
 /**
  * required_atomicity:
  *
@@ -317,7 +318,9 @@ static uint64_t load_atom_extract_al16_or_exit(CPUState *cpu, uintptr_t ra,
     r = int128_urshift(r, shr);
     return int128_getlo(r);
 }
+#endif
 
+#ifndef GEN_LLVM_HELPERS
 /**
  * load_atom_4_by_2:
  * @pv: host address
@@ -386,6 +389,7 @@ static inline uint64_t load_atom_8_by_8_or_4(void *pv)
         return load_atom_8_by_4(pv);
     }
 }
+#endif
 
 /**
  * load_atom_2:
@@ -397,6 +401,9 @@ static inline uint64_t load_atom_8_by_8_or_4(void *pv)
 static uint16_t load_atom_2(CPUState *cpu, uintptr_t ra,
                             void *pv, MemOp memop)
 {
+#ifdef GEN_LLVM_HELPERS
+    return lduw_he_p(pv);
+#else
     uintptr_t pi = (uintptr_t)pv;
     int atmax;
 
@@ -427,6 +434,7 @@ static uint16_t load_atom_2(CPUState *cpu, uintptr_t ra,
     default:
         g_assert_not_reached();
     }
+#endif
 }
 
 /**
@@ -439,6 +447,9 @@ static uint16_t load_atom_2(CPUState *cpu, uintptr_t ra,
 static uint32_t load_atom_4(CPUState *cpu, uintptr_t ra,
                             void *pv, MemOp memop)
 {
+#ifdef GEN_LLVM_HELPERS
+    return ldl_he_p(pv);
+#else
     uintptr_t pi = (uintptr_t)pv;
     int atmax;
 
@@ -472,6 +483,7 @@ static uint32_t load_atom_4(CPUState *cpu, uintptr_t ra,
     default:
         g_assert_not_reached();
     }
+#endif
 }
 
 /**
@@ -484,6 +496,9 @@ static uint32_t load_atom_4(CPUState *cpu, uintptr_t ra,
 static uint64_t load_atom_8(CPUState *cpu, uintptr_t ra,
                             void *pv, MemOp memop)
 {
+#ifdef GEN_LLVM_HELPERS
+    return ldq_he_p(pv);
+#else
     uintptr_t pi = (uintptr_t)pv;
     int atmax;
 
@@ -523,6 +538,7 @@ static uint64_t load_atom_8(CPUState *cpu, uintptr_t ra,
     default:
         g_assert_not_reached();
     }
+#endif
 }
 
 /**
@@ -535,6 +551,11 @@ static uint64_t load_atom_8(CPUState *cpu, uintptr_t ra,
 static Int128 load_atom_16(CPUState *cpu, uintptr_t ra,
                            void *pv, MemOp memop)
 {
+#ifdef GEN_LLVM_HELPERS
+    Int128 r;
+    memcpy(&r, pv, 16);
+    return r;
+#else
     uintptr_t pi = (uintptr_t)pv;
     int atmax;
     Int128 r;
@@ -581,8 +602,10 @@ static Int128 load_atom_16(CPUState *cpu, uintptr_t ra,
         g_assert_not_reached();
     }
     return int128_make128(HOST_BIG_ENDIAN ? b : a, HOST_BIG_ENDIAN ? a : b);
+#endif
 }
 
+#ifndef GEN_LLVM_HELPERS
 /**
  * store_atomic2:
  * @pv: host address
@@ -848,6 +871,7 @@ static uint64_t store_whole_le16(void *pv, int size, Int128 val_le)
     }
     return int128_gethi(val_le) >> (sz - 64);
 }
+#endif
 
 /**
  * store_atom_2:
@@ -860,6 +884,9 @@ static uint64_t store_whole_le16(void *pv, int size, Int128 val_le)
 static void store_atom_2(CPUState *cpu, uintptr_t ra,
                          void *pv, MemOp memop, uint16_t val)
 {
+#ifdef GEN_LLVM_HELPERS
+    stw_he_p(pv, val);
+#else
     uintptr_t pi = (uintptr_t)pv;
     int atmax;
 
@@ -898,6 +925,7 @@ static void store_atom_2(CPUState *cpu, uintptr_t ra,
     }
 
     cpu_loop_exit_atomic(cpu, ra);
+#endif
 }
 
 /**
@@ -911,6 +939,9 @@ static void store_atom_2(CPUState *cpu, uintptr_t ra,
 static void store_atom_4(CPUState *cpu, uintptr_t ra,
                          void *pv, MemOp memop, uint32_t val)
 {
+#ifdef GEN_LLVM_HELPERS
+    stl_he_p(pv, val);
+#else
     uintptr_t pi = (uintptr_t)pv;
     int atmax;
 
@@ -965,6 +996,7 @@ static void store_atom_4(CPUState *cpu, uintptr_t ra,
     default:
         g_assert_not_reached();
     }
+#endif
 }
 
 /**
@@ -978,6 +1010,9 @@ static void store_atom_4(CPUState *cpu, uintptr_t ra,
 static void store_atom_8(CPUState *cpu, uintptr_t ra,
                          void *pv, MemOp memop, uint64_t val)
 {
+#ifdef GEN_LLVM_HELPERS
+    stq_he_p(pv, val);
+#else
     uintptr_t pi = (uintptr_t)pv;
     int atmax;
 
@@ -1030,6 +1065,7 @@ static void store_atom_8(CPUState *cpu, uintptr_t ra,
         g_assert_not_reached();
     }
     cpu_loop_exit_atomic(cpu, ra);
+#endif
 }
 
 /**
@@ -1043,6 +1079,9 @@ static void store_atom_8(CPUState *cpu, uintptr_t ra,
 static void store_atom_16(CPUState *cpu, uintptr_t ra,
                           void *pv, MemOp memop, Int128 val)
 {
+#ifdef GEN_LLVM_HELPERS
+    memcpy(pv, &val, 16);
+#else
     uintptr_t pi = (uintptr_t)pv;
     uint64_t a, b;
     int atmax;
@@ -1108,4 +1147,5 @@ static void store_atom_16(CPUState *cpu, uintptr_t ra,
         g_assert_not_reached();
     }
     cpu_loop_exit_atomic(cpu, ra);
+#endif
 }

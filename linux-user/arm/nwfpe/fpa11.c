@@ -131,6 +131,12 @@ void SetRoundingPrecision(const unsigned int opcode)
     set_floatx80_rounding_precision(rounding_precision, &fpa11->fp_status);
 }
 
+#ifdef GEN_LLVM_HELPERS
+unsigned int EmulateAll(unsigned int opcode, FPA11* qfpa, CPUARMState* qregs) {
+  abort();
+}
+#else
+
 /* Emulate the instruction in the opcode. */
 /* ??? This is not thread safe.  */
 unsigned int EmulateAll(unsigned int opcode, FPA11* qfpa, CPUARMState* qregs)
@@ -206,6 +212,7 @@ unsigned int EmulateAll(unsigned int opcode, FPA11* qfpa, CPUARMState* qregs)
   //printf("returning %d\n",nRc);
   return(nRc);
 }
+#endif
 
 #if 0
 unsigned int EmulateAll1(unsigned int opcode)

@@ -55,7 +55,12 @@ const char *cpu_to_uname_machine(CPUArchState *cpu_env)
 #elif defined(TARGET_I386) && !defined(TARGET_X86_64)
     /* see arch/x86/kernel/cpu/bugs.c: check_bugs(), 386, 486, 586, 686 */
     CPUState *cpu = env_cpu(cpu_env);
+#ifdef GEN_LLVM_HELPERS
+    int family = 0;
+#else
     int family = object_property_get_int(OBJECT(cpu), "family", NULL);
+#endif
+
     if (family == 4) {
         return "i486";
     }

@@ -523,6 +523,7 @@ abi_long target_mmap(abi_ulong start, abi_ulong len, int target_prot,
         goto fail;
     }
 
+#ifndef GEN_LLVM_HELPERS
     /*
      * If we're mapping shared memory, ensure we generate code for parallel
      * execution and flush old translations.  This will work up to the level
@@ -536,6 +537,7 @@ abi_long target_mmap(abi_ulong start, abi_ulong len, int target_prot,
             tb_flush(cpu);
         }
     }
+#endif
 
     real_start = start & qemu_host_page_mask;
     host_offset = offset & qemu_host_page_mask;
@@ -1120,6 +1122,7 @@ abi_ulong target_shmat(CPUArchState *cpu_env, int shmid,
         shm_region_add(raddr, last);
     }
 
+#ifndef GEN_LLVM_HELPERS
     /*
      * We're mapping shared memory, so ensure we generate code for parallel
      * execution and flush old translations.  This will work up to the level
@@ -1130,6 +1133,7 @@ abi_ulong target_shmat(CPUArchState *cpu_env, int shmid,
         cpu->tcg_cflags |= CF_PARALLEL;
         tb_flush(cpu);
     }
+#endif
 
     return raddr;
 }

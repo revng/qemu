@@ -133,8 +133,16 @@ long safe_syscall_set_errno_tail(int value);
 extern char safe_syscall_start[];
 extern char safe_syscall_end[];
 
+#ifdef GEN_LLVM_HELPERS
+
+#define safe_syscall syscall
+
+#else
+
 #define safe_syscall(...)                                                 \
     safe_syscall_base(&((TaskState *)thread_cpu->opaque)->signal_pending, \
                       __VA_ARGS__)
+
+#endif
 
 #endif

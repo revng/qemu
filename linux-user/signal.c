@@ -671,11 +671,13 @@ void force_sigsegv(int oldsig)
 void cpu_loop_exit_sigsegv(CPUState *cpu, target_ulong addr,
                            MMUAccessType access_type, bool maperr, uintptr_t ra)
 {
+#ifndef GEN_LLVM_HELPERS
     const struct TCGCPUOps *tcg_ops = CPU_GET_CLASS(cpu)->tcg_ops;
 
     if (tcg_ops->record_sigsegv) {
         tcg_ops->record_sigsegv(cpu, addr, access_type, maperr, ra);
     }
+#endif
 
     force_sig_fault(TARGET_SIGSEGV,
                     maperr ? TARGET_SEGV_MAPERR : TARGET_SEGV_ACCERR,
@@ -687,6 +689,11 @@ void cpu_loop_exit_sigsegv(CPUState *cpu, target_ulong addr,
 void cpu_loop_exit_sigbus(CPUState *cpu, target_ulong addr,
                           MMUAccessType access_type, uintptr_t ra)
 {
+#ifdef GEN_LLVM_HELPERS
+    // We don't handle signals
+    // TODO: check but I think this was also a source of recursion
+    abort();
+#else
     const struct TCGCPUOps *tcg_ops = CPU_GET_CLASS(cpu)->tcg_ops;
 
     if (tcg_ops->record_sigbus) {
@@ -696,6 +703,7 @@ void cpu_loop_exit_sigbus(CPUState *cpu, target_ulong addr,
     force_sig_fault(TARGET_SIGBUS, TARGET_BUS_ADRALN, addr);
     cpu->exception_index = EXCP_INTERRUPT;
     cpu_loop_exit_restore(cpu, ra);
+#endif
 }
 
 /* abort execution with signal */
@@ -782,6 +790,7 @@ void queue_signal(CPUArchState *env, int sig, int si_type,
 }
 
 
+#ifndef GEN_LLVM_HELPERS
 /* Adjust the signal context to rewind out of safe-syscall if we're in it */
 static inline void rewind_if_in_safe_syscall(void *puc)
 {
@@ -793,6 +802,7 @@ static inline void rewind_if_in_safe_syscall(void *puc)
         host_signal_set_pc(uc, (uintptr_t)safe_syscall_start);
     }
 }
+#endif
 
 static G_NORETURN
 void die_from_signal(siginfo_t *info)
@@ -899,6 +909,7 @@ static void host_sigsegv_handler(CPUState *cpu, siginfo_t *info,
         return;
     }
 
+#ifndef GEN_LLVM_HELPERS
     /*
      * If the access was not on behalf of the guest, within the executable
      * mapping of the generated code buffer, then it is a host bug.
@@ -907,6 +918,7 @@ static void host_sigsegv_handler(CPUState *cpu, siginfo_t *info,
         && !in_code_gen_buffer((void *)(pc - tcg_splitwx_diff))) {
         die_from_signal(info);
     }
+#endif
 
     maperr = true;
     if (is_valid && info->si_code == SEGV_ACCERR) {
@@ -932,6 +944,7 @@ static uintptr_t host_sigbus_handler(CPUState *cpu, siginfo_t *info,
     bool is_write = host_signal_write(info, uc);
     MMUAccessType access_type = adjust_signal_pc(&pc, is_write);
 
+#ifndef GEN_LLVM_HELPERS
     /*
      * If the access was not on behalf of the guest, within the executable
      * mapping of the generated code buffer, then it is a host bug.
@@ -939,6 +952,7 @@ static uintptr_t host_sigbus_handler(CPUState *cpu, siginfo_t *info,
     if (!in_code_gen_buffer((void *)(pc - tcg_splitwx_diff))) {
         die_from_signal(info);
     }
+#endif
 
     if (info->si_code == BUS_ADRALN) {
         uintptr_t host_addr = (uintptr_t)info->si_addr;
@@ -1008,7 +1022,9 @@ static void host_signal_handler(int host_sig, siginfo_t *info, void *puc)
         cpu_loop_exit_restore(cpu, pc);
     }
 
+#ifndef GEN_LLVM_HELPERS
     rewind_if_in_safe_syscall(puc);
+#endif
 
     /*
      * Block host signals until target signal handler entered. We
@@ -1254,6 +1270,9 @@ static void handle_pending_signal(CPUArchState *cpu_env, int sig,
 
 void process_pending_signals(CPUArchState *cpu_env)
 {
+#ifdef GEN_LLVM_HELPERS
+    return;
+#else
     CPUState *cpu = env_cpu(cpu_env);
     int sig;
     TaskState *ts = cpu->opaque;
@@ -1311,6 +1330,7 @@ void process_pending_signals(CPUArchState *cpu_env)
         sigprocmask(SIG_SETMASK, &set, 0);
     }
     ts->in_sigsuspend = 0;
+#endif
 }
 
 int process_sigsuspend_mask(sigset_t **pset, target_ulong sigset,
