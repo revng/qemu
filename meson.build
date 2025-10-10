@@ -73,6 +73,7 @@ foreach target : target_dirs
   have_llvm_helpers = have_llvm_helpers or target.endswith('-llvm-helpers')
   have_system = have_system or target.endswith('-softmmu')
 endforeach
+have_emulator = have_linux_user or have_bsd_user or have_system
 have_linux_user = have_linux_user or have_libtcg or have_llvm_helpers
 have_user = have_linux_user or have_bsd_user or have_libtcg or have_llvm_helpers
 have_tools = get_option('tools') \
@@ -4275,7 +4276,9 @@ endif
 
 subdir('scripts')
 subdir('tools')
-subdir('pc-bios')
+if have_emulator
+  subdir('pc-bios')
+endif
 subdir('docs')
 subdir('tests')
 if gtk.found()
