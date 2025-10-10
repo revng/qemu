@@ -238,6 +238,7 @@ void handle_exception(CPUX86State *env, int trapnr) {
                              env->regs[R_EDI],
                              env->regs[R_EBP],
                              0, 0);
+            env->eip = env->exception_next_eip;
             if (ret == -QEMU_ERESTARTSYS) {
                 env->eip -= 2;
             } else if (ret != -QEMU_ESIGRETURN) {
@@ -256,6 +257,7 @@ void handle_exception(CPUX86State *env, int trapnr) {
                              env->regs[8],
                              env->regs[9],
                              0, 0);
+            env->eip = env->exception_next_eip;
             if (ret == -QEMU_ERESTARTSYS) {
                 env->eip -= 2;
             } else if (ret != -QEMU_ESIGRETURN) {
