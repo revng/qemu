@@ -21,6 +21,7 @@
  */
 
 #include "qemu/osdep.h"
+#include "qemu.h"
 #include "qapi/error.h"
 #include "cpu.h"
 #include "s390x-internal.h"
@@ -39,6 +40,7 @@
 #include "sysemu/reset.h"
 #endif
 #include "hw/s390x/cpu-topology.h"
+#include "user-internals.h"
 
 #define CR0_RESET       0xE0UL
 #define CR14_RESET      0xC2000000UL;
@@ -109,6 +111,12 @@ uint64_t s390_cpu_get_psw_mask(CPUS390XState *env)
     }
 
     return r;
+}
+
+void helper_initialize_env(CPUS390XState *env) {
+    env->psw.mask = PSW_MASK_DAT | PSW_MASK_IO | PSW_MASK_EXT |
+        PSW_MASK_MCHECK | PSW_MASK_PSTATE | PSW_MASK_64 |
+        PSW_MASK_32;
 }
 
 static void s390_cpu_set_pc(CPUState *cs, vaddr value)
