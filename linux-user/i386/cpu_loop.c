@@ -333,6 +333,54 @@ void handle_exception(CPUX86State *env, int trapnr) {
     }
 }
 
+void helper_initialize_env(CPUX86State *env) {
+    CC_SRC = env->eflags & (CC_O | CC_S | CC_Z | CC_A | CC_P | CC_C);
+    env->df = 1 - (2 * ((env->eflags >> 10) & 1));
+    CC_OP = CC_OP_EFLAGS;
+    env->eflags &= ~(DF_MASK | CC_O | CC_S | CC_Z | CC_A | CC_P | CC_C);
+
+    // TODO: this comes from target_cpu_copy_regs, factor out?
+    /* linux segment setup */
+    {
+        uint64_t *gdt_table;
+        env->gdt.base = target_mmap(0, sizeof(uint64_t) * TARGET_GDT_ENTRIES,
+                                    PROT_READ|PROT_WRITE,
+                                    MAP_ANONYMOUS|MAP_PRIVATE, -1, 0);
+        env->gdt.limit = sizeof(uint64_t) * TARGET_GDT_ENTRIES - 1;
+        gdt_table = g2h_untagged(env->gdt.base);
+#ifdef TARGET_ABI32
+        write_dt(&gdt_table[__USER_CS >> 3], 0, 0xfffff,
+                 DESC_G_MASK | DESC_B_MASK | DESC_P_MASK | DESC_S_MASK |
+                 (3 << DESC_DPL_SHIFT) | (0xa << DESC_TYPE_SHIFT));
+#else
+        /* 64 bit code segment */
+        write_dt(&gdt_table[__USER_CS >> 3], 0, 0xfffff,
+                 DESC_G_MASK | DESC_B_MASK | DESC_P_MASK | DESC_S_MASK |
+                 DESC_L_MASK |
+                 (3 << DESC_DPL_SHIFT) | (0xa << DESC_TYPE_SHIFT));
+#endif
+        write_dt(&gdt_table[__USER_DS >> 3], 0, 0xfffff,
+                 DESC_G_MASK | DESC_B_MASK | DESC_P_MASK | DESC_S_MASK |
+                 (3 << DESC_DPL_SHIFT) | (0x2 << DESC_TYPE_SHIFT));
+    }
+    cpu_x86_load_seg(env, R_CS, __USER_CS);
+    cpu_x86_load_seg(env, R_SS, __USER_DS);
+#ifdef TARGET_ABI32
+    cpu_x86_load_seg(env, R_DS, __USER_DS);
+    cpu_x86_load_seg(env, R_ES, __USER_DS);
+    cpu_x86_load_seg(env, R_FS, __USER_DS);
+    cpu_x86_load_seg(env, R_GS, __USER_DS);
+    /* This hack makes Wine work... */
+    env->segs[R_FS].selector = 0;
+#else
+    cpu_x86_load_seg(env, R_DS, 0);
+    cpu_x86_load_seg(env, R_ES, 0);
+    cpu_x86_load_seg(env, R_FS, 0);
+    cpu_x86_load_seg(env, R_GS, 0);
+#endif
+
+}
+
 static void target_cpu_free(void *obj)
 {
     CPUArchState *env = cpu_env(obj);
