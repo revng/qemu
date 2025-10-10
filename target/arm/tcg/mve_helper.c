@@ -2819,9 +2819,11 @@ DO_VMAXMINA(vminaw, 4, int32_t, uint32_t, DO_MIN)
             if (!(mask & 1)) {                                          \
                 /* We need the result but without updating flags */     \
                 scratch_fpst = *fpst;                                   \
-                fpst = &scratch_fpst;                                   \
             }                                                           \
             r = FN(n[H##ESIZE(e)], m[H##ESIZE(e)], fpst);               \
+            if (!(mask & 1)) {                                          \
+                *fpst = scratch_fpst;                                   \
+            }                                                           \
             mergemask(&d[H##ESIZE(e)], r, mask);                        \
         }                                                               \
         mve_advance_vpt(env);                                           \
@@ -2893,12 +2895,14 @@ DO_2OP_FP_ALL(vminnma, minnuma)
             if (!(tm & 1)) {                                            \
                 /* We need the result but without updating flags */     \
                 scratch_fpst = *fpst;                                   \
-                fpst = &scratch_fpst;                                   \
             }                                                           \
             if (!(e & 1)) {                                             \
                 r[e] = FN0(n[H##ESIZE(e)], m[H##ESIZE(e + 1)], fpst);   \
             } else {                                                    \
                 r[e] = FN1(n[H##ESIZE(e)], m[H##ESIZE(e - 1)], fpst);   \
+            }                                                           \
+            if (!(tm & 1)) {                                            \
+                *fpst = scratch_fpst;                                   \
             }                                                           \
         }                                                               \
         for (e = 0; e < 16 / ESIZE; e++, mask >>= ESIZE) {              \
@@ -2931,7 +2935,6 @@ DO_VCADD_FP(vfcadd270s, 4, float32, float32_add, float32_sub)
             if (!(mask & 1)) {                                          \
                 /* We need the result but without updating flags */     \
                 scratch_fpst = *fpst;                                   \
-                fpst = &scratch_fpst;                                   \
             }                                                           \
             r = n[H##ESIZE(e)];                                         \
             if (CHS) {                                                  \
@@ -2939,6 +2942,9 @@ DO_VCADD_FP(vfcadd270s, 4, float32, float32_add, float32_sub)
             }                                                           \
             r = TYPE##_muladd(r, m[H##ESIZE(e)], d[H##ESIZE(e)],        \
                               0, fpst);                                 \
+            if (!(mask & 1)) {                                          \
+                *fpst = scratch_fpst;                                   \
+            }                                                           \
             mergemask(&d[H##ESIZE(e)], r, mask);                        \
         }                                                               \
         mve_advance_vpt(env);                                           \
@@ -2969,11 +2975,9 @@ DO_VFMA(vfmss, 4, float32, true)
             fpst1 = fpst0;                                              \
             if (!(mask & 1)) {                                          \
                 scratch_fpst = *fpst0;                                  \
-                fpst0 = &scratch_fpst;                                  \
             }                                                           \
             if (!(mask & (1 << ESIZE))) {                               \
                 scratch_fpst = *fpst1;                                  \
-                fpst1 = &scratch_fpst;                                  \
             }                                                           \
             switch (ROT) {                                              \
             case 0:                                                     \
@@ -3005,6 +3009,12 @@ DO_VFMA(vfmss, 4, float32, true)
             }                                                           \
             r0 = FN(e2, e1, d[H##ESIZE(e)], fpst0);                     \
             r1 = FN(e4, e3, d[H##ESIZE(e + 1)], fpst1);                 \
+            if (!(mask & 1)) {                                          \
+                *fpst0 = scratch_fpst;                                  \
+            }                                                           \
+            if (!(mask & (1 << ESIZE))) {                               \
+                *fpst1 = scratch_fpst;                                  \
+            }                                                           \
             mergemask(&d[H##ESIZE(e)], r0, mask);                       \
             mergemask(&d[H##ESIZE(e + 1)], r1, mask >> ESIZE);          \
         }                                                               \
@@ -3054,9 +3064,11 @@ DO_VCMLA(vcmla270s, 4, float32, 3, DO_VCMLAS)
             if (!(mask & 1)) {                                          \
                 /* We need the result but without updating flags */     \
                 scratch_fpst = *fpst;                                   \
-                fpst = &scratch_fpst;                                   \
             }                                                           \
             r = FN(n[H##ESIZE(e)], m, fpst);                            \
+            if (!(mask & 1)) {                                          \
+                *fpst = scratch_fpst;                                   \
+            }                                                           \
             mergemask(&d[H##ESIZE(e)], r, mask);                        \
         }                                                               \
         mve_advance_vpt(env);                                           \
@@ -3089,9 +3101,11 @@ DO_2OP_FP_SCALAR_ALL(vfmul_scalar, mul)
             if (!(mask & 1)) {                                          \
                 /* We need the result but without updating flags */     \
                 scratch_fpst = *fpst;                                   \
-                fpst = &scratch_fpst;                                   \
             }                                                           \
             r = FN(n[H##ESIZE(e)], m, d[H##ESIZE(e)], 0, fpst);         \
+            if (!(mask & 1)) {                                          \
+                *fpst = scratch_fpst;                                   \
+            }                                                           \
             mergemask(&d[H##ESIZE(e)], r, mask);                        \
         }                                                               \
         mve_advance_vpt(env);                                           \
@@ -3173,9 +3187,11 @@ DO_FP_VMAXMINV(vminnmavs, 4, float32, true, float32_minnum)
             if (!(mask & (1 << (e * ESIZE)))) {                         \
                 /* We need the result but without updating flags */     \
                 scratch_fpst = *fpst;                                   \
-                fpst = &scratch_fpst;                                   \
             }                                                           \
             r = FN(n[H##ESIZE(e)], m[H##ESIZE(e)], fpst);               \
+            if (!(mask & (1 << (e * ESIZE)))) {                         \
+                *fpst = scratch_fpst;                                   \
+            }                                                           \
             /* Comparison sets 0/1 bits for each byte in the element */ \
             beatpred |= r * emask;                                      \
         }                                                               \
@@ -3207,9 +3223,11 @@ DO_FP_VMAXMINV(vminnmavs, 4, float32, true, float32_minnum)
             if (!(mask & (1 << (e * ESIZE)))) {                         \
                 /* We need the result but without updating flags */     \
                 scratch_fpst = *fpst;                                   \
-                fpst = &scratch_fpst;                                   \
             }                                                           \
             r = FN(n[H##ESIZE(e)], (TYPE)rm, fpst);                     \
+            if (!(mask & (1 << (e * ESIZE)))) {                         \
+                *fpst = scratch_fpst;                                   \
+            }                                                           \
             /* Comparison sets 0/1 bits for each byte in the element */ \
             beatpred |= r * emask;                                      \
         }                                                               \
@@ -3272,9 +3290,11 @@ DO_VCMP_FP_BOTH(vfcmples, vfcmple_scalars, 4, float32, !DO_GT32)
             if (!(mask & 1)) {                                          \
                 /* We need the result but without updating flags */     \
                 scratch_fpst = *fpst;                                   \
-                fpst = &scratch_fpst;                                   \
             }                                                           \
             r = FN(m[H##ESIZE(e)], shift, fpst);                        \
+            if (!(mask & 1)) {                                          \
+                *fpst = scratch_fpst;                                   \
+            }                                                           \
             mergemask(&d[H##ESIZE(e)], r, mask);                        \
         }                                                               \
         mve_advance_vpt(env);                                           \
@@ -3313,9 +3333,11 @@ DO_VCVT_FIXED(vcvt_fu, 4, uint32_t, helper_vfp_touls_round_to_zero)
             if (!(mask & 1)) {                                          \
                 /* We need the result but without updating flags */     \
                 scratch_fpst = *fpst;                                   \
-                fpst = &scratch_fpst;                                   \
             }                                                           \
             r = FN(m[H##ESIZE(e)], 0, fpst);                            \
+            if (!(mask & 1)) {                                          \
+                *fpst = scratch_fpst;                                   \
+            }                                                           \
             mergemask(&d[H##ESIZE(e)], r, mask);                        \
         }                                                               \
         set_float_rounding_mode(prev_rmode, base_fpst);                 \
@@ -3358,9 +3380,11 @@ static void do_vcvt_sh(CPUARMState *env, void *vd, void *vm, int top)
         if (!(mask & 1)) {
             /* We need the result but without updating flags */
             scratch_fpst = *fpst;
-            fpst = &scratch_fpst;
         }
         r = float32_to_float16(m[H4(e)], ieee, fpst);
+        if (!(mask & 1)) {
+            *fpst = scratch_fpst;
+        }
         mergemask(&d[H2(e * 2 + top)], r, mask >> (top * 2));
     }
     set_flush_to_zero(old_fz, base_fpst);
@@ -3388,9 +3412,11 @@ static void do_vcvt_hs(CPUARMState *env, void *vd, void *vm, int top)
         if (!(mask & (1 << (top * 2)))) {
             /* We need the result but without updating flags */
             scratch_fpst = *fpst;
-            fpst = &scratch_fpst;
         }
         r = float16_to_float32(m[H2(e * 2 + top)], ieee, fpst);
+        if (!(mask & (1 << (top * 2)))) {
+            *fpst = scratch_fpst;
+        }
         mergemask(&d[H4(e)], r, mask);
     }
     set_flush_inputs_to_zero(old_fiz, base_fpst);
@@ -3432,9 +3458,11 @@ void HELPER(mve_vcvtt_hs)(CPUARMState *env, void *vd, void *vm)
             if (!(mask & 1)) {                                          \
                 /* We need the result but without updating flags */     \
                 scratch_fpst = *fpst;                                   \
-                fpst = &scratch_fpst;                                   \
             }                                                           \
             r = FN(m[H##ESIZE(e)], fpst);                               \
+            if (!(mask & 1)) {                                          \
+                *fpst = scratch_fpst;                                   \
+            }                                                           \
             mergemask(&d[H##ESIZE(e)], r, mask);                        \
         }                                                               \
         mve_advance_vpt(env);                                           \
