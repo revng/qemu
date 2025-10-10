@@ -737,6 +737,10 @@ for opt do
   ;;
   --enable-libtcg) libtcg="yes"; linux_user="yes";
   ;;
+  --disable-llvm-helpers) llvm_helpers="no"
+  ;;
+  --enable-llvm-helpers) llvm_helpers="yes"; linux_user="yes";
+  ;;
   --enable-pie) pie="yes"
   ;;
   --disable-pie) pie="no"
@@ -829,6 +833,9 @@ if [ -n "$host_arch" ] && [ -d "$source_path/common-user/host/$host_arch" ]; the
     if [ "$libtcg" != "no" ]; then
         mak_wilds="${mak_wilds} $source_path/configs/targets/*-libtcg.mak"
     fi
+    if [ "$llvm_helpers" != "no" ]; then
+        mak_wilds="${mak_wilds} $source_path/configs/targets/*-llvm-helpers.mak"
+    fi
 else
     if [ "$linux_user" = yes ] || [ "$bsd_user" = yes ]; then
         error_exit "user mode emulation not supported on this architecture"
@@ -894,6 +901,7 @@ cat << EOF
   linux-user      all linux usermode emulation targets
   bsd-user        all BSD usermode emulation targets
   libtcg          all libtcg targets
+  llvm-helpers    all llvm-helpers targets
   pie             Position Independent Executables
 
 NOTE: The object files are built at the place where configure is launched

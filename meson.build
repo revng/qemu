@@ -65,14 +65,16 @@ have_linux_user = false
 have_bsd_user = false
 have_libtcg = false
 have_system = false
+have_llvm_helpers = false
 foreach target : target_dirs
   have_linux_user = have_linux_user or target.endswith('linux-user')
   have_bsd_user = have_bsd_user or target.endswith('bsd-user')
   have_libtcg = have_libtcg or target.endswith('-libtcg')
+  have_llvm_helpers = have_llvm_helpers or target.endswith('-llvm-helpers')
   have_system = have_system or target.endswith('-softmmu')
 endforeach
-have_linux_user = have_linux_user or have_libtcg
-have_user = have_linux_user or have_bsd_user or have_libtcg
+have_linux_user = have_linux_user or have_libtcg or have_llvm_helpers
+have_user = have_linux_user or have_bsd_user or have_libtcg or have_llvm_helpers
 have_tools = get_option('tools') \
   .disable_auto_if(not have_system) \
   .allowed()
@@ -2924,6 +2926,9 @@ foreach target : target_dirs
       # libtcg is not compatible with plugins as of now
       assert(not get_option('plugins'))
     endif
+    if target.endswith('-llvm-helpers')
+      config_target += { 'GEN_LLVM_HELPERS': 'y' }
+    endif
     config_target += { 'CONFIG_LINUX_USER': 'y' }
   elif target.endswith('bsd-user')
     if targetos not in bsd_oses
@@ -2937,7 +2942,7 @@ foreach target : target_dirs
     config_target += { 'CONFIG_SYSTEM_ONLY': 'y' }
     config_target += { 'CONFIG_SOFTMMU': 'y' }
   endif
-  if target.endswith('-user') or target.endswith('-libtcg')
+  if target.endswith('-user') or target.endswith('-libtcg') or target.endswith('-llvm-helpers')
     config_target += {
       'CONFIG_USER_ONLY': 'y',
       'CONFIG_QEMU_INTERP_PREFIX':
@@ -3898,6 +3903,233 @@ foreach target : target_dirs
                    link_args: link_args)
 
     execs = []
+  elif target.endswith('-llvm-helpers')
+    execs = []
+    emulator = executable('qemu-for-bitcode-' + target_name,
+               install: false,
+               c_args: c_args,
+               dependencies: arch_deps + deps,
+               objects: lib.extract_all_objects(recursive: true),
+               link_depends: [block_syms, qemu_syms],
+               link_args: link_args)
+
+    common_files = [
+        'accel/tcg/tcg-runtime.c',
+        'accel/tcg/tcg-runtime-gvec.c',
+        'accel/tcg/cpu-exec-common.c',
+        'accel/tcg/user-exec.c',
+        'linux-user/main.c',
+        'linux-user/syscall.c',
+        'linux-user/thunk.c',
+        'linux-user/mmap.c',
+        'linux-user/signal.c',
+        'linux-user/uaccess.c',
+        'linux-user/uname.c',
+        'linux-user/fd-trans.c',
+        'util/cutils.c',
+        'util/error.c',
+        'util/interval-tree.c',
+        'fpu/softfloat.c',
+        'trace/control.c',
+        'stubs/iothread-lock.c',
+    ]
+
+    helpers = {
+        'arm' : [
+            'target/arm/helper.c',
+            'target/arm/tcg/crypto_helper.c',
+            'target/arm/tcg/hflags.c',
+            'target/arm/tcg/iwmmxt_helper.c',
+            'target/arm/tcg/m_helper.c',
+            'target/arm/tcg/mve_helper.c',
+            'target/arm/tcg/neon_helper.c',
+            'target/arm/tcg/op_helper.c',
+            'target/arm/tcg/tlb_helper.c',
+            'target/arm/tcg/translate-m-nocp.c',
+            'target/arm/tcg/translate-mve.c',
+            'target/arm/tcg/translate-neon.c',
+            'target/arm/tcg/translate-vfp.c',
+            'target/arm/tcg/translate.c',
+            'target/arm/tcg/vec_helper.c',
+            'target/arm/vfp_helper.c',
+            'target/arm/debug_helper.c',
+            'linux-user/arm/nwfpe/fpa11.c',
+            'linux-user/arm/nwfpe/fpa11_cpdo.c',
+            'linux-user/arm/nwfpe/fpa11_cpdt.c',
+            'linux-user/arm/nwfpe/fpa11_cprt.c',
+            'linux-user/arm/nwfpe/fpopcode.c',
+            'linux-user/arm/nwfpe/single_cpdo.c',
+            'linux-user/arm/nwfpe/double_cpdo.c',
+            'linux-user/arm/nwfpe/extended_cpdo.c',
+            'linux-user/arm/cpu_loop.c',
+            'linux-user/arm/signal.c',
+        ],
+        'aarch64' : [
+            'target/arm/helper.c',
+            'target/arm/debug_helper.c',
+            'target/arm/tcg/crypto_helper.c',
+            'target/arm/tcg/helper-a64.c',
+            'target/arm/tcg/hflags.c',
+            'target/arm/tcg/iwmmxt_helper.c',
+            'target/arm/tcg/m_helper.c',
+            'target/arm/tcg/mte_helper.c',
+            'target/arm/tcg/mve_helper.c',
+            'target/arm/tcg/neon_helper.c',
+            'target/arm/tcg/op_helper.c',
+            'target/arm/tcg/pauth_helper.c',
+            'target/arm/tcg/sme_helper.c',
+            'target/arm/tcg/sve_helper.c',
+            'target/arm/tcg/tlb_helper.c',
+            'target/arm/tcg/translate-a64.c',
+            'target/arm/tcg/translate-m-nocp.c',
+            'target/arm/tcg/translate-mve.c',
+            'target/arm/tcg/translate-neon.c',
+            'target/arm/tcg/translate-sme.c',
+            'target/arm/tcg/translate-sve.c',
+            'target/arm/tcg/translate-vfp.c',
+            'target/arm/tcg/translate.c',
+            'target/arm/tcg/vec_helper.c',
+            'target/arm/vfp_helper.c',
+            'linux-user/aarch64/cpu_loop.c',
+            'linux-user/aarch64/signal.c',
+        ],
+        's390x' : [
+            'target/s390x/tcg/cc_helper.c',
+            'target/s390x/tcg/crypto_helper.c',
+            'target/s390x/tcg/excp_helper.c',
+            'target/s390x/tcg/fpu_helper.c',
+            'target/s390x/tcg/int_helper.c',
+            'target/s390x/tcg/mem_helper.c',
+            'target/s390x/tcg/misc_helper.c',
+            'target/s390x/tcg/translate.c',
+            'target/s390x/cpu-dump.c',
+            'target/s390x/interrupt.c',
+            'target/s390x/tcg/vec_fpu_helper.c',
+            'target/s390x/tcg/vec_helper.c',
+            'target/s390x/tcg/vec_int_helper.c',
+            'target/s390x/tcg/vec_string_helper.c',
+            'linux-user/s390x/cpu_loop.c',
+            'linux-user/s390x/signal.c',
+        ],
+        'i386' : [
+            'target/i386/tcg/misc_helper.c',
+            'target/i386/tcg/translate.c',
+            'target/i386/tcg/bpt_helper.c',
+            'target/i386/tcg/cc_helper.c',
+            'target/i386/tcg/excp_helper.c',
+            'target/i386/tcg/fpu_helper.c',
+            'target/i386/tcg/int_helper.c',
+            'target/i386/tcg/mem_helper.c',
+            'target/i386/tcg/mpx_helper.c',
+            'target/i386/tcg/seg_helper.c',
+            'target/i386/tcg/user/seg_helper.c',
+            'target/i386/helper.c',
+            'linux-user/i386/cpu_loop.c',
+            'linux-user/i386/signal.c',
+            'linux-user/vm86.c',
+        ],
+        'x86_64' : [
+            'target/i386/tcg/misc_helper.c',
+            'target/i386/tcg/translate.c',
+            'target/i386/tcg/bpt_helper.c',
+            'target/i386/tcg/cc_helper.c',
+            'target/i386/tcg/excp_helper.c',
+            'target/i386/tcg/fpu_helper.c',
+            'target/i386/tcg/int_helper.c',
+            'target/i386/tcg/mem_helper.c',
+            'target/i386/tcg/mpx_helper.c',
+            'target/i386/tcg/seg_helper.c',
+            'target/i386/tcg/user/seg_helper.c',
+            'target/i386/helper.c',
+            'linux-user/x86_64/cpu_loop.c',
+            'linux-user/x86_64/signal.c',
+        ],
+        'mips' : [
+            'target/mips/fpu.c',
+            'target/mips/tcg/dsp_helper.c',
+            'target/mips/tcg/exception.c',
+            'target/mips/tcg/fpu_helper.c',
+            'target/mips/tcg/ldst_helper.c',
+            'target/mips/tcg/lmmi_helper.c',
+            'target/mips/tcg/msa_helper.c',
+            'target/mips/tcg/msa_translate.c',
+            'target/mips/tcg/op_helper.c',
+            'target/mips/tcg/translate.c',
+            'target/mips/tcg/vr54xx_helper.c',
+            'target/mips/tcg/vr54xx_translate.c',
+            'target/mips/tcg/mxu_translate.c',
+            'linux-user/mips/cpu_loop.c',
+            'linux-user/mips/signal.c',
+        ],
+        'mipsel' : [
+            'target/mips/fpu.c',
+            'target/mips/tcg/dsp_helper.c',
+            'target/mips/tcg/exception.c',
+            'target/mips/tcg/fpu_helper.c',
+            'target/mips/tcg/ldst_helper.c',
+            'target/mips/tcg/lmmi_helper.c',
+            'target/mips/tcg/msa_helper.c',
+            'target/mips/tcg/msa_translate.c',
+            'target/mips/tcg/op_helper.c',
+            'target/mips/tcg/translate.c',
+            'target/mips/tcg/vr54xx_helper.c',
+            'target/mips/tcg/vr54xx_translate.c',
+            'target/mips/tcg/mxu_translate.c',
+            'linux-user/mips/cpu_loop.c',
+            'linux-user/mips/signal.c',
+        ],
+        'hexagon' : [
+            'target/hexagon/decode.c',
+            'target/hexagon/genptr.c',
+            'target/hexagon/op_helper.c',
+            'target/hexagon/translate.c',
+            'linux-user/hexagon/cpu_loop.c',
+            'linux-user/hexagon/signal.c',
+        ],
+        'loongarch64' : [],
+        'aarch64_be' : [],
+        'alpha' : [],
+        'armeb' : [],
+        'cris' : [],
+        'hppa' : [],
+        'm68k' : [],
+        'microblazeel' : [],
+        'microblaze' : [],
+        'mips64el' : [],
+        'mips64' : [],
+        'mipsn32el' : [],
+        'mipsn32' : [],
+        'nios2' : [],
+        'or1k' : [],
+        'ppc64le' : [],
+        'ppc64' : [],
+        'ppc' : [],
+        'riscv32' : [],
+        'riscv64' : [],
+        'sh4eb' : [],
+        'sh4' : [],
+        'sparc32plus' : [],
+        'sparc64' : [],
+        'sparc' : [],
+        'xtensaeb' : [],
+        'xtensa' : [],
+    }
+    embedded_object_linker = files('python/scripts/link-embedded-objects')
+
+    source_full_paths = [join_paths(meson.current_build_dir(), 'trace/trace-linux_user.c')]
+    foreach path : common_files + helpers[target_name]
+      source_full_paths += join_paths(meson.current_source_dir(), path)
+    endforeach
+
+    custom_target('libtcg-helpers-' + target_name,
+        output: 'libtcg-helpers-' + target_name + '.bc',
+        depend_files: [embedded_object_linker],
+        depends: [emulator],
+        command: [embedded_object_linker, emulator, '@OUTPUT@'] + source_full_paths,
+        install: true,
+        install_dir: 'share/libtcg',
+        build_by_default: true,
+    )
   else
     execs = [{
       'name': 'qemu-' + target_name,
