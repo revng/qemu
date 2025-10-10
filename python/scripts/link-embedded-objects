@@ -1,0 +1,123 @@
+#!/usr/bin/env python3
+
+import argparse
+import os
+import re
+import subprocess
+import sys
+import tempfile
+from pathlib import Path
+from typing import List, Dict
+
+def log(message: str) -> None:
+    """Write a message to stderr."""
+    print(message, file=sys.stderr)
+
+def parse_args() -> argparse.Namespace:
+    """Parse command-line arguments."""
+    parser = argparse.ArgumentParser(
+        description="Extract and link bitcode files from ELF input.",
+        usage="%(prog)s [--verbose] ELF_INPUT OUTPUT_BITCODE SOURCE_PATTERN [SOURCE_PATTERN ...]"
+    )
+    parser.add_argument("--verbose", action="store_true", help="Enable verbose output")
+    parser.add_argument("elf_input", help="Input ELF file")
+    parser.add_argument("output_bitcode", help="Output bitcode file")
+    parser.add_argument("source_patterns", nargs="+", help="Source file patterns to match")
+    return parser.parse_args()
+
+def extract_bitcode(elf_input: str, work_dir: Path) -> Path:
+    """Extract .llvmbc section from ELF file to a temporary file."""
+    concatenated = work_dir / "concatenated.bc"
+    subprocess.run(
+        ["objcopy", "--dump-section=.llvmbc=" + str(concatenated), elf_input, "/dev/null"],
+        check=True
+    )
+    return concatenated
+
+def split_bitcode(concatenated: Path, output_dir: Path) -> None:
+    marker = bytes.fromhex("4243c0de")
+    os.makedirs(output_dir, exist_ok=True)
+
+    data = concatenated.read_bytes()
+
+    parts = data.split(marker)
+
+    for i, part in enumerate(parts):
+        if not part:
+            continue
+        output_path = os.path.join(output_dir, f"file-{i}.bc")
+        with open(output_path, 'wb') as f:
+            f.write(marker + part)
+
+def get_source_name(bitcode_file: Path) -> str:
+    """Extract source filename from bitcode file using llvm-bcanalyzer."""
+    result = subprocess.run(
+        ["llvm-bcanalyzer", "--dump"],
+        input=bitcode_file.read_bytes(),
+        capture_output=True,
+        check=True
+    )
+    match = re.search(r"<SOURCE_FILENAME.*record string = '(.*?)'", result.stdout.decode("ascii"))
+    if not match:
+        raise ValueError(f"No source filename found in {bitcode_file}")
+    source_name = match.group(1)
+    return os.path.realpath(source_name)
+
+def collect_bitcode_files(extracted_dir: Path, verbose: bool) -> Dict[str, Path]:
+    """Collect bitcode files and their corresponding source names."""
+    names: Dict[str, Path] = {}
+    for bitcode_file in extracted_dir.glob("file-*.bc"):
+        try:
+            source_name = get_source_name(bitcode_file)
+            if verbose:
+                log(f"Found {source_name}")
+            names[source_name] = bitcode_file
+        except (subprocess.CalledProcessError, ValueError) as e:
+            log(f"Error processing {bitcode_file}: {e}")
+    return names
+
+def link_bitcode_files(names: Dict[str, Path], source_patterns: List[str], output_bitcode: str) -> None:
+    """Link selected bitcode files based on source patterns."""
+    bitcode_files_to_link: List[Path] = []
+    result = 0
+
+    for source in source_patterns:
+        source_path = os.path.realpath(source)
+        if source_path in names:
+            bitcode_files_to_link.append(names[source_path])
+        else:
+            log(f"Couldn't find source {source}")
+            result = 1
+
+    if result != 0:
+        sys.exit(1)
+
+    subprocess.run(
+        ["llvm-link", *bitcode_files_to_link, "-o", output_bitcode],
+        check=True
+    )
+
+def main() -> None:
+    """Main function to process ELF file and link bitcode files."""
+    args = parse_args()
+
+    if not args.elf_input or not args.output_bitcode or not args.source_patterns:
+        log("Error: ELF_INPUT, OUTPUT_BITCODE, and at least one SOURCE_PATTERN are required")
+        sys.exit(1)
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        work_dir = Path(temp_dir)
+        extracted_dir = work_dir / "extracted"
+        extracted_dir.mkdir()
+
+        try:
+            concatenated = extract_bitcode(args.elf_input, work_dir)
+            split_bitcode(concatenated, extracted_dir)
+            names = collect_bitcode_files(extracted_dir, args.verbose)
+            link_bitcode_files(names, args.source_patterns, args.output_bitcode)
+        except subprocess.CalledProcessError as e:
+            log(f"Subprocess error: {e}")
+            sys.exit(1)
+
+if __name__ == "__main__":
+    main()

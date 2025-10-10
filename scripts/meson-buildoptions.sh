@@ -38,6 +38,8 @@ meson_options_help() {
   printf "%s\n" '  --enable-gcov            Enable coverage tracking.'
   printf "%s\n" '  --enable-libtcg          Build *-user target as a shared library, exposing'
   printf "%s\n" '                           tcg frontend'
+  printf "%s\n" '  --enable-llvm-helpers    Build LLVM bitcode target containing relevant'
+  printf "%s\n" '                           helper functions'
   printf "%s\n" '  --enable-lto             Use link time optimization'
   printf "%s\n" '  --enable-malloc=CHOICE   choose memory allocator to use [system] (choices:'
   printf "%s\n" '                           jemalloc/system/tcmalloc)'
