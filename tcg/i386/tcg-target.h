@@ -196,12 +196,12 @@ typedef enum {
 #endif
 
 #define TCG_TARGET_HAS_qemu_ldst_i128 \
-    (TCG_TARGET_REG_BITS == 64 && (cpuinfo & CPUINFO_ATOMIC_VMOVDQA))
+    0
 
 /* We do not support older SSE systems, only beginning with AVX1.  */
-#define TCG_TARGET_HAS_v64              have_avx1
-#define TCG_TARGET_HAS_v128             have_avx1
-#define TCG_TARGET_HAS_v256             have_avx2
+#define TCG_TARGET_HAS_v64              0
+#define TCG_TARGET_HAS_v128             0
+#define TCG_TARGET_HAS_v256             0
 
 #define TCG_TARGET_HAS_andc_vec         1
 #define TCG_TARGET_HAS_orc_vec          have_avx512vl

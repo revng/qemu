@@ -138,8 +138,8 @@ extern uint64_t s390_facilities[3];
 
 #define TCG_TARGET_HAS_qemu_ldst_i128 1
 
-#define TCG_TARGET_HAS_v64            HAVE_FACILITY(VECTOR)
-#define TCG_TARGET_HAS_v128           HAVE_FACILITY(VECTOR)
+#define TCG_TARGET_HAS_v64            0
+#define TCG_TARGET_HAS_v128           0
 #define TCG_TARGET_HAS_v256           0
 
 #define TCG_TARGET_HAS_andc_vec       1
