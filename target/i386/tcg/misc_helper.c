@@ -75,7 +75,7 @@ void helper_rdtsc(CPUX86State *env)
     env->regs[R_EDX] = (uint32_t)(val >> 32);
 }
 
-G_NORETURN void helper_rdpmc(CPUX86State *env)
+G_NORETURN void helper_rdpmc(CPUX86State *env) REVNG_EXCEPTIONAL
 {
     if (((env->cr[4] & CR4_PCE_MASK) == 0 ) &&
         ((env->hflags & HF_CPL_MASK) != 0)) {
@@ -88,7 +88,7 @@ G_NORETURN void helper_rdpmc(CPUX86State *env)
     raise_exception_err(env, EXCP06_ILLOP, 0);
 }
 
-G_NORETURN void do_pause(CPUX86State *env)
+G_NORETURN void do_pause(CPUX86State *env) REVNG_EXCEPTIONAL
 {
     CPUState *cs = env_cpu(env);
 
@@ -97,7 +97,7 @@ G_NORETURN void do_pause(CPUX86State *env)
     cpu_loop_exit(cs);
 }
 
-G_NORETURN void helper_pause(CPUX86State *env, int next_eip_addend)
+G_NORETURN void helper_pause(CPUX86State *env, int next_eip_addend) REVNG_EXCEPTIONAL
 {
     cpu_svm_check_intercept_param(env, SVM_EXIT_PAUSE, 0, GETPC());
     env->eip += next_eip_addend;

@@ -72,8 +72,8 @@ abi_long get_errno(abi_long ret);
 const char *target_strerror(int err);
 int get_osversion(void);
 void init_qemu_uname_release(void);
-void fork_start(void);
-void fork_end(int child);
+void fork_start(void) REVNG_NOOP;
+void fork_end(int child) REVNG_NOOP;
 
 /**
  * probe_guest_base:

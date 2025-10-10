@@ -20,10 +20,10 @@
 
 void print_syscall(CPUArchState *cpu_env, int num,
                    abi_long arg1, abi_long arg2, abi_long arg3,
-                   abi_long arg4, abi_long arg5, abi_long arg6);
+                   abi_long arg4, abi_long arg5, abi_long arg6) REVNG_NOOP;
 void print_syscall_ret(CPUArchState *cpu_env, int num, abi_long ret,
                        abi_long arg1, abi_long arg2, abi_long arg3,
-                       abi_long arg4, abi_long arg5, abi_long arg6);
+                       abi_long arg4, abi_long arg5, abi_long arg6) REVNG_NOOP;
 /**
  * print_taken_signal:
  * @target_signum: target signal being taken
@@ -33,6 +33,6 @@ void print_syscall_ret(CPUArchState *cpu_env, int num, abi_long ret,
  * in a format similar to:
  * --- SIGSEGV {si_signo=SIGSEGV, si_code=SI_KERNEL, si_addr=0} ---
  */
-void print_taken_signal(int target_signum, const target_siginfo_t *tinfo);
+void print_taken_signal(int target_signum, const target_siginfo_t *tinfo) REVNG_NOOP;
 
 #endif /* LINUX_USER_STRACE_H */

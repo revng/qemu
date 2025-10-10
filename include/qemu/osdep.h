@@ -607,7 +607,7 @@ bool qemu_has_ofd_lock(void);
 
 bool qemu_write_pidfile(const char *pidfile, Error **errp);
 
-int qemu_get_thread_id(void);
+int qemu_get_thread_id(void) REVNG_NOOP;
 
 #ifndef CONFIG_IOVEC
 struct iovec {

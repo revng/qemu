@@ -698,7 +698,7 @@ enum CPUDumpFlags {
  *
  * Dumps CPU state.
  */
-void cpu_dump_state(CPUState *cpu, FILE *f, int flags);
+void cpu_dump_state(CPUState *cpu, FILE *f, int flags) REVNG_NOOP;
 
 #ifndef CONFIG_USER_ONLY
 /**
@@ -972,7 +972,7 @@ void cpu_reset_interrupt(CPUState *cpu, int mask);
  *
  * Requests the CPU @cpu to exit execution.
  */
-void cpu_exit(CPUState *cpu);
+void cpu_exit(CPUState *cpu) REVNG_ABORT;
 
 /**
  * cpu_resume:
@@ -994,7 +994,7 @@ void cpu_remove_sync(CPUState *cpu);
  * process_queued_cpu_work() - process all items on CPU work queue
  * @cpu: The CPU which work queue to process.
  */
-void process_queued_cpu_work(CPUState *cpu);
+void process_queued_cpu_work(CPUState *cpu) REVNG_NOOP;
 
 /**
  * cpu_exec_start:
@@ -1003,7 +1003,7 @@ void process_queued_cpu_work(CPUState *cpu);
  * Record that a CPU has started execution and can be interrupted with
  * cpu_exit.
  */
-void cpu_exec_start(CPUState *cpu);
+void cpu_exec_start(CPUState *cpu) REVNG_NOOP;
 
 /**
  * cpu_exec_end:
@@ -1012,7 +1012,7 @@ void cpu_exec_start(CPUState *cpu);
  * Record that a CPU has stopped execution and exclusive sections
  * can be executed without interrupting it.
  */
-void cpu_exec_end(CPUState *cpu);
+void cpu_exec_end(CPUState *cpu) REVNG_NOOP;
 
 /**
  * start_exclusive:
@@ -1147,7 +1147,7 @@ static inline bool cpu_plugin_mem_cbs_enabled(const CPUState *cpu)
 AddressSpace *cpu_get_address_space(CPUState *cpu, int asidx);
 
 G_NORETURN void cpu_abort(CPUState *cpu, const char *fmt, ...)
-    G_GNUC_PRINTF(2, 3);
+    G_GNUC_PRINTF(2, 3) REVNG_ABORT;
 
 /* $(top_srcdir)/cpu.c */
 void cpu_class_init_props(DeviceClass *dc);

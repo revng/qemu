@@ -27,7 +27,7 @@ typedef uint64_t vaddr;
 #define VADDR_MAX UINT64_MAX
 
 void cpu_exec_init_all(void);
-void cpu_exec_step_atomic(CPUState *cpu);
+void cpu_exec_step_atomic(CPUState *cpu) REVNG_NOOP;
 
 /* Using intptr_t ensures that qemu_*_page_mask is sign-extended even
  * when intptr_t is 32-bit and we are aligning a long long.
@@ -209,7 +209,7 @@ bool cpu_unwind_state_data(CPUState *cpu, uintptr_t host_pc, uint64_t *data);
  * code. If @host_pc is not in translated code no state is
  * restored and the function returns false.
  */
-bool cpu_restore_state(CPUState *cpu, uintptr_t host_pc);
+bool cpu_restore_state(CPUState *cpu, uintptr_t host_pc) REVNG_NOOP;
 
 G_NORETURN void cpu_loop_exit_noexc(CPUState *cpu);
 G_NORETURN void cpu_loop_exit_atomic(CPUState *cpu, uintptr_t pc);

@@ -28,12 +28,12 @@ void mips_restore_state_to_opc(CPUState *cs,
 const char *mips_exception_name(int32_t exception);
 
 G_NORETURN void do_raise_exception_err(CPUMIPSState *env, uint32_t exception,
-                                       int error_code, uintptr_t pc);
+                                       int error_code, uintptr_t pc) REVNG_EXCEPTIONAL;
 
 static inline G_NORETURN
 void do_raise_exception(CPUMIPSState *env,
                         uint32_t exception,
-                        uintptr_t pc)
+                        uintptr_t pc) REVNG_EXCEPTIONAL
 {
     do_raise_exception_err(env, exception, 0, pc);
 }

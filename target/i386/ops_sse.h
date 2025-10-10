@@ -465,7 +465,7 @@ void glue(helper_pshufhw, SUFFIX)(Reg *d, Reg *s, int order)
 
 #define SSE_HELPER_P(name, F)                                           \
     void glue(helper_ ## name ## ps, SUFFIX)(CPUX86State *env,          \
-            Reg *d, Reg *v, Reg *s)                                     \
+            Reg *d, Reg *v, Reg *s) REVNG_INLINE                        \
     {                                                                   \
         int i;                                                          \
         for (i = 0; i < 2 << SHIFT; i++) {                              \
@@ -474,7 +474,7 @@ void glue(helper_pshufhw, SUFFIX)(Reg *d, Reg *s, int order)
     }                                                                   \
                                                                         \
     void glue(helper_ ## name ## pd, SUFFIX)(CPUX86State *env,          \
-            Reg *d, Reg *v, Reg *s)                                     \
+            Reg *d, Reg *v, Reg *s) REVNG_INLINE                        \
     {                                                                   \
         int i;                                                          \
         for (i = 0; i < 1 << SHIFT; i++) {                              \
@@ -488,6 +488,7 @@ void glue(helper_pshufhw, SUFFIX)(Reg *d, Reg *s, int order)
     SSE_HELPER_P(name, F)                                               \
                                                                         \
     void helper_ ## name ## ss(CPUX86State *env, Reg *d, Reg *v, Reg *s)\
+            REVNG_INLINE                                                \
     {                                                                   \
         int i;                                                          \
         d->ZMM_S(0) = F(32, v->ZMM_S(0), s->ZMM_S(0));                  \
@@ -497,6 +498,7 @@ void glue(helper_pshufhw, SUFFIX)(Reg *d, Reg *s, int order)
     }                                                                   \
                                                                         \
     void helper_ ## name ## sd(CPUX86State *env, Reg *d, Reg *v, Reg *s)\
+            REVNG_INLINE                                                \
     {                                                                   \
         int i;                                                          \
         d->ZMM_D(0) = F(64, v->ZMM_D(0), s->ZMM_D(0));                  \

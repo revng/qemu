@@ -52,7 +52,7 @@
 #endif
 
 /* Raise an exception statically from a TB.  */
-void HELPER(exception)(CPUS390XState *env, uint32_t excp)
+void HELPER(exception)(CPUS390XState *env, uint32_t excp) REVNG_INLINE
 {
     CPUState *cs = env_cpu(env);
 

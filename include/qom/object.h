@@ -796,7 +796,7 @@ Object *object_dynamic_cast(Object *obj, const char *typename);
  * the wrapper macro OBJECT_CHECK.
  */
 Object *object_dynamic_cast_assert(Object *obj, const char *typename,
-                                   const char *file, int line, const char *func);
+                                   const char *file, int line, const char *func) REVNG_ABORT;
 
 /**
  * object_get_class:

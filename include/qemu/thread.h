@@ -26,11 +26,11 @@ typedef struct QemuThread QemuThread;
 void qemu_mutex_init(QemuMutex *mutex);
 void qemu_mutex_destroy(QemuMutex *mutex);
 int TSA_NO_TSA qemu_mutex_trylock_impl(QemuMutex *mutex, const char *file,
-                                       const int line);
+                                       const int line) REVNG_NOOP;
 void TSA_NO_TSA qemu_mutex_lock_impl(QemuMutex *mutex, const char *file,
-                                     const int line);
+                                     const int line) REVNG_NOOP;
 void TSA_NO_TSA qemu_mutex_unlock_impl(QemuMutex *mutex, const char *file,
-                                       const int line);
+                                       const int line) REVNG_NOOP;
 
 void qemu_rec_mutex_init(QemuRecMutex *mutex);
 void qemu_rec_mutex_destroy(QemuRecMutex *mutex);

@@ -34,7 +34,7 @@
 #endif
 
 /* 64/32 -> 32 signed division */
-uint64_t HELPER(divs32)(CPUS390XState *env, int64_t a, int64_t b64)
+uint64_t HELPER(divs32)(CPUS390XState *env, int64_t a, int64_t b64) REVNG_INLINE
 {
     int32_t b = b64;
     int64_t q, r;
@@ -55,7 +55,7 @@ uint64_t HELPER(divs32)(CPUS390XState *env, int64_t a, int64_t b64)
 }
 
 /* 64/32 -> 32 unsigned division */
-uint64_t HELPER(divu32)(CPUS390XState *env, uint64_t a, uint64_t b64)
+uint64_t HELPER(divu32)(CPUS390XState *env, uint64_t a, uint64_t b64) REVNG_INLINE
 {
     uint32_t b = b64;
     uint64_t q, r;

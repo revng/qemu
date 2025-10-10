@@ -10136,7 +10136,7 @@ void cpsr_write(CPUARMState *env, uint32_t val, uint32_t mask,
 }
 
 /* Sign/zero extend */
-uint32_t HELPER(sxtb16)(uint32_t x)
+uint32_t HELPER(sxtb16)(uint32_t x) REVNG_INLINE
 {
     uint32_t res;
     res = (uint16_t)(int8_t)x;
@@ -10156,7 +10156,7 @@ static void handle_possible_div0_trap(CPUARMState *env, uintptr_t ra)
     }
 }
 
-uint32_t HELPER(uxtb16)(uint32_t x)
+uint32_t HELPER(uxtb16)(uint32_t x) REVNG_INLINE
 {
     uint32_t res;
     res = (uint16_t)(uint8_t)x;
@@ -10164,7 +10164,7 @@ uint32_t HELPER(uxtb16)(uint32_t x)
     return res;
 }
 
-int32_t HELPER(sdiv)(CPUARMState *env, int32_t num, int32_t den)
+int32_t HELPER(sdiv)(CPUARMState *env, int32_t num, int32_t den) REVNG_INLINE
 {
     if (den == 0) {
         handle_possible_div0_trap(env, GETPC());
@@ -10176,7 +10176,7 @@ int32_t HELPER(sdiv)(CPUARMState *env, int32_t num, int32_t den)
     return num / den;
 }
 
-uint32_t HELPER(udiv)(CPUARMState *env, uint32_t num, uint32_t den)
+uint32_t HELPER(udiv)(CPUARMState *env, uint32_t num, uint32_t den) REVNG_INLINE
 {
     if (den == 0) {
         handle_possible_div0_trap(env, GETPC());
@@ -11871,7 +11871,7 @@ uint32_t HELPER(usad8)(uint32_t a, uint32_t b)
 }
 
 /* For ARMv6 SEL instruction.  */
-uint32_t HELPER(sel_flags)(uint32_t flags, uint32_t a, uint32_t b)
+uint32_t HELPER(sel_flags)(uint32_t flags, uint32_t a, uint32_t b) REVNG_INLINE
 {
     uint32_t mask;
 

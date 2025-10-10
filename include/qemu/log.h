@@ -39,8 +39,8 @@ bool qemu_log_separate(void);
 
 /* Lock/unlock output. */
 
-FILE *qemu_log_trylock(void) G_GNUC_WARN_UNUSED_RESULT;
-void qemu_log_unlock(FILE *fd);
+FILE *qemu_log_trylock(void) G_GNUC_WARN_UNUSED_RESULT REVNG_NOOP;
+void qemu_log_unlock(FILE *fd) REVNG_NOOP;
 
 /* Logging functions: */
 

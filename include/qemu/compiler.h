@@ -227,4 +227,16 @@
 #define SECOND_ARG(first, second, ...) second
 #define IS_EMPTY_(junk_maybecomma)     SECOND_ARG(junk_maybecomma 1, 0)
 
+#ifdef GEN_LLVM_HELPERS
+#define REVNG_INLINE __attribute__((section("revng_inline")))
+#define REVNG_EXCEPTIONAL __attribute__((section("revng_exceptional")))
+#define REVNG_ABORT __attribute__((section("revng_abort")))
+#define REVNG_NOOP __attribute__((section("revng_noop")))
+#else
+#define REVNG_INLINE
+#define REVNG_EXCEPTIONAL
+#define REVNG_ABORT
+#define REVNG_NOOP
+#endif
+
 #endif /* COMPILER_H */

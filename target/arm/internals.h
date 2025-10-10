@@ -116,7 +116,7 @@ FIELD(DBGWCR, SSCE, 29, 1)
  * and never returns because we will longjump back up to the CPU main loop.
  */
 G_NORETURN void raise_exception(CPUARMState *env, uint32_t excp,
-                                uint32_t syndrome, uint32_t target_el);
+                                uint32_t syndrome, uint32_t target_el) REVNG_EXCEPTIONAL;
 
 /*
  * Similarly, but also use unwinding to restore cpu state.
