@@ -68,11 +68,10 @@ static inline uint64_t expand_pred_h(uint8_t byte)
 
 static inline void clear_tail(void *vd, uintptr_t opr_sz, uintptr_t max_sz)
 {
-    uint64_t *d = vd + opr_sz;
-    uintptr_t i;
-
-    for (i = opr_sz; i < max_sz; i += 8) {
-        *d++ = 0;
+    if (opr_sz < max_sz) {
+        void *start = (char *)vd + opr_sz;
+        uintptr_t size = max_sz - opr_sz;
+        bzero(start, size);
     }
 }
 
