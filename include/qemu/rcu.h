@@ -31,6 +31,8 @@
 #include "qemu/sys_membarrier.h"
 #include "qemu/coroutine-tls.h"
 
+extern bool enable_rcu_thread;
+
 /*
  * Important !
  *
