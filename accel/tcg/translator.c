@@ -195,10 +195,12 @@ void translator_loop(CPUState *cpu, TranslationBlock *tb, int *max_insns,
 
         /* Stop translation if the output buffer is full,
            or we have executed all of the allowed instructions.  */
-        if (tcg_op_buf_full() || db->num_insns >= db->max_insns) {
+        if (tcg_op_buf_full() || db->num_insns >= db->max_insns
+            || !can_translation_proceed(cpu, db->pc_next, tb->max_pc)) {
             db->is_jmp = DISAS_TOO_MANY;
             break;
         }
+
     }
 
     /* Emit code to exit the TB, as indicated by db->is_jmp.  */

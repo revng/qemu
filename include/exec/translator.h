@@ -240,4 +240,16 @@ static inline bool is_same_page(const DisasContextBase *db, target_ulong addr)
     return ((addr ^ db->pc_first) & TARGET_PAGE_MASK) == 0;
 }
 
+#ifdef CONFIG_LIBTCG
+bool can_translation_proceed(CPUState *cpu,
+                             target_ulong pc_next,
+                             target_ulong max_pc);
+#else
+static inline bool can_translation_proceed(CPUState *cpu,
+                                           target_ulong pc_next,
+                                           target_ulong max_pc) {
+    return true;
+}
+#endif
+
 #endif /* EXEC__TRANSLATOR_H */
