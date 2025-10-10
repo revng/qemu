@@ -3411,14 +3411,16 @@ qom_ss = qom_ss.apply(config_targetos, strict: false)
 libqom = static_library('qom', qom_ss.sources() + genh,
                         dependencies: [qom_ss.dependencies()],
                         name_suffix: 'fa',
-                        build_by_default: false)
+                        build_by_default: false,
+                        pic: have_libtcg)
 qom = declare_dependency(link_whole: libqom)
 
 event_loop_base = files('event-loop-base.c')
 event_loop_base = static_library('event-loop-base',
                                  sources: event_loop_base + genh,
                                  name_suffix: 'fa',
-                                 build_by_default: false)
+                                 build_by_default: false,
+                                 pic: have_libtcg)
 event_loop_base = declare_dependency(link_whole: event_loop_base,
                                      dependencies: [qom])
 
@@ -3429,7 +3431,8 @@ util_ss = util_ss.apply(config_all, strict: false)
 libqemuutil = static_library('qemuutil',
                              build_by_default: false,
                              sources: util_ss.sources() + stub_ss.sources() + genh,
-                             dependencies: [util_ss.dependencies(), libm, threads, glib, socket, malloc, pixman])
+                             dependencies: [util_ss.dependencies(), libm, threads, glib, socket, malloc, pixman],
+                             pic: have_libtcg)
 qemuutil = declare_dependency(link_with: libqemuutil,
                               sources: genh + version_res,
                               dependencies: [event_loop_base])
@@ -3719,7 +3722,8 @@ chardev = declare_dependency(link_whole: libchardev)
 hwcore_ss = hwcore_ss.apply(config_targetos, strict: false)
 libhwcore = static_library('hwcore', sources: hwcore_ss.sources() + genh,
                            name_suffix: 'fa',
-                           build_by_default: false)
+                           build_by_default: false,
+                           pic: have_libtcg)
 hwcore = declare_dependency(link_whole: libhwcore)
 common_ss.add(hwcore)
 

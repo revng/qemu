@@ -21,7 +21,8 @@ libgdb_user = static_library('gdb_user',
                              gdb_user_ss.sources() + genh,
                              name_suffix: 'fa',
                              c_args: '-DCONFIG_USER_ONLY',
-                             build_by_default: false)
+                             build_by_default: false,
+                             pic: have_libtcg)
 
 libgdb_system = static_library('gdb_system',
                                 gdb_system_ss.sources() + genh,
