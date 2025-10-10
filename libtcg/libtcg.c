@@ -21,6 +21,8 @@
  */
 #include "libtcg/libtcg.h"
 
+bool enable_rcu_thread = false;
+
 #define ASSERT_CONSTANT(name) _Static_assert((LIBTCG_MO_ ## name) == (MO_ ## name), "Constant out-of-sync")
 
 ASSERT_CONSTANT(8);

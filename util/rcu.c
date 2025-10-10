@@ -36,6 +36,8 @@
 #include <malloc.h>
 #endif
 
+bool enable_rcu_thread __attribute__((weak)) = true;
+
 /*
  * Global grace period counter.  Bit 0 is always one in rcu_gp_ctr.
  * Bits 1 and above are defined in synchronize_rcu.
@@ -464,6 +466,9 @@ static void rcu_init_child(void)
 
 static void __attribute__((__constructor__)) rcu_init(void)
 {
+    if (!enable_rcu_thread)
+        return;
+
     smp_mb_global_init();
 #ifdef CONFIG_POSIX
     pthread_atfork(rcu_init_lock, rcu_init_unlock, rcu_init_child);
