@@ -170,7 +170,7 @@ typedef enum {
 #define TCG_TARGET_HAS_qemu_ldst_i128   (cpuinfo & CPUINFO_LSX)
 
 #define TCG_TARGET_HAS_v64              0
-#define TCG_TARGET_HAS_v128             (cpuinfo & CPUINFO_LSX)
+#define TCG_TARGET_HAS_v128             0
 #define TCG_TARGET_HAS_v256             0
 
 #define TCG_TARGET_HAS_not_vec          1
