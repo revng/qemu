@@ -77,6 +77,8 @@ void arm_translate_init(void)
     cpu_VF = tcg_global_mem_new_i32(tcg_env, offsetof(CPUARMState, VF), "VF");
     cpu_ZF = tcg_global_mem_new_i32(tcg_env, offsetof(CPUARMState, ZF), "ZF");
 
+    tcg_global_mem_new_i32(tcg_env, offsetof(CPUARMState, thumb), "thumb");
+
     cpu_exclusive_addr = tcg_global_mem_new_i64(tcg_env,
         offsetof(CPUARMState, exclusive_addr), "exclusive_addr");
     cpu_exclusive_val = tcg_global_mem_new_i64(tcg_env,
