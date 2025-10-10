@@ -88,6 +88,10 @@ G_NORETURN void x86_cpu_do_unaligned_access(CPUState *cs, vaddr vaddr,
 /* cc_helper.c */
 extern const uint8_t parity_table[256];
 
+static inline uint8_t bit_parity(uint8_t value) {
+  return parity_table[value];
+}
+
 /* misc_helper.c */
 void cpu_load_eflags(CPUX86State *env, int eflags, int update_mask);
 G_NORETURN void do_pause(CPUX86State *env);
