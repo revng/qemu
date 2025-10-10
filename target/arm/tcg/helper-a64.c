@@ -37,7 +37,7 @@
 
 /* C2.4.7 Multiply and divide */
 /* special cases for 0 and LLONG_MIN are mandated by the standard */
-uint64_t HELPER(udiv64)(uint64_t num, uint64_t den)
+uint64_t HELPER(udiv64)(uint64_t num, uint64_t den) REVNG_INLINE
 {
     if (den == 0) {
         return 0;
@@ -45,7 +45,7 @@ uint64_t HELPER(udiv64)(uint64_t num, uint64_t den)
     return num / den;
 }
 
-int64_t HELPER(sdiv64)(int64_t num, int64_t den)
+int64_t HELPER(sdiv64)(int64_t num, int64_t den) REVNG_INLINE
 {
     if (den == 0) {
         return 0;

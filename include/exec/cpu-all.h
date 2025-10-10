@@ -432,7 +432,7 @@ static inline ArchCPU *env_archcpu(CPUArchState *env)
  *
  * Return the CPUState associated with the environment.
  */
-static inline CPUState *env_cpu(CPUArchState *env)
+static inline CPUState *env_cpu(CPUArchState *env) REVNG_INLINE
 {
     return (void *)env - sizeof(CPUState);
 }

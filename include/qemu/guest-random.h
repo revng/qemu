@@ -53,7 +53,7 @@ void qemu_guest_random_seed_thread_part2(uint64_t seed);
  *
  * Returns 0 on success, < 0 on failure while setting *errp.
  */
-int qemu_guest_getrandom(void *buf, size_t len, Error **errp);
+int qemu_guest_getrandom(void *buf, size_t len, Error **errp) REVNG_ABORT;
 
 /**
  * qemu_guest_getrandom_nofail(void *buf, size_t len)
@@ -63,6 +63,6 @@ int qemu_guest_getrandom(void *buf, size_t len, Error **errp);
  * Like qemu_guest_getrandom, but will assert for failure.
  * Use this when there is no reasonable recovery.
  */
-void qemu_guest_getrandom_nofail(void *buf, size_t len);
+void qemu_guest_getrandom_nofail(void *buf, size_t len) REVNG_ABORT;
 
 #endif /* QEMU_GUEST_RANDOM_H */

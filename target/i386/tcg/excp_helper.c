@@ -26,12 +26,12 @@
 #include "helper-tcg.h"
 
 G_NORETURN void helper_raise_interrupt(CPUX86State *env, int intno,
-                                          int next_eip_addend)
+                                          int next_eip_addend) REVNG_EXCEPTIONAL
 {
     raise_interrupt(env, intno, 1, 0, next_eip_addend);
 }
 
-G_NORETURN void helper_raise_exception(CPUX86State *env, int exception_index)
+G_NORETURN void helper_raise_exception(CPUX86State *env, int exception_index) REVNG_EXCEPTIONAL
 {
     raise_exception(env, exception_index);
 }
@@ -113,13 +113,13 @@ void raise_interrupt2(CPUX86State *env, int intno,
 /* shortcuts to generate exceptions */
 
 G_NORETURN void raise_interrupt(CPUX86State *env, int intno, int is_int,
-                                int error_code, int next_eip_addend)
+                                int error_code, int next_eip_addend) REVNG_EXCEPTIONAL
 {
     raise_interrupt2(env, intno, is_int, error_code, next_eip_addend, 0);
 }
 
 G_NORETURN void raise_exception_err(CPUX86State *env, int exception_index,
-                                    int error_code)
+                                    int error_code) REVNG_EXCEPTIONAL
 {
     raise_interrupt2(env, exception_index, 0, error_code, 0, 0);
 }
@@ -130,7 +130,7 @@ G_NORETURN void raise_exception_err_ra(CPUX86State *env, int exception_index,
     raise_interrupt2(env, exception_index, 0, error_code, 0, retaddr);
 }
 
-G_NORETURN void raise_exception(CPUX86State *env, int exception_index)
+G_NORETURN void raise_exception(CPUX86State *env, int exception_index) REVNG_EXCEPTIONAL
 {
     raise_interrupt2(env, exception_index, 0, 0, 0, 0);
 }

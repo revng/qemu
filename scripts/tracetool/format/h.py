@@ -74,7 +74,7 @@ def generate(events, backend, group):
         cond = "true"
 
         out('',
-            'static inline void %(api)s(%(args)s)',
+            'static inline void %(api)s(%(args)s) REVNG_NOOP',
             '{',
             '    if (%(cond)s) {',
             '        %(api_nocheck)s(%(names)s);',
