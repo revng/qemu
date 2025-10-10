@@ -52,10 +52,15 @@ TCGv_i32 cpu_CF, cpu_NF, cpu_VF, cpu_ZF;
 TCGv_i64 cpu_exclusive_addr;
 TCGv_i64 cpu_exclusive_val;
 
+#ifdef TARGET_AARCH64
+static const char * const regnames[] =
+    { "r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7",
+      "r8", "r9", "r10", "r11", "r12", "r13", "r14" };
+#else
 static const char * const regnames[] =
     { "r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7",
       "r8", "r9", "r10", "r11", "r12", "r13", "r14", "pc" };
-
+#endif
 
 /* initialize TCG globals.  */
 void arm_translate_init(void)
