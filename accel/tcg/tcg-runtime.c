@@ -152,3 +152,7 @@ void HELPER(exit_atomic)(CPUArchState *env)
 {
     cpu_loop_exit_atomic(env_cpu(env), GETPC());
 }
+
+void *HELPER(memset)(void *s, int c, void *n) {
+    return memset(s, c, (size_t) n);
+}
