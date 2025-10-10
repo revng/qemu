@@ -6438,6 +6438,8 @@ static DisasJumpType translate_one(CPUS390XState *env, DisasContext *s)
     }
 #endif
 
+    update_cc_op(s);
+
 out:
     /* Advance to the next instruction.  */
     s->base.pc_next = s->pc_tmp;
