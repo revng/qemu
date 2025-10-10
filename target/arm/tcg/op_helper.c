@@ -121,7 +121,7 @@ void HELPER(v8m_stackcheck)(CPUARMState *env, uint32_t newvalue)
     }
 }
 
-uint32_t HELPER(add_setq)(CPUARMState *env, uint32_t a, uint32_t b)
+uint32_t HELPER(add_setq)(CPUARMState *env, uint32_t a, uint32_t b) REVNG_INLINE
 {
     uint32_t res = a + b;
     if (((res ^ a) & SIGNBIT) && !((a ^ b) & SIGNBIT))
@@ -384,7 +384,7 @@ void HELPER(yield)(CPUARMState *env)
  * the guest (those must all have syndrome information and thus should
  * use exception_with_syndrome*).
  */
-void HELPER(exception_internal)(CPUARMState *env, uint32_t excp)
+void HELPER(exception_internal)(CPUARMState *env, uint32_t excp) REVNG_EXCEPTIONAL
 {
     CPUState *cs = env_cpu(env);
 
@@ -405,7 +405,7 @@ void HELPER(exception_with_syndrome_el)(CPUARMState *env, uint32_t excp,
  * to the default target el.
  */
 void HELPER(exception_with_syndrome)(CPUARMState *env, uint32_t excp,
-                                     uint32_t syndrome)
+                                     uint32_t syndrome) REVNG_EXCEPTIONAL
 {
     raise_exception(env, excp, syndrome, exception_target_el(env));
 }
@@ -986,7 +986,7 @@ void HELPER(pre_smc)(CPUARMState *env, uint32_t syndrome)
 
 /* Similarly for variable shift instructions.  */
 
-uint32_t HELPER(shl_cc)(CPUARMState *env, uint32_t x, uint32_t i)
+uint32_t HELPER(shl_cc)(CPUARMState *env, uint32_t x, uint32_t i) REVNG_INLINE
 {
     int shift = i & 0xff;
     if (shift >= 32) {
@@ -1018,7 +1018,7 @@ uint32_t HELPER(shr_cc)(CPUARMState *env, uint32_t x, uint32_t i)
     return x;
 }
 
-uint32_t HELPER(sar_cc)(CPUARMState *env, uint32_t x, uint32_t i)
+uint32_t HELPER(sar_cc)(CPUARMState *env, uint32_t x, uint32_t i) REVNG_INLINE
 {
     int shift = i & 0xff;
     if (shift >= 32) {
@@ -1031,7 +1031,7 @@ uint32_t HELPER(sar_cc)(CPUARMState *env, uint32_t x, uint32_t i)
     return x;
 }
 
-uint32_t HELPER(ror_cc)(CPUARMState *env, uint32_t x, uint32_t i)
+uint32_t HELPER(ror_cc)(CPUARMState *env, uint32_t x, uint32_t i) REVNG_INLINE
 {
     int shift1, shift;
     shift1 = i & 0xff;

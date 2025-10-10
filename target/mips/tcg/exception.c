@@ -44,12 +44,12 @@ target_ulong exception_resume_pc(CPUMIPSState *env)
 }
 
 void helper_raise_exception_err(CPUMIPSState *env, uint32_t exception,
-                                int error_code)
+                                int error_code) REVNG_EXCEPTIONAL
 {
     do_raise_exception_err(env, exception, error_code, 0);
 }
 
-void helper_raise_exception(CPUMIPSState *env, uint32_t exception)
+void helper_raise_exception(CPUMIPSState *env, uint32_t exception) REVNG_EXCEPTIONAL
 {
     do_raise_exception(env, exception, GETPC());
 }
@@ -138,7 +138,7 @@ const char *mips_exception_name(int32_t exception)
 }
 
 void do_raise_exception_err(CPUMIPSState *env, uint32_t exception,
-                            int error_code, uintptr_t pc)
+                            int error_code, uintptr_t pc) REVNG_EXCEPTIONAL
 {
     CPUState *cs = env_cpu(env);
 

@@ -65,7 +65,7 @@ typedef enum {
 #define ui_module_load(lib, errp) module_load("ui-", lib, errp)
 #define audio_module_load(lib, errp) module_load("audio-", lib, errp)
 
-void register_module_init(void (*fn)(void), module_init_type type);
+void register_module_init(void (*fn)(void), module_init_type type) REVNG_NOOP;
 void register_dso_module_init(void (*fn)(void), module_init_type type);
 
 void module_call_init(module_init_type type);
