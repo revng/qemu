@@ -6708,6 +6708,8 @@ static void x86_cpu_reset_hold(Object *obj)
     env->old_exception = -1;
 
     /* init to reset state */
+    /* TODO: is this a proper solution? should we manipulate eflags? */
+    env->df = 1;
     env->int_ctl = 0;
     env->hflags2 |= HF2_GIF_MASK;
     env->hflags2 |= HF2_VGIF_MASK;
