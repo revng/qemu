@@ -405,8 +405,10 @@ abi_ulong mmap_find_vma(abi_ulong start, abi_ulong size, abi_ulong align)
          *  - mremap() with MREMAP_FIXED flag
          *  - shmat() with SHM_REMAP flag
          */
+        bool is_32bit = TARGET_VIRT_ADDR_SPACE_BITS == 32;
         ptr = mmap(g2h_untagged(addr), size, PROT_NONE,
-                   MAP_ANONYMOUS | MAP_PRIVATE | MAP_NORESERVE, -1, 0);
+                   MAP_ANONYMOUS | MAP_PRIVATE | MAP_NORESERVE
+                   | (is_32bit ? MAP_32BIT : 0), -1, 0);
 
         /* ENOMEM, if host address space has no memory */
         if (ptr == MAP_FAILED) {

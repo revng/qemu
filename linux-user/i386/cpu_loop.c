@@ -390,6 +390,7 @@ void target_cpu_copy_regs(CPUArchState *env, struct target_pt_regs *regs)
     env->idt.base = target_mmap(0, sizeof(uint64_t) * (env->idt.limit + 1),
                                 PROT_READ|PROT_WRITE,
                                 MAP_ANONYMOUS|MAP_PRIVATE, -1, 0);
+    assert(env->idt.base != -1);
     idt_table = g2h_untagged(env->idt.base);
     for (i = 0; i < 20; i++) {
         set_idt(i, 0, is64);
