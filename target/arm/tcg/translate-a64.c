@@ -199,7 +199,11 @@ void gen_a64_update_pc(DisasContext *s, target_long diff)
 static void gen_top_byte_ignore(DisasContext *s, TCGv_i64 dst,
                                 TCGv_i64 src, int tbi)
 {
+#ifdef CONFIG_LIBTCG
+    if (true) {
+#else
     if (tbi == 0) {
+#endif
         /* Load unmodified address */
         tcg_gen_mov_i64(dst, src);
     } else if (!regime_has_2_ranges(s->mmu_idx)) {
