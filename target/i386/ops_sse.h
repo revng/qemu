@@ -1104,6 +1104,19 @@ SSE_HELPER_CMP(cmptrues, FPU_CMPS,  !FPU_FALSE)
 #if SHIFT == 1
 static const int comis_eflags[4] = {CC_C, CC_Z, 0, CC_Z | CC_P | CC_C};
 
+#ifdef GEN_LLVM_HELPERS
+/*
+ * Insert a layer of indirection with the `lookup_comis_eflags` function, so
+ * that the GEP, generated in LLVM IR by the lookup into the `comis_eflags`
+ * array, is kept hidden inside this function and does not reach the helper
+ * bodies.
+ */
+#endif
+static int lookup_comis_eflags(int idx)
+{
+    return comis_eflags[idx];
+}
+
 void helper_ucomiss(CPUX86State *env, Reg *d, Reg *s)
 {
     FloatRelation ret;
@@ -1112,7 +1125,7 @@ void helper_ucomiss(CPUX86State *env, Reg *d, Reg *s)
     s0 = d->ZMM_S(0);
     s1 = s->ZMM_S(0);
     ret = float32_compare_quiet(s0, s1, &env->sse_status);
-    CC_SRC = comis_eflags[ret + 1];
+    CC_SRC = lookup_comis_eflags(ret + 1);
 }
 
 void helper_comiss(CPUX86State *env, Reg *d, Reg *s)
@@ -1123,7 +1136,7 @@ void helper_comiss(CPUX86State *env, Reg *d, Reg *s)
     s0 = d->ZMM_S(0);
     s1 = s->ZMM_S(0);
     ret = float32_compare(s0, s1, &env->sse_status);
-    CC_SRC = comis_eflags[ret + 1];
+    CC_SRC = lookup_comis_eflags(ret + 1);
 }
 
 void helper_ucomisd(CPUX86State *env, Reg *d, Reg *s)
@@ -1134,7 +1147,7 @@ void helper_ucomisd(CPUX86State *env, Reg *d, Reg *s)
     d0 = d->ZMM_D(0);
     d1 = s->ZMM_D(0);
     ret = float64_compare_quiet(d0, d1, &env->sse_status);
-    CC_SRC = comis_eflags[ret + 1];
+    CC_SRC = lookup_comis_eflags(ret + 1);
 }
 
 void helper_comisd(CPUX86State *env, Reg *d, Reg *s)
@@ -1145,8 +1158,9 @@ void helper_comisd(CPUX86State *env, Reg *d, Reg *s)
     d0 = d->ZMM_D(0);
     d1 = s->ZMM_D(0);
     ret = float64_compare(d0, d1, &env->sse_status);
-    CC_SRC = comis_eflags[ret + 1];
+    CC_SRC = lookup_comis_eflags(ret + 1);
 }
+
 #endif
 
 uint32_t glue(helper_movmskps, SUFFIX)(CPUX86State *env, Reg *s)
