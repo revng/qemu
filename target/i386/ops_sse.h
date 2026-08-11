@@ -172,6 +172,7 @@ void glue(helper_psllq, SUFFIX)(CPUX86State *env, Reg *d, Reg *s, Reg *c)
 
 #if SHIFT >= 1
 void glue(helper_psrldq, SUFFIX)(CPUX86State *env, Reg *d, Reg *s, Reg *c)
+    REVNG_INLINE
 {
     int shift, i, j;
 
@@ -190,6 +191,7 @@ void glue(helper_psrldq, SUFFIX)(CPUX86State *env, Reg *d, Reg *s, Reg *c)
 }
 
 void glue(helper_pslldq, SUFFIX)(CPUX86State *env, Reg *d, Reg *s, Reg *c)
+    REVNG_INLINE
 {
     int shift, i, j;
 
@@ -395,7 +397,7 @@ void glue(helper_maskmov, SUFFIX)(CPUX86State *env, Reg *d, Reg *s,
     } while (0)
 
 #if SHIFT == 0
-void glue(helper_pshufw, SUFFIX)(Reg *d, Reg *s, int order)
+void glue(helper_pshufw, SUFFIX)(Reg *d, Reg *s, int order) REVNG_INLINE
 {
     uint16_t r0, r1, r2, r3;
 
@@ -403,6 +405,7 @@ void glue(helper_pshufw, SUFFIX)(Reg *d, Reg *s, int order)
 }
 #else
 void glue(helper_shufps, SUFFIX)(Reg *d, Reg *v, Reg *s, int order)
+    REVNG_INLINE
 {
     uint32_t r0, r1, r2, r3;
     int i;
@@ -413,6 +416,7 @@ void glue(helper_shufps, SUFFIX)(Reg *d, Reg *v, Reg *s, int order)
 }
 
 void glue(helper_shufpd, SUFFIX)(Reg *d, Reg *v, Reg *s, int order)
+    REVNG_INLINE
 {
     uint64_t r0, r1;
     int i;
@@ -426,7 +430,7 @@ void glue(helper_shufpd, SUFFIX)(Reg *d, Reg *v, Reg *s, int order)
     }
 }
 
-void glue(helper_pshufd, SUFFIX)(Reg *d, Reg *s, int order)
+void glue(helper_pshufd, SUFFIX)(Reg *d, Reg *s, int order) REVNG_INLINE
 {
     uint32_t r0, r1, r2, r3;
     int i;
@@ -436,7 +440,7 @@ void glue(helper_pshufd, SUFFIX)(Reg *d, Reg *s, int order)
     }
 }
 
-void glue(helper_pshuflw, SUFFIX)(Reg *d, Reg *s, int order)
+void glue(helper_pshuflw, SUFFIX)(Reg *d, Reg *s, int order) REVNG_INLINE
 {
     uint16_t r0, r1, r2, r3;
     int i, j;
@@ -447,7 +451,7 @@ void glue(helper_pshuflw, SUFFIX)(Reg *d, Reg *s, int order)
     }
 }
 
-void glue(helper_pshufhw, SUFFIX)(Reg *d, Reg *s, int order)
+void glue(helper_pshufhw, SUFFIX)(Reg *d, Reg *s, int order) REVNG_INLINE
 {
     uint16_t r0, r1, r2, r3;
     int i, j;
@@ -1163,7 +1167,7 @@ void helper_comisd(CPUX86State *env, Reg *d, Reg *s)
 
 #endif
 
-uint32_t glue(helper_movmskps, SUFFIX)(CPUX86State *env, Reg *s)
+uint32_t glue(helper_movmskps, SUFFIX)(CPUX86State *env, Reg *s) REVNG_INLINE
 {
     uint32_t mask;
     int i;
@@ -1175,7 +1179,7 @@ uint32_t glue(helper_movmskps, SUFFIX)(CPUX86State *env, Reg *s)
     return mask;
 }
 
-uint32_t glue(helper_movmskpd, SUFFIX)(CPUX86State *env, Reg *s)
+uint32_t glue(helper_movmskpd, SUFFIX)(CPUX86State *env, Reg *s) REVNG_INLINE
 {
     uint32_t mask;
     int i;
@@ -1233,6 +1237,7 @@ void glue(helper_packssdw, SUFFIX)(CPUX86State *env, Reg *d, Reg *v, Reg *s)
                                                                         \
     void glue(helper_punpck ## base_name ## bw, SUFFIX)(CPUX86State *env,\
                                                 Reg *d, Reg *v, Reg *s) \
+        REVNG_INLINE                                                    \
     {                                                                   \
         uint8_t r[PACK_WIDTH * 2];                                      \
         int j, i;                                                       \
@@ -1251,6 +1256,7 @@ void glue(helper_packssdw, SUFFIX)(CPUX86State *env, Reg *d, Reg *v, Reg *s)
                                                                         \
     void glue(helper_punpck ## base_name ## wd, SUFFIX)(CPUX86State *env,\
                                                 Reg *d, Reg *v, Reg *s) \
+        REVNG_INLINE                                                    \
     {                                                                   \
         uint16_t r[PACK_WIDTH];                                         \
         int j, i;                                                       \
@@ -1269,6 +1275,7 @@ void glue(helper_packssdw, SUFFIX)(CPUX86State *env, Reg *d, Reg *v, Reg *s)
                                                                         \
     void glue(helper_punpck ## base_name ## dq, SUFFIX)(CPUX86State *env,\
                                                 Reg *d, Reg *v, Reg *s) \
+        REVNG_INLINE                                                    \
     {                                                                   \
         uint32_t r[PACK_WIDTH / 2];                                     \
         int j, i;                                                       \
@@ -1288,6 +1295,7 @@ void glue(helper_packssdw, SUFFIX)(CPUX86State *env, Reg *d, Reg *v, Reg *s)
     XMM_ONLY(                                                           \
              void glue(helper_punpck ## base_name ## qdq, SUFFIX)(      \
                         CPUX86State *env, Reg *d, Reg *v, Reg *s)       \
+                 REVNG_INLINE                                           \
              {                                                          \
                  uint64_t r[2];                                         \
                  int i;                                                 \
@@ -1550,7 +1558,7 @@ SSE_HELPER_W(helper_psignw, FSIGNW)
 SSE_HELPER_L(helper_psignd, FSIGNL)
 
 void glue(helper_palignr, SUFFIX)(CPUX86State *env, Reg *d, Reg *v, Reg *s,
-                                  uint32_t imm)
+                                  uint32_t imm) REVNG_INLINE
 {
     int i;
 
@@ -1634,6 +1642,7 @@ void glue(helper_ptest, SUFFIX)(CPUX86State *env, Reg *d, Reg *s)
 
 #define SSE_HELPER_F(name, elem, num, F)                        \
     void glue(name, SUFFIX)(CPUX86State *env, Reg *d, Reg *s)   \
+        REVNG_INLINE                                            \
     {                                                           \
         int n = num;                                            \
         for (int i = n; --i >= 0; ) {                           \
@@ -2255,6 +2264,7 @@ void glue(helper_vpermilps, SUFFIX)(CPUX86State *env, Reg *d, Reg *v, Reg *s)
 }
 
 void glue(helper_vpermilpd_imm, SUFFIX)(Reg *d, Reg *s, uint32_t order)
+    REVNG_INLINE
 {
     uint64_t r0, r1;
     int i;
@@ -2270,6 +2280,7 @@ void glue(helper_vpermilpd_imm, SUFFIX)(Reg *d, Reg *s, uint32_t order)
 }
 
 void glue(helper_vpermilps_imm, SUFFIX)(Reg *d, Reg *s, uint32_t order)
+    REVNG_INLINE
 {
     uint32_t r0, r1, r2, r3;
     int i;
@@ -2489,7 +2500,7 @@ void helper_vpermdq_ymm(Reg *d, Reg *v, Reg *s, uint32_t order)
     }
 }
 
-void helper_vpermq_ymm(Reg *d, Reg *s, uint32_t order)
+void helper_vpermq_ymm(Reg *d, Reg *s, uint32_t order) REVNG_INLINE
 {
     uint64_t r0, r1, r2, r3;
     r0 = s->Q(order & 3);
