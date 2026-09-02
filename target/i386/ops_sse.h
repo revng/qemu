@@ -1106,19 +1106,20 @@ SSE_HELPER_CMP(cmptrues, FPU_CMPS,  !FPU_FALSE)
 #undef SSE_HELPER_CMP
 
 #if SHIFT == 1
-static const int comis_eflags[4] = {CC_C, CC_Z, 0, CC_Z | CC_P | CC_C};
-
-#ifdef GEN_LLVM_HELPERS
-/*
- * Insert a layer of indirection with the `lookup_comis_eflags` function, so
- * that the GEP, generated in LLVM IR by the lookup into the `comis_eflags`
- * array, is kept hidden inside this function and does not reach the helper
- * bodies.
- */
-#endif
-static int lookup_comis_eflags(int idx)
+static int lookup_comis_eflags(int idx) REVNG_INLINE
 {
-    return comis_eflags[idx];
+    switch (idx) {
+    case 0:
+        return CC_C;
+    case 1:
+        return CC_Z;
+    case 2:
+        return 0;
+    case 3:
+        return CC_Z | CC_P | CC_C;
+    }
+
+    __builtin_unreachable();
 }
 
 void helper_ucomiss(CPUX86State *env, Reg *d, Reg *s)
