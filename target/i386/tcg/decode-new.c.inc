@@ -1526,6 +1526,14 @@ static bool validate_vex(DisasContext *s, X86DecodedInsn *decode)
 {
     X86OpEntry *e = &decode->e;
 
+    /*
+     * MMX instructions have no VEX encoding.
+     */
+    if ((s->prefix & PREFIX_VEX) && e->special == X86_SPECIAL_MMX &&
+        !(s->prefix & (PREFIX_DATA | PREFIX_REPZ | PREFIX_REPNZ))) {
+        goto illegal;
+    }
+
     switch (e->vex_special) {
     case X86_VEX_REPScalar:
         /*
