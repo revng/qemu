@@ -65,6 +65,7 @@ static inline void set_float_rounding_mode(FloatRoundMode val,
 }
 
 static inline void set_float_exception_flags(int val, float_status *status)
+    REVNG_NOOP
 {
     status->float_exception_flags = val;
 }
@@ -115,7 +116,7 @@ static inline FloatRoundMode get_float_rounding_mode(float_status *status)
     return status->float_rounding_mode;
 }
 
-static inline int get_float_exception_flags(float_status *status)
+static inline int get_float_exception_flags(float_status *status) REVNG_NOOP
 {
     return status->float_exception_flags;
 }
