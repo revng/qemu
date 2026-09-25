@@ -433,6 +433,16 @@ static int generate_tinycode(LibTcgContext *context, TranslationBlock *tb,
     return 0;
 }
 
+static inline void clear_temp_state(LibTcgContext *context)
+{
+    assert(context->cpu->opaque);
+    BytecodeRegion *region = context->cpu->opaque;
+    if (region->extended_region) {
+        free((void *) region->buffer);
+    }
+    context->cpu->opaque = NULL;
+}
+
 LibTcgTranslationBlock libtcg_translate_block(LibTcgContext *context,
                                               const unsigned char *buffer,
                                               size_t size,
@@ -525,9 +535,7 @@ restart_translation:
         }
         case -3: {
             /* Invalid translation */
-            if (region.extended_region) {
-                free((void *) region.buffer);
-            }
+            clear_temp_state(context);
             return (LibTcgTranslationBlock) {
                 .size_in_bytes = sizeof(target_ulong),
             };
@@ -736,9 +744,7 @@ restart_translation:
         instruction_list.list[instruction_list.instruction_count++] = insn;
     }
 
-    if (region.extended_region)
-        free((void *) region.buffer);
-
+    clear_temp_state(context);
     return instruction_list;
 }
 
