@@ -119,6 +119,7 @@ ASSERT_CONSTANT(PLUGIN);
 
 typedef struct LibTcgContext {
     CPUState *cpu;
+    TranslationBlock tb;
 } LibTcgContext;
 
 /*
@@ -416,8 +417,7 @@ bool can_translation_proceed(CPUState *cpu,
  * local variables become indeterminate if modified between a sigsetjmp and
  * siglongjmp (See C11 $7.13.2.1).
  */
-static int generate_tinycode(LibTcgContext *context, TranslationBlock *tb,
-                             int *max_insns, vaddr pc)
+static int generate_tinycode(LibTcgContext *context, int *max_insns, vaddr pc)
 {
     const int ret = sigsetjmp(tcg_ctx->jmp_trans, 0);
     if (ret != 0) {
@@ -428,7 +428,7 @@ static int generate_tinycode(LibTcgContext *context, TranslationBlock *tb,
     tcg_func_start(tcg_ctx);
 
     /* Generate tinycode, might siglongjmp back in case of failure */
-    gen_intermediate_code(context->cpu, tb, max_insns, pc, NULL);
+    gen_intermediate_code(context->cpu, &context->tb, max_insns, pc, NULL);
 
     return 0;
 }
@@ -513,18 +513,20 @@ LibTcgTranslationBlock libtcg_translate_block(LibTcgContext *context,
      */
     int max_insns = TCG_MAX_INSNS;
 
-    TranslationBlock *tb = tcg_tb_alloc(tcg_ctx);
-    tb->pc = pc;
-    tb->cs_base = cs_base;
-    tb->max_pc = virtual_address + size;
-    tb->flags = flags;
-    tb->cflags = cflags;
+    /* Clear translation block state and set expected fields */
+    context->tb = (TranslationBlock) {
+        .pc = pc,
+        .cs_base = cs_base,
+        .max_pc = virtual_address + size,
+        .flags = flags,
+        .cflags = cflags,
+    };
 
-    tcg_ctx->gen_tb = tb;
+    tcg_ctx->gen_tb = &context->tb;
 
     int ret;
 restart_translation:
-    ret = generate_tinycode(context, tb, &max_insns, pc);
+    ret = generate_tinycode(context, &max_insns, pc);
     if (ret != 0) {
         switch (ret) {
         case -2: {
@@ -557,7 +559,7 @@ restart_translation:
         .labels = calloc(sizeof(LibTcgLabel), (tcg_ctx->nb_labels)),
         .label_count = 0,
 
-        .size_in_bytes = tb->size,
+        .size_in_bytes = context->tb.size,
     };
 
     assert(instruction_list.list   != NULL &&
