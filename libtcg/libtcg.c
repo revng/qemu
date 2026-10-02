@@ -119,6 +119,7 @@ ASSERT_CONSTANT(PLUGIN);
 
 typedef struct LibTcgContext {
     CPUState *cpu;
+    TranslationBlock tb;
 } LibTcgContext;
 
 /*
@@ -408,6 +409,40 @@ bool can_translation_proceed(CPUState *cpu,
                  && !region->extended_region));
 }
 
+/*
+ * Generate Tinycode by calling into QEMU frontends.
+ *
+ * Note: The sigsetjmp/siglongjmp boundary needs to be contained in this
+ * function since gen_intermediate_code() modifies `max_insns` and non-volatile
+ * local variables become indeterminate if modified between a sigsetjmp and
+ * siglongjmp (See C11 $7.13.2.1).
+ */
+static int generate_tinycode(LibTcgContext *context, int *max_insns, vaddr pc)
+{
+    const int ret = sigsetjmp(tcg_ctx->jmp_trans, 0);
+    if (ret != 0) {
+        return ret;
+    }
+
+    /* Needed to initialize fields in `tcg_ctx` */
+    tcg_func_start(tcg_ctx);
+
+    /* Generate tinycode, might siglongjmp back in case of failure */
+    gen_intermediate_code(context->cpu, &context->tb, max_insns, pc, NULL);
+
+    return 0;
+}
+
+static inline void clear_temp_state(LibTcgContext *context)
+{
+    assert(context->cpu->opaque);
+    BytecodeRegion *region = context->cpu->opaque;
+    if (region->extended_region) {
+        free((void *) region->buffer);
+    }
+    context->cpu->opaque = NULL;
+}
+
 LibTcgTranslationBlock libtcg_translate_block(LibTcgContext *context,
                                               const unsigned char *buffer,
                                               size_t size,
@@ -478,39 +513,40 @@ LibTcgTranslationBlock libtcg_translate_block(LibTcgContext *context,
      */
     int max_insns = TCG_MAX_INSNS;
 
-    TranslationBlock *tb = tcg_tb_alloc(tcg_ctx);
-    tb->pc = pc;
-    tb->cs_base = cs_base;
-    tb->max_pc = virtual_address + size;
-    tb->flags = flags;
-    tb->cflags = cflags;
+    /* Clear translation block state and set expected fields */
+    context->tb = (TranslationBlock) {
+        .pc = pc,
+        .cs_base = cs_base,
+        .max_pc = virtual_address + size,
+        .flags = flags,
+        .cflags = cflags,
+    };
 
-    tcg_ctx->gen_tb = tb;
+    tcg_ctx->gen_tb = &context->tb;
 
     int ret;
 restart_translation:
-    ret = sigsetjmp(tcg_ctx->jmp_trans, 0);
+    ret = generate_tinycode(context, &max_insns, pc);
     if (ret != 0) {
         switch (ret) {
-        case -2:
+        case -2: {
+            /* Too many instructions per TB, restart translation */
             assert(max_insns > 1);
             max_insns /= 2;
             goto restart_translation;
-            break;
-        case -3:
-            if (region.extended_region)
-                free((void *) region.buffer);
+        }
+        case -3: {
+            /* Invalid translation */
+            clear_temp_state(context);
             return (LibTcgTranslationBlock) {
                 .size_in_bytes = sizeof(target_ulong),
             };
         }
+        default:
+            /* Unhandled translation failure */
+            abort();
+        }
     }
-
-    /* Needed to initialize fields in `tcg_ctx` */
-    tcg_func_start(tcg_ctx);
-
-    void *host_pc = NULL;
-    gen_intermediate_code(context->cpu, tb, &max_insns, pc, host_pc);
 
     LibTcgTranslationBlock instruction_list = {
         .list = calloc(sizeof(LibTcgInstruction), tcg_ctx->nb_ops),
@@ -523,7 +559,7 @@ restart_translation:
         .labels = calloc(sizeof(LibTcgLabel), (tcg_ctx->nb_labels)),
         .label_count = 0,
 
-        .size_in_bytes = tb->size,
+        .size_in_bytes = context->tb.size,
     };
 
     assert(instruction_list.list   != NULL &&
@@ -710,9 +746,7 @@ restart_translation:
         instruction_list.list[instruction_list.instruction_count++] = insn;
     }
 
-    if (region.extended_region)
-        free((void *) region.buffer);
-
+    clear_temp_state(context);
     return instruction_list;
 }
 
